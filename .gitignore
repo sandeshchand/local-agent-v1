@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+*.log
+logs/
+data/logs/
+
+# Local databases and indexes
+app.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Vector store / local storage
+qdrant_data/
+data/qdrant/
+data/sqlite/
+
+# Processed / generated app data
+data/processed/
+data/evals/
+
+# Model / runtime temp files
+*.tmp
+*.temp
+
+# Jupyter
+.ipynb_checkpoints/
+
+# FastAPI / Uvicorn
+uvicorn*.log
+
+# Node (only if you add frontend tooling later)
+node_modules/
