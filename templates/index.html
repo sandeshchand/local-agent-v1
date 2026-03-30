@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="/static/style.css?v=2" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <h1>Local Agent V1</h1>
+
+      <section class="panel">
+        <h2>Ingest PDFs</h2>
+        <div class="row">
+          <input id="ingest-path" type="text" placeholder="data/raw/documents or a single PDF path" />
+          <button id="ingest-btn" type="button">Ingest</button>
+        </div>
+        <div id="ingest-status" class="status-box"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Indexed Documents</h2>
+        <button id="refresh-docs-btn" type="button">Refresh</button>
+        <div id="documents-list" class="documents-list"></div>
+      </section>
+    </aside>
+
+    <main class="main-content">
+      <section class="chat-header">
+        <h2>Chat</h2>
+        <p>Ask questions about your indexed PDFs.</p>
+      </section>
+
+      <section id="chat-window" class="chat-window"></section>
+
+      <section class="chat-input-bar">
+        <textarea id="chat-input" rows="3" placeholder="Ask a question about your documents..."></textarea>
+        <button id="send-btn" type="button">Send</button>
+      </section>
+    </main>
+  </div>
+
+  <template id="message-template">
+    <div class="message">
+      <div class="message-role"></div>
+      <div class="message-body"></div>
+    </div>
+  </template>
+
+  <script src="/static/chat.js?v=2"></script>
+</body>
+</html>
