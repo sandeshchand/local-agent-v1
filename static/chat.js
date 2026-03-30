@@ -1,4 +1,39 @@
-console.log("chat.js loaded");
+function setChatStatus(text) {
+  const statusEl = document.getElementById("chat-status");
+  if (statusEl) {
+    statusEl.textContent = text;
+  }
+}
+
+function setSendButtonLoading(isLoading) {
+  const sendBtn = document.getElementById("send-btn");
+  const chatInput = document.getElementById("chat-input");
+
+  if (sendBtn) {
+    sendBtn.disabled = isLoading;
+    sendBtn.textContent = isLoading ? "Thinking..." : "Send";
+  }
+
+  if (chatInput) {
+    chatInput.disabled = isLoading;
+  }
+
+  setChatStatus(isLoading ? "Generating response..." : "Ready");
+}
+
+function setIngestLoading(isLoading) {
+  const ingestBtn = document.getElementById("ingest-btn");
+  const ingestInput = document.getElementById("ingest-path");
+
+  if (ingestBtn) {
+    ingestBtn.disabled = isLoading;
+    ingestBtn.textContent = isLoading ? "Ingesting..." : "Ingest";
+  }
+
+  if (ingestInput) {
+    ingestInput.disabled = isLoading;
+  }
+}
 
 async function fetchJSON(url, options = {}) {
   const response = await fetch(url, {
@@ -22,24 +57,27 @@ async function fetchJSON(url, options = {}) {
   return data;
 }
 
-function addMessage(role, content) {
+function hideEmptyState() {
+  const emptyState = document.getElementById("empty-state");
+  if (emptyState) {
+    emptyState.style.display = "none";
+  }
+}
+
+function addMessage(role, content, extraClass = "") {
+  hideEmptyState();
+
   const template = document.getElementById("message-template");
   const chatWindow = document.getElementById("chat-window");
 
-  if (!template || !chatWindow) {
-    console.error("message-template or chat-window not found");
-    return;
-  }
+  if (!template || !chatWindow) return;
 
   const clone = template.content.cloneNode(true);
   const roleEl = clone.querySelector(".message-role");
   const bodyEl = clone.querySelector(".message-body");
   const messageEl = clone.querySelector(".message");
 
-  if (!roleEl || !bodyEl || !messageEl) {
-    console.error("message template structure is invalid");
-    return;
-  }
+  if (!roleEl || !bodyEl || !messageEl) return;
 
   roleEl.textContent = role;
   bodyEl.textContent = content;
@@ -50,21 +88,78 @@ function addMessage(role, content) {
     messageEl.classList.add("assistant");
   }
 
+  if (extraClass) {
+    messageEl.classList.add(extraClass);
+  }
+
   chatWindow.appendChild(clone);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function addAssistantResponse(answer, traceId, citations = []) {
+  hideEmptyState();
+
+  const chatWindow = document.getElementById("chat-window");
+  if (!chatWindow) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "message assistant";
+
+  const role = document.createElement("div");
+  role.className = "message-role";
+  role.textContent = "Assistant";
+
+  const body = document.createElement("div");
+  body.className = "message-body";
+
+  const answerBox = document.createElement("div");
+  answerBox.className = "answer-box";
+  answerBox.textContent = answer;
+
+  body.appendChild(answerBox);
+
+  if (Array.isArray(citations) && citations.length > 0) {
+    const citationTitle = document.createElement("div");
+    citationTitle.className = "citation-title";
+    citationTitle.textContent = "Sources";
+    body.appendChild(citationTitle);
+
+    const citationList = document.createElement("div");
+    citationList.className = "citation-list";
+
+    citations.forEach((c) => {
+      const item = document.createElement("div");
+      item.className = "citation-item";
+      item.innerHTML = `
+        <div><strong>[${c.index}] ${c.title}</strong></div>
+        <div>Page: ${c.page_number}</div>
+        <div class="citation-path">${c.source_path}</div>
+      `;
+      citationList.appendChild(item);
+    });
+
+    body.appendChild(citationList);
+  }
+
+  const trace = document.createElement("div");
+  trace.className = "trace-badge";
+  trace.textContent = `Trace ID: ${traceId}`;
+  body.appendChild(trace);
+
+  wrapper.appendChild(role);
+  wrapper.appendChild(body);
+  chatWindow.appendChild(wrapper);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
 function renderDocuments(docs) {
   const container = document.getElementById("documents-list");
-  if (!container) {
-    console.error("documents-list not found");
-    return;
-  }
+  if (!container) return;
 
   container.innerHTML = "";
 
   if (!docs.length) {
-    container.textContent = "No indexed documents found.";
+    container.innerHTML = `<div class="muted">No indexed documents found.</div>`;
     return;
   }
 
@@ -73,43 +168,36 @@ function renderDocuments(docs) {
     item.className = "doc-item";
     item.innerHTML = `
       <div class="doc-title">${doc.title}</div>
-      <div class="doc-meta">Pages: ${doc.page_count}</div>
-      <div class="doc-meta">${doc.source_path}</div>
-      <div class="doc-meta">Indexed: ${doc.indexed_at}</div>
+      <div class="doc-meta"><strong>Pages:</strong> ${doc.page_count}</div>
+      <div class="doc-meta"><strong>Path:</strong> ${doc.source_path}</div>
+      <div class="doc-meta"><strong>Indexed:</strong> ${doc.indexed_at}</div>
     `;
     container.appendChild(item);
   }
 }
 
 async function loadDocuments() {
-  console.log("loading documents...");
   try {
     const docs = await fetchJSON("/api/documents");
-    console.log("documents loaded", docs);
     renderDocuments(docs);
   } catch (error) {
-    console.error("loadDocuments error:", error);
     const container = document.getElementById("documents-list");
     if (container) {
-      container.textContent = `Error loading documents: ${error.message}`;
+      container.innerHTML = `<div class="error-text">Error loading documents: ${error.message}</div>`;
     }
   }
 }
 
 async function sendChat() {
-  console.log("sendChat triggered");
-
   const input = document.getElementById("chat-input");
-  if (!input) {
-    console.error("chat-input not found");
-    return;
-  }
+  if (!input) return;
 
   const query = input.value.trim();
   if (!query) return;
 
   addMessage("User", query);
   input.value = "";
+  setSendButtonLoading(true);
 
   try {
     const data = await fetchJSON("/api/chat", {
@@ -117,40 +205,30 @@ async function sendChat() {
       body: JSON.stringify({ query }),
     });
 
-    let citationBlock = "";
-    if (Array.isArray(data.citations) && data.citations.length) {
-      citationBlock =
-        "\n\nCitations:\n" +
-        data.citations
-          .map((c) => `[${c.index}] ${c.title}, page ${c.page_number}`)
-          .join("\n");
-    }
-
-    addMessage("Assistant", `${data.answer}\n\nTrace ID: ${data.trace_id}${citationBlock}`);
+    addAssistantResponse(data.answer, data.trace_id, data.citations || []);
   } catch (error) {
-    console.error("sendChat error:", error);
-    addMessage("Assistant", `Error: ${error.message}`);
+    addMessage("Assistant", `Error: ${error.message}`, "error-message");
+  } finally {
+    setSendButtonLoading(false);
   }
 }
 
 async function ingestPath() {
-  console.log("ingestPath triggered");
-
   const input = document.getElementById("ingest-path");
   const statusBox = document.getElementById("ingest-status");
 
-  if (!input || !statusBox) {
-    console.error("ingest input/status elements not found");
-    return;
-  }
+  if (!input || !statusBox) return;
 
   const path = input.value.trim();
   if (!path) {
     statusBox.textContent = "Enter a file or folder path first.";
+    statusBox.className = "status-box error-text";
     return;
   }
 
-  statusBox.textContent = "Ingesting...";
+  setIngestLoading(true);
+  statusBox.textContent = "Ingestion in progress...";
+  statusBox.className = "status-box";
 
   try {
     const data = await fetchJSON("/api/ingest-path", {
@@ -168,16 +246,17 @@ async function ingestPath() {
     ];
 
     statusBox.textContent = lines.join("\n");
+    statusBox.className = "status-box";
     await loadDocuments();
   } catch (error) {
-    console.error("ingestPath error:", error);
     statusBox.textContent = `Error: ${error.message}`;
+    statusBox.className = "status-box error-text";
+  } finally {
+    setIngestLoading(false);
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("DOMContentLoaded");
-
   const sendBtn = document.getElementById("send-btn");
   const refreshDocsBtn = document.getElementById("refresh-docs-btn");
   const ingestBtn = document.getElementById("ingest-btn");
@@ -185,20 +264,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (sendBtn) {
     sendBtn.addEventListener("click", sendChat);
-  } else {
-    console.error("send-btn not found");
   }
 
   if (refreshDocsBtn) {
     refreshDocsBtn.addEventListener("click", loadDocuments);
-  } else {
-    console.error("refresh-docs-btn not found");
   }
 
   if (ingestBtn) {
     ingestBtn.addEventListener("click", ingestPath);
-  } else {
-    console.error("ingest-btn not found");
   }
 
   if (chatInput) {
@@ -208,8 +281,6 @@ document.addEventListener("DOMContentLoaded", () => {
         sendChat();
       }
     });
-  } else {
-    console.error("chat-input not found");
   }
 
   loadDocuments();
