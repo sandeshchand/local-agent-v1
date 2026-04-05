@@ -8,6 +8,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from agent.orchestrator import Orchestrator
+from agent.planner import Planner
+
+
 from app.api_models import (
     ChatRequest,
     ChatResponse,
@@ -83,6 +87,7 @@ def list_documents():
 def chat(request_data: ChatRequest):
     deps = get_deps()
 
+    planner = Planner(chat_client=deps.chat_client)
     retrieval = RetrievalService(
         qdrant_store=deps.qdrant_store,
         embedding_client=deps.embedding_client,
@@ -90,38 +95,30 @@ def chat(request_data: ChatRequest):
     )
     answer_service = AnswerService(chat_client=deps.chat_client)
 
-    results = retrieval.search(request_data.query)
+    orchestrator = Orchestrator(
+        planner=planner,
+        retrieval_service=retrieval,
+        answer_service=answer_service,
+    )
 
-    if not results:
-        answer = "I could not find relevant information in the indexed documents for that question."
-        trace_id = save_trace(
-            sqlite_store=deps.sqlite_store,
-            query=request_data.query,
-            top_k=deps.config.top_k,
-            retrieved_items=[],
-            final_answer=answer,
-        )
-        return ChatResponse(
-            answer=answer,
-            trace_id=trace_id,
-            citations=[],
-        )
+    results = orchestrator.handle_query(request_data.query)
 
-    answer = answer_service.answer(request_data.query, results)
     trace_id = save_trace(
         sqlite_store=deps.sqlite_store,
         query=request_data.query,
         top_k=deps.config.top_k,
-        retrieved_items=results,
-        final_answer=answer,
+        retrieved_items=results["citations"],
+        final_answer=results["answer"],
+        plan=results["plan"],
     )
-
     return ChatResponse(
-        answer=answer,
+        answer=results["answer"],
         trace_id=trace_id,
-        citations=build_citations(results),
+        mode=results["mode"],
+        reason=results["reason"],
+        retrieval_query=results["retrieval_query"], 
+        citations=build_citations(results["citations"]),
     )
-
 
 @app.post("/api/ingest-path", response_model=IngestPathResponse)
 def ingest_path(request_data: IngestPathRequest):

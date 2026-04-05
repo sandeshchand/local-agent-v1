@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import argparse
 from pathlib import Path
+
+from agent.planner import Planner
+from agent.orchestrator import Orchestrator
+from app.dependencies import AppDependencies
 from ingestion.file_loader import discover_pdf_files
 from ingestion.pipeline import IngestionPipeline
 from observability.traces import save_trace
 from retrieval.answer_service import AnswerService
 from retrieval.search import RetrievalService
-from app.dependencies import AppDependencies
+
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -62,27 +68,43 @@ def run_ingest(deps: AppDependencies, path:str) -> None:
 
 
 def run_ask(deps: AppDependencies, query:str) ->None:
+    planner = Planner(chat_client=deps.chat_client)
     retrieval = RetrievalService(
         qdrant_store=deps.qdrant_store,
         embedding_client=deps.embedding_client,
         top_k = deps.config.top_k,
     )
     answer_service = AnswerService(chat_client=deps.chat_client)
-    results = retrieval.search(query)
-    if not results:
-        print("No retreival results found.")
-        return
-
-    answer= answer_service.answer(query, results)
+    orchestrator = Orchestrator(
+        planner=planner,
+        retrieval_service=retrieval,
+        answer_service=answer_service,
+    )
+    
+    result = orchestrator.handle_query(query)
     trace_id = save_trace(
         sqlite_store=deps.sqlite_store,
         query=query,
         top_k=deps.config.top_k,
-        retrieved_items=results,
-        final_answer=answer,
+        retrieved_items=result["citations"],
+        final_answer=result["answer"],
+        plan=result["plan"],
     )
-    print(answer)
+
+    print(f"Mode: {result['mode']}")
+    print(f"Reason: {result['reason']}")
+    if result["retrieval_query"]:
+        print(f"Retrieval Query: {result['retrieval_query']}")
+    
+    print()
+    print(f"Answer: {result['answer']}")
     print(f"\n Trace saved with id:{trace_id}")
+
+    if result["citations"]:
+        print("\nCitations:")
+        for idx, item in enumerate(result["citations"], start=1):
+            print(
+                f"[{idx}]{item.get('title')} | page {item.get('page_number')} | {item.get('source_path')}")
 
 
 def run_list_docs(deps:AppDependencies)->None:
@@ -90,6 +112,7 @@ def run_list_docs(deps:AppDependencies)->None:
     if not docs:
         print("No indexed documents found.")
         return
+ 
     for index, doc in enumerate(docs, start=1):
         print(f"[{index}] {doc['title']}")
         print(f"path: {doc['source_path']}")

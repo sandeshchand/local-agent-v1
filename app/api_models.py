@@ -19,6 +19,9 @@ class CitationItem(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     trace_id: int
+    mode: str
+    reason: str =""
+    retrieval_query: str | None = None
     citations: list[CitationItem]
 
 
