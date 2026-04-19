@@ -73,7 +73,10 @@ def run_ask(deps: AppDependencies, query:str) ->None:
     if plan_dict and plan_dict.get("retrieval_query"):
         print(f"Retrieval Query: {plan_dict['retrieval_query']}")
 
-    if result["citations"]:
+    verif = result.get("verification", {})
+    is_grounded = verif.get("grounded", True)
+
+    if result["citations"] and is_grounded:
         print("\nTop retrieved chunks:")
         for idx, item in enumerate(result["citations"], start=1):
             hybrid_score = item.get('hybrid_score')
@@ -92,7 +95,7 @@ def run_ask(deps: AppDependencies, query:str) ->None:
     print()
     print(f"Answer: {result['answer']}")
     
-    verif = result.get("verification", {})
+
     if verif:
         print(f"\nVerification Status: {verif.get('status')}")
         for issue in verif.get("issues", []):
@@ -100,7 +103,7 @@ def run_ask(deps: AppDependencies, query:str) ->None:
             
     print(f"\nTrace saved with id: {result.get('trace_id')}")
 
-    if result.get("citations"):
+    if result.get("citations") and is_grounded:
         print("\nCitations Summary:")
         for idx, item in enumerate(result["citations"], start=1):
             print(

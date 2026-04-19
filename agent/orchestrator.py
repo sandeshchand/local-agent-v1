@@ -56,13 +56,13 @@ class Orchestrator:
         for step_no in range(2,self.max_steps+ 2):
             action = self.tool_router.next_action(state)
 
-            if action.action_type == "answer_direct":
+            if action.action_type == "direct_answer":
                 answer = self.answer_service.answer_direct(query)
                 state.final_answer = answer
                 state.done = True
                 state.steps.append({
                     "step": step_no,
-                    "type": "answer_direct",
+                    "type": "direct_answer",
                     "notes": action.notes,
                 })
                 break
