@@ -3,14 +3,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from agent.planner import Planner
-from agent.orchestrator import Orchestrator
 from app.dependencies import AppDependencies
 from ingestion.file_loader import discover_pdf_files
 from ingestion.pipeline import IngestionPipeline
-from observability.traces import save_trace
-from retrieval.answer_service import AnswerService
-from retrieval.search import RetrievalService
 
 
 
@@ -68,43 +63,48 @@ def run_ingest(deps: AppDependencies, path:str) -> None:
 
 
 def run_ask(deps: AppDependencies, query:str) ->None:
-    planner = Planner(chat_client=deps.chat_client)
-    retrieval = RetrievalService(
-        qdrant_store=deps.qdrant_store,
-        embedding_client=deps.embedding_client,
-        top_k = deps.config.top_k,
-    )
-    answer_service = AnswerService(chat_client=deps.chat_client)
-    orchestrator = Orchestrator(
-        planner=planner,
-        retrieval_service=retrieval,
-        answer_service=answer_service,
-    )
+    print(f"Running agent for query: {query}")
+    result = deps.orchestrator.handle_query(query)
     
-    result = orchestrator.handle_query(query)
-    trace_id = save_trace(
-        sqlite_store=deps.sqlite_store,
-        query=query,
-        top_k=deps.config.top_k,
-        retrieved_items=result["citations"],
-        final_answer=result["answer"],
-        plan=result["plan"],
-    )
-
-    print(f"Mode: {result['mode']}")
+    print(f"\nMode selected: {result['mode']}")
     print(f"Reason: {result['reason']}")
-    if result["retrieval_query"]:
-        print(f"Retrieval Query: {result['retrieval_query']}")
+    
+    plan_dict = result.get("plan", {})
+    if plan_dict and plan_dict.get("retrieval_query"):
+        print(f"Retrieval Query: {plan_dict['retrieval_query']}")
+
+    if result["citations"]:
+        print("\nTop retrieved chunks:")
+        for idx, item in enumerate(result["citations"], start=1):
+            hybrid_score = item.get('hybrid_score')
+            hybrid_score_str = f"{hybrid_score:.4f}" if hybrid_score is not None else "N/A"
+            reranker_score = item.get('reranker_score', 0.0)
+            reranker_score_str = f"{reranker_score:.4f}" if reranker_score is not None else "N/A"
+            
+            print(
+                f"[{idx}] page= {item.get('page_number')}\n"
+                f"hybrid_score={hybrid_score_str}\n"
+                f"reranker_score={reranker_score_str}"
+            )
+            print(f"   {item.get('text', '')[:500]}...")
+            print()
     
     print()
     print(f"Answer: {result['answer']}")
-    print(f"\n Trace saved with id:{trace_id}")
+    
+    verif = result.get("verification", {})
+    if verif:
+        print(f"\nVerification Status: {verif.get('status')}")
+        for issue in verif.get("issues", []):
+            print(f"  - {issue}")
+            
+    print(f"\nTrace saved with id: {result.get('trace_id')}")
 
-    if result["citations"]:
-        print("\nCitations:")
+    if result.get("citations"):
+        print("\nCitations Summary:")
         for idx, item in enumerate(result["citations"], start=1):
             print(
-                f"[{idx}]{item.get('title')} | page {item.get('page_number')} | {item.get('source_path')}")
+                f"[{idx}] {item.get('title')} | page {item.get('page_number')} | {item.get('source_path')}")
 
 
 def run_list_docs(deps:AppDependencies)->None:

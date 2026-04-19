@@ -10,6 +10,8 @@ from fastapi.templating import Jinja2Templates
 
 from agent.orchestrator import Orchestrator
 from agent.planner import Planner
+from retrieval.query_rewriter import QueryRewriter
+from retrieval.evidence_checker import EvidenceChecker
 
 
 from app.api_models import (
@@ -90,15 +92,23 @@ def chat(request_data: ChatRequest):
     planner = Planner(chat_client=deps.chat_client)
     retrieval = RetrievalService(
         qdrant_store=deps.qdrant_store,
+        sqlite_store=deps.sqlite_store,
         embedding_client=deps.embedding_client,
         top_k=deps.config.top_k,
+        use_reranker=deps.config.use_reranker,
+        rerank_model=deps.config.rerank_model,
+        rerank_candidates=deps.config.rerank_candidates,
     )
     answer_service = AnswerService(chat_client=deps.chat_client)
+    evidence_checker= EvidenceChecker()
+    query_rewriter = QueryRewriter()
 
     orchestrator = Orchestrator(
         planner=planner,
         retrieval_service=retrieval,
         answer_service=answer_service,
+        evidence_checker=evidence_checker,
+        query_rewriter=query_rewriter,
     )
 
     results = orchestrator.handle_query(request_data.query)

@@ -55,6 +55,27 @@ class SQLiteStore:
                 text TEXT NOT NULL,
                 token_estimate INTEGER NOT NULL,
                 FOREIGN KEY (doc_id) REFERENCES documents(doc_id)
+        )
+        """)
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS sessions (
+                session_id TEXT PRIMARY KEY,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS conversation_turns (
+                turn_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (session_id) REFERENCES sessions(session_id)
             )
             """
         )
@@ -62,16 +83,64 @@ class SQLiteStore:
             """
             CREATE TABLE IF NOT EXISTS traces (
                 trace_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL DEFAULT 'default',
                 query TEXT NOT NULL,
                 top_k INTEGER NOT NULL,
                 retrieved_json TEXT NOT NULL,
                 final_answer TEXT NOT NULL,
+                steps_json TEXT NOT NULL DEFAULT '[]',
+                tool_results_json TEXT NOT NULL  DEFAULT '[]',
+                verification_json TEXT NOT NULL DEFAULT '{}',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
 
         conn.commit()
+    def ensure_session(self, session_id: str) -> None:
+        conn = self.connect()
+        conn.execute(
+            """
+            INSERT  INTO sessions (session_id)
+            VALUES (?)
+            ON CONFLICT(session_id) DO UPDATE SET
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (session_id,))
+        conn.commit()
+
+    def insert_conversation_turn(self, session_id: str, role: str, content: str) -> None:
+        conn = self.connect()
+        self.ensure_session(session_id)
+        conn.execute(
+            """
+            INSERT INTO conversation_turns (session_id, role, content)
+            VALUES (?, ?, ?)
+            """,
+            (session_id, role, content)
+        )
+        conn.commit()
+
+    def get_recent_conversations(self, session_id: str, limit: int = 6) -> list[dict[str, Any]]:
+        conn = self.connect()
+        rows = conn.execute(
+            """
+            SELECT role, content, created_at
+            FROM conversation_turns
+            WHERE session_id= ?
+            ORDER BY turn_id DESC
+            LIMIT ?
+            """,
+            (session_id,limit,)
+        ).fetchall()
+        return [
+            {
+                "role": row["role"],
+                "content": row["content"],
+                "created_at": row["created_at"],
+            }
+            for row in reversed(rows)
+        ]
 
     def health_check(self) -> bool:
         conn = self.connect()
@@ -142,21 +211,59 @@ class SQLiteStore:
         ]
 
     def insert_trace(self,
+                     session_id: str,   
                      query:str,
                      top_k: int,
                      retrieved_json: str,
                      final_answer:str,
+                     steps_json: str = "[]",
+                     tool_results_json: str = "[]",
+                     verification_json: str = "{}",
                      ) -> int:
         conn = self.connect()
         cursor = conn.execute(
             """
-            INSERT INTO traces (query, top_k , retrieved_json, final_answer)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO traces (session_id, query, top_k , retrieved_json, final_answer, steps_json, tool_results_json, verification_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (query, top_k, retrieved_json, final_answer)
+            (session_id, query, top_k, retrieved_json, final_answer, steps_json, tool_results_json, verification_json)
         )
         conn.commit()
         return int(cursor.lastrowid)
+
+    def list_chunks_for_retrieval(self) -> list[dict[str, Any]]:
+        conn = self.connect()
+        rows = conn.execute(
+            """
+            SELECT 
+                c.chunk_id,
+                c.doc_id,
+                c.chunk_index,
+                c.page_number,
+                c.text, 
+                c.token_estimate,
+                d.title,
+                d.source_path
+            FROM chunks c
+            JOIN documents d 
+                ON c.doc_id = d.doc_id
+            ORDER BY d.title, c.page_number, c.chunk_index
+            """
+        ).fetchall()
+
+        return [
+            {
+                "chunk_id": row["chunk_id"],
+                "doc_id": row["doc_id"],
+                "chunk_index": row["chunk_index"],
+                "page_number": row["page_number"],
+                "text": row["text"],
+                "token_estimate": row["token_estimate"],
+                "title": row["title"],
+                "source_path": row["source_path"],
+            }
+            for row in rows
+        ]
 
     def close(self) -> None:
         if self._connection is not None:

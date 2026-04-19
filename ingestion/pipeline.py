@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+import hashlib
 from pathlib import  Path
 
 from app.ollama_client import OllamaEmbeddingClient
@@ -15,7 +16,7 @@ class IngestionPipeline:
          sqlite_store: SQLiteStore,
          qdrant_store: QdrantStore,
          embedding_client: OllamaEmbeddingClient,
-         chunk_size : int = 800,
+         chunk_size : int = 900,
          chunk_overlap: int = 120,
          ) -> None:
         self.sqlite_store = sqlite_store
@@ -23,6 +24,9 @@ class IngestionPipeline:
         self.embedding_client = embedding_client
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+
+    def _make_point_id(self, chunk_id:str) -> int:
+        return int(hashlib.md5(chunk_id.encode("utf-8")).hexdigest()[:12], 16)
 
     def ingest_pdf(self, pdf_path: str | Path) -> dict:
         parsed_doc = parse_pdf(pdf_path)
@@ -46,7 +50,7 @@ class IngestionPipeline:
         qdrant_records = []
         sqlite_chunks = []
 
-        for point_id,(chunk, vector) in enumerate(zip(chunks, vectors), start=1):
+        for chunk, vector in zip(chunks, vectors):
             payload = {
                 "doc_id": chunk.doc_id,
                 "chunk_id": chunk.chunk_id,
@@ -58,7 +62,7 @@ class IngestionPipeline:
 
             qdrant_records.append(
                 {
-                    "id": point_id,
+                    "id": self._make_point_id(chunk.chunk_id),
                     "vector": vector,
                     "payload": payload,
                 }
