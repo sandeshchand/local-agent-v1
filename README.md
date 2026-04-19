@@ -409,11 +409,14 @@ Then re-ingest your documents.
 * answer generation
 * FastAPI chat UI
 * improved frontend usability
-
-### Planned
-
 * planner + orchestrator
 * direct-answer vs retrieve-only modes
+* Reranking
+* Evidence check + one retry loop
+
+
+### Planned
+* retrieval stabilization across multiple PDFs
 * MCP integration
 * richer trace/debug views
 * improved retrieval quality
