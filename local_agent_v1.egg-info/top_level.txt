@@ -1,6 +1,0 @@
-agent
-app
-ingestion
-observability
-retrieval
-storage

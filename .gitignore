@@ -60,6 +60,9 @@ data/sqlite/
 # Processed / generated app data
 data/processed/
 data/evals/
+data/logs/
+query_results.txt
+write_test.txt
 
 # Model / runtime temp files
 *.tmp
@@ -77,6 +80,4 @@ node_modules/
 #agent
 agent/planner_old.py
 
-# db
-app.db
-app.db-journal
+# local runtime data
