@@ -1,48 +1,54 @@
-# Local Agent V1
+# 🚀 Local Agentic RAG System
 
-A local-first PDF RAG assistant built with **Ollama**, **Qdrant**, **SQLite**, and **FastAPI**.
-
-Local Agent V1 lets you ingest PDF documents, search them semantically, and chat with them through a simple web interface — all while keeping inference and storage on your own machine.
-
-The project is designed as a modular foundation for future **planner/orchestrator logic**, **agent workflows**, and **MCP-based tool integration**.
+A local-first **Agentic AI system** that extends traditional RAG into a multi-step, decision-driven pipeline with planning, retrieval, reasoning, and verification.
 
 ---
 
-## Highlights
+## 🔍 Overview
 
-- **Local-first** architecture
-- **PDF ingestion** from a single file or an entire folder
-- **Semantic retrieval** over indexed document chunks
-- **Chat interface** powered by FastAPI
-- **Source citations** in responses
-- **SQLite-backed metadata and trace storage**
-- **Qdrant vector search**
-- **Ollama-based local LLM + embeddings**
-- Built with a clean architecture for future agentic expansion
+This project implements an **Agentic Retrieval-Augmented Generation (RAG)** system where the model dynamically decides how to respond instead of following a fixed pipeline.
 
----
+Unlike traditional RAG (retrieve → generate), this system introduces:
 
-## Demo Scope
-
-Current capabilities include:
-
-- Indexing PDFs into a local vector database
-- Asking grounded questions over indexed documents
-- Viewing indexed documents in a web UI
-- Tracking query traces for debugging and iteration
-
-This repository currently focuses on a strong **local RAG core** before introducing more advanced agentic features.
+- 🧠 **Planner** → decides execution strategy  
+- 🔄 **Orchestrator** → manages multi-step workflow  
+- 🔍 **Hybrid Retrieval** → dense + BM25 + reranking  
+- 🧪 **Evidence Checking** → ensures relevant context  
+- ✅ **Verification Layer** → validates grounded answers  
+- 🧰 **Tool Integration** → enables action-based responses  
 
 ---
 
-## Tech Stack
+## ⚙️ Architecture Flow
 
-- **Python**
-- **Ollama** — local model serving and embeddings
-- **Qdrant** — vector database
-- **SQLite** — metadata and trace storage
-- **FastAPI** — web backend and API layer
-- **PyPDF** — PDF text extraction
+User Query  
+→ Planner (decide action)  
+→ Retrieval (Hybrid Search + Reranker)  
+→ Evidence Filtering  
+→ Answer Generation (LLM)  
+→ Verification  
+→ Final Response  
+
+---
+
+## 🚀 Key Features
+
+- Agentic decision-making instead of static pipelines  
+- Hybrid search (semantic + keyword)  
+- Cross-encoder reranking for precision  
+- Evidence-aware answer generation  
+- Grounding and hallucination reduction  
+- Modular architecture for extensibility  
+
+---
+
+## 🛠 Tech Stack
+
+- Python  
+- FastAPI  
+- Qdrant (Vector DB)  
+- SQLite (metadata + traces)  
+- Ollama (local LLM + embeddings)  
 
 ---
 

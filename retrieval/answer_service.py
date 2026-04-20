@@ -12,19 +12,26 @@ class AnswerService:
         self,
         query: str,
         results: list[dict],
-        memory_context: str,
-        tool_context: str,
+        memory_context: str = "",
+        tool_context: str = "",
     ) -> str:
         context = build_context(results)
+
         return f"""
-You are answering only from the retrieved context below.
+You are a grounded question-answering assistant.
+
+Answer the user's question using only the retrieved context below.
 
 Rules:
-- Use only the provided context.
-- If the context is insufficient, say that clearly.
-- Cite supporting evidence using [1], [2], [3] style.
-- Do not invent facts that are not in the context.
-- Keep the answer clear and concise.
+1. Answer the exact question only.
+2. Do not add related background unless the question explicitly asks for it.
+3. Use the most direct evidence first.
+4. If the question asks for a reason or mechanism, explain only that.
+5. If the question asks for a list or a number of examples, provide exactly that number.
+6. If the retrieved context is insufficient, say: "The retrieved context does not directly answer this."
+7. Do not invent facts, terms, or explanations not supported by the retrieved context.
+8. Cite supporting evidence using [1], [2], [3] style.
+9. Keep the answer concise: 2 to 5 sentences unless the question explicitly asks for a list.
 
 {memory_context}
 
@@ -45,10 +52,10 @@ Answer:
 You are a friendly and helpful AI assistant.
 
 Rules:
-- For greetings like "hi", "hello", or "hey", respond warmly and naturally in one short sentence.
+- For greetings like "hi", "hello", "hey", or "namaste", respond warmly and naturally in one short sentence.
 - For casual conversation, respond briefly and politely.
 - Answer clearly and concisely.
-- If the question requires specific document content that you don't have, say that clearly.
+- If the question requires specific document content that you do not have, say that clearly.
 - Do not claim you searched documents unless retrieval actually happened.
 - Do not invent facts.
 
@@ -65,10 +72,11 @@ Answer:
         memory_context: str = "",
     ) -> str:
         return f"""
-You are a helpful AI assistant using tool output.
+You are a grounded assistant using tool output.
 
 Rules:
-- Base your answer only on the tool output below.
+- Answer only from the tool output below.
+- Do not add unrelated background.
 - If the tool output is insufficient, say that clearly.
 - Keep the answer concise and accurate.
 
@@ -83,7 +91,24 @@ Question:
 Answer:
 """.strip()
 
+    def _direct_fallback(self, query: str) -> str:
+        q = query.strip().lower()
 
+        greeting_map = {
+            "hi": "Hello! How can I help you today?",
+            "hello": "Hello! How can I help you today?",
+            "hey": "Hey! How can I help you today?",
+            "namaste": "Namaste! How can I help you today?",
+            "namaskar": "Namaskar! How can I help you today?",
+            "good morning": "Good morning! How can I help you today?",
+            "good afternoon": "Good afternoon! How can I help you today?",
+            "good evening": "Good evening! How can I help you today?",
+        }
+
+        if q in greeting_map:
+            return greeting_map[q]
+
+        return "I’m here and ready to help. Could you rephrase your question?"
 
     def answer_from_context(
         self,
@@ -92,32 +117,45 @@ Answer:
         memory_context: str = "",
         tool_context: str = "",
     ) -> str:
-        prompt = self.build_retrieval_prompt(query, results, memory_context, tool_context)
-        return self.chat_client.generate(prompt).strip()
+        prompt = self.build_retrieval_prompt(
+            query=query,
+            results=results,
+            memory_context=memory_context,
+            tool_context=tool_context,
+        )
+        answer = self.chat_client.generate(prompt).strip()
+
+        if not answer:
+            return "The retrieved context does not directly answer this."
+
+        return answer
 
     def answer_direct(self, query: str) -> str:
         q = query.strip().lower()
+
         greeting_map = {
             "hi": "Hello! How can I help you today?",
             "hello": "Hello! How can I help you today?",
             "hey": "Hey! How can I help you today?",
+            "namaste": "Namaste! How can I help you today?",
+            "namaskar": "Namaskar! How can I help you today?",
             "good morning": "Good morning! How can I help you today?",
             "good afternoon": "Good afternoon! How can I help you today?",
             "good evening": "Good evening! How can I help you today?",
         }
-        
-        # Fast path for known greetings
+
         if q in greeting_map:
             return greeting_map[q]
 
         prompt = self.build_direct_prompt(query)
+
         try:
             answer = self.chat_client.generate(prompt).strip()
         except Exception:
-            return "I’m here and ready to help. Could you rephrase your question?"
+            return self._direct_fallback(query)
 
         if not answer:
-            return "I’m here and ready to help. Could you rephrase your question?"
+            return self._direct_fallback(query)
 
         return answer
 
@@ -127,5 +165,14 @@ Answer:
         tool_context: str,
         memory_context: str = "",
     ) -> str:
-        prompt = self.build_tool_prompt(query, tool_context, memory_context)
-        return self.chat_client.generate(prompt).strip()
+        prompt = self.build_tool_prompt(
+            query=query,
+            tool_context=tool_context,
+            memory_context=memory_context,
+        )
+        answer = self.chat_client.generate(prompt).strip()
+
+        if not answer:
+            return "The tool output does not directly answer this."
+
+        return answer
