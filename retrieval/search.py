@@ -20,12 +20,17 @@ class RetrievalService:
             use_reranker: bool = True,
             rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
             rerank_candidates: int = 8,
+            neighbor_window: int = 1,
+            final_context_limit: int = 6,
             ) -> None:
         self.qdrant_store = qdrant_store
         self.sqlite_store = sqlite_store
         self.embedding_client = embedding_client
         self.top_k = top_k
         self.rerank_candidates = max(rerank_candidates, top_k)
+        self.neighbor_window = neighbor_window
+        self.final_context_limit = final_context_limit
+
         self.reranker = (
             CrossEncoderReranker(
                 model_name=rerank_model,
@@ -50,12 +55,16 @@ class RetrievalService:
             k=60,
 
         )
+        ranked = fused[:self.top_k]
+
         if self.reranker is not None:
             try:
                 return self.reranker.rerank(query, fused)
             except Exception as e:
                 print(f"Reranker failed: {e}")
-        return fused[:self.top_k]
+                ranked = fused[: self.top_k]
+        expanded = self._expand_neighbors(ranked)
+        return expanded[:self.final_context_limit]
 
     def _dense_search(self, query:str, limit:int) -> list[dict]:
         query_vector = self.embedding_client.embed(query)
@@ -64,7 +73,6 @@ class RetrievalService:
         points = getattr(result, "points", []) or []
 
         items: list[dict] = []
-       
         for point in points:
             payload = getattr(point, "payload", {}) or {}
             items.append(
@@ -140,19 +148,28 @@ class RetrievalService:
 
         for rank,item in enumerate(dense_items, start=1):
             key = item["chunk_id"]
+            if not key:
+                continue
+
             fused_scores[key]= fused_scores.get(key, 0.0) + 1.0 /(k + rank)
+
             if key not in fused_items:
                 fused_items[key] = dict(item)
-            fused_items[key]["dense_rank"]= rank
+                fused_items[key]["dense_rank"]= rank
+        
         for rank,item in enumerate(sparse_items, start=1):
             key = item["chunk_id"]
+            if not key:
+                continue
+
             fused_scores[key]= fused_scores.get(key, 0.0) + 1.0 /(k + rank)
+
             if key not in fused_items:
                 fused_items[key] = dict(item)
             else:
                 if not fused_items[key].get("text") and item.get("text"):
                     fused_items[key]["text"] = item["text"]
-                fused_items[key]["sparse_rank"] = rank
+            fused_items[key]["sparse_rank"] = rank
         
         ranked = sorted(
             fused_items.items(),
@@ -161,7 +178,7 @@ class RetrievalService:
         )
 
         results: list[dict] = []
-        seen = set()
+        seen: set[tuple[str | None ,int | None ,str | None]] = set()
 
         for chunk_id, item in ranked:
            key = (item.get("doc_id"), item.get("page_number"), item.get("chunk_id"))
@@ -170,12 +187,66 @@ class RetrievalService:
            seen.add(key)
 
            item["score"] = fused_scores[chunk_id]
+           item["hybrid_score"] = fused_scores[chunk_id]
            item["source"] = "hybrid"
+
            results.append(item)
 
            if len(results) >= limit:
                break
         return results
+
+    def _expand_with_neighbors(self, ranked_items: list[dict]) -> list[dict]:
+        """
+        Add previous/next chunks for each top-ranked chunk.
+
+        Important:
+        - Only expands within the same doc_id.
+        - Preserves ranked chunks first.
+        - Adds neighbor chunks after their anchor chunk.
+        - Deduplicates by chunk_id.
+        """
+        expanded: list[dict] = []
+        seen_chunk_ids: set[str] = set()
+       
+        for item in ranked_items:
+            doc_id = item.get("doc_id")
+            chunk_id = item.get("chunk_id")
+            chunk_index_id = item.get("chunk_index_id")
+
+            if chunk_id and chunk_id not in seen_chunk_ids:
+                expanded.append(item)
+                seen_chunk_ids.add(chunk_id)
+
+            if doc_id is None or chunk_index_id is None:
+                continue
+
+            try:
+                chunk_index_id=int(chunk_index_id)
+            except (ValueError, TypeError):
+                continue
+                
+            neighbors = self.sqlite_store.get_neighbor_chunk(doc_id=doc_id, chunk_index=chunk_index_int, window=self.neightbor_window)
+            for neighbor in neighbors:
+                neighbor_chunk_id= neighbor.get("chunk_id")
+                if not neighbor_chunk_id:
+                    continue
+                if neighbor_chunk_id in seen_chunk_ids:
+                    continue
+
+                neighbor["source"]= item.get("source" , 0.0)
+                neighbor["neighbor_score"]= item.get("hybrid_score" , item.get("score",0.0))
+                neighbor["source"] = "neighbor"
+                neighbor["anchor_chunk_id"]= chunk_id
+                neighbor["anchor_reranker_score"] = item.get("reranker_score")
+
+                expanded.append(neighbor)
+                seen_chunk_ids.add(neighbor_chunk_id)
+            
+            expanded.sort(key=lambda x: (str(x.get("doc_id") or ""), x.get("chunk_index")or 0))
+                
+            return expanded
+            
 
     def _tokenize(self, text: str) -> list[str]:
         return re.findall(r"\b\w+\b", text.lower())

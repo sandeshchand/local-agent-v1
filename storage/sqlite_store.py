@@ -152,7 +152,7 @@ class SQLiteStore:
                         source_path:str,
                         title:str,
                         page_count:int,
-                        checksum:str,) ->str:
+                        checksum:str,) ->None:
         conn = self.connect()
         conn.execute(
             """
@@ -251,20 +251,89 @@ class SQLiteStore:
             """
         ).fetchall()
 
-        return [
-            {
-                "chunk_id": row["chunk_id"],
-                "doc_id": row["doc_id"],
-                "chunk_index": row["chunk_index"],
-                "page_number": row["page_number"],
-                "text": row["text"],
-                "token_estimate": row["token_estimate"],
-                "title": row["title"],
-                "source_path": row["source_path"],
-            }
-            for row in rows
-        ]
+        return [self._chunk_row_to_dict(row) for row in rows]
 
+    def get_chunk_by_id(self, chunk_id: str) -> dict[str, Any] | None:
+        conn = self.connect()
+        row = conn.execute(
+            """
+            SELECT 
+                c.chunk_id,
+                c.doc_id,
+                c.chunk_index,
+                c.page_number,
+                c.text, 
+                c.token_estimate,
+                d.title,
+                d.source_path
+            FROM chunks c
+            JOIN documents d 
+                ON c.doc_id = d.doc_id
+            WHERE c.chunk_id = ?
+            """,
+            (chunk_id,)
+        ).fetchone()
+
+        if row is None:
+            return None
+        
+        return self._chunk_row_to_dict(row)
+
+    def get_neighbor_chunks(self, 
+                            doc_id:str,
+                            chunk_index:int,
+                            window: int = 1,
+                            ) -> list[dict[str,Any]]:
+
+        """
+        Return neighboring chunks from the same document only.
+
+        This is multi-document safe because it filters by doc_id.
+        Example: window=1 returns previous, current, next chunk.
+        """
+        conn = self.connect()
+        start_index = max(0, chunk_index - window)
+        end_index = chunk_index + window
+        
+        rows = conn.execute(
+            """
+            SELECT 
+                c.chunk_id,
+                c.doc_id,
+                c.chunk_index,
+                c.page_number,
+                c.text, 
+                c.token_estimate,
+                d.title,
+                d.source_path
+            FROM chunks c
+            JOIN documents d 
+                ON c.doc_id = d.doc_id
+            WHERE c.doc_id = ?
+              AND c.chunk_index BETWEEN ? AND ?
+            ORDER BY c.chunk_index
+            """,
+            (doc_id, start_index, end_index)
+        ).fetchall()
+
+        return [self._chunk_row_to_dict(row) for row in rows]
+
+    def _chunk_row_to_dict(self, row: sqlite3.Row) -> dict[str, Any]:
+        """
+        Safe chunk row converter that handles missing columns gracefully.
+        """
+        return {
+        "id":row["chunk_id"],    
+        "chunk_id": row["chunk_id"],
+        "doc_id": row["doc_id"],
+        "chunk_index": row["chunk_index"],
+        "page_number": row["page_number"],
+        "text": row["text"],
+        "token_estimate": row["token_estimate"],
+        "title": row["title"],
+        "source_path": row["source_path"],
+    }
+        
     def close(self) -> None:
         if self._connection is not None:
             self._connection.close()

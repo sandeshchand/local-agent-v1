@@ -54,6 +54,7 @@ class IngestionPipeline:
             payload = {
                 "doc_id": chunk.doc_id,
                 "chunk_id": chunk.chunk_id,
+                "chunk_index": chunk.chunk_index,
                 "source_path": parsed_doc.source_path,
                 "title": parsed_doc.title,
                 "page_number": chunk.page_number,
