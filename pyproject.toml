@@ -5,7 +5,7 @@ build-backend= "setuptools.build_meta"
 [project]
 name = "local-agent-v1"
 version= "0.1.0"
-description = "Local-first agentic assistant using ollama, Qdrant, SQlite, and MCP"
+description = "Local-first agentic assistant with RAG, MCP, and MCP tools using ollama, Qdrant, SQlite"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies =[

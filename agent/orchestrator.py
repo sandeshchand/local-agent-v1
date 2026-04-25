@@ -36,6 +36,9 @@ class Orchestrator:
         self.tool_router = ToolRouter()
         self.max_steps = max_steps
 
+        self.evidence_checker = EvidenceChecker()
+        self.query_rewriter = QueryRewriter()
+
     def handle_query(self, query: str, session_id: str= "default") -> dict:
         self.memory_manager.save_user_turn(session_id, query)
         memory = self.memory_manager.load_sesssion_memory(session_id)
@@ -52,6 +55,7 @@ class Orchestrator:
             "type": "plan",
             "plan": state.plan.model_dump(),
         })
+        used_citations: list[dict] = []
 
         for step_no in range(2,self.max_steps+ 2):
             action = self.tool_router.next_action(state)
@@ -69,32 +73,56 @@ class Orchestrator:
 
             if action.action_type == "retrieve":
                 retrieval_query = action.retrieve_query or query
-                results = self.retrieval_service.search(retrieval_query)
-                state.retrieved_items = results
+                rewritten_query = self.query_rewriter.rewrite(query=retrieval_query, session_memory=memory)
+                final_query = rewritten_query if rewritten_query else retrieval_query
+                results = self.retrieval_service.search(final_query)
                 state.steps.append({
                     "step": step_no,
                     "type": "retrieve",
                     "retrieval_query": retrieval_query,
+                    "final_query": final_query,
                     "result_count": len(results),
                     "notes": action.notes,
                 })
-            
-                if results:
-                    answer = self.answer_service.answer_from_context(
-                        query= query, 
-                        results=results,
-                        memory_context = self.memory_manager.format_memory_context(memory),
-                        tool_context=","
-                    )
-                    state.final_answer = answer
-                else:
+                evidence = self.evidence_checker.evaluate(query, results)
+               
+                state.steps.append({
+                    "step": step_no,
+                    "type": "evidence_check",
+                    "sufficient": evidence.sufficient,
+                    "quality_score": evidence.quality_score,
+                    "overlap_ratio": evidence.overlap_ratio,
+                    "matched_terms": evidence.matched_terms,
+                    "reason": evidence.reason,
+                })
+                   
+                if not  results:
                     state.final_answer = (
                     "I could not find any relevant information in the indexed documents"
                     "for that question.")
-                state.done = True
-                break
+                    state.retrieved_items = []
+                    state.done = True
+                    break
 
-                
+                if not evidence.sufficient:
+                    state.final_answer = (
+                    "The retrieved documents are not relevant to the question.")
+                    state.retrieved_items = results[:2]
+                    state.done = True
+                    break
+                selected_results = results[:3]
+                state.retrieved_items = selected_results
+                used_citations = selected_results
+              
+                answer = self.answer_service.answer_from_context(
+                    query= query, 
+                    results=selected_results,
+                    memory_context = self.memory_manager.format_memory_context(memory),
+                    tool_context="",
+                )
+                state.final_answer = answer
+                state.done = True
+                break 
 
             if action.action_type == "tool_call" and action.tool_call:
                 tool_name = action.tool_call["name"]
@@ -109,21 +137,29 @@ class Orchestrator:
                     "notes": action.notes,
                 })
 
-                tool_text = ""
                 if tool_result.success:
                     tool_text = str(tool_result.output)
                     state.final_answer = self.answer_service.answer_from_result(
                         query=query,
-                        tool_result=tool_text,
+                        tool_context=tool_text,
                         memory_context=self.memory_manager.format_memory_context(memory),
                     )
                 else:
                     state.final_answer = "I could not get the result from the tool."
                 state.done = True
                 break
+            state.steps.append(
+                {
+                    "step": step_no,
+                    "type": "finalize",
+                    "notes": action.notes,
+                }
+            )
+            break
+
         verification = self.verifier.verify(
             answer=state.final_answer,
-            retrieved_items=state.retrieved_items,
+            retrieved_items=used_citations,
         
         )
 
@@ -132,11 +168,14 @@ class Orchestrator:
             content=state.final_answer,
         )
 
+        grounded_citations:list[dict] = []
+        if verification.grounded and used_citations:
+            grounded_citations = used_citations
         trace_id = save_trace(
             sqlite_store=self.sqlite_store,
             query=query,
             top_k=self.retrieval_service.top_k,
-            retrieved_items=state.retrieved_items,
+            retrieved_items=used_citations,
             final_answer=state.final_answer,
             plan=state.plan.model_dump() if state.plan else {},
             session_id=session_id,

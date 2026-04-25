@@ -45,9 +45,11 @@ class QueryRewriter:
             "over", "under"
         }
 
-    def rewrite(self, query: str, results: list[str]) -> str:
+    def rewrite(self, query: str, results: list[dict]| None = None, session_memory: list | None = None) -> str:
+        original_query = query.strip()
+        
         # Remove punctuation
-        query = re.findall(r'\b\w+\b', query.lower())
+        tokens  = re.findall(r'\b\w+\b', query.lower())
 
         cleaned: list[str] =[]
 
@@ -66,10 +68,10 @@ class QueryRewriter:
                 seen.add(token)
                 deduped.append(token)
 
-        candidate = ' '.join(deduped).strip()
+        candidate = " ".join(deduped).strip()
 
         if results:
-            top_title = (results[0].get["title"] or "").lower()
+            top_title = (results[0].get("title") or "").lower()
             if "sora" in top_title and  "sora" not in candidate:
                 candidate =f"{candidate} sora".strip()
         
