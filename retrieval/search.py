@@ -42,8 +42,8 @@ class RetrievalService:
     
 
     def search(self, query: str) -> list[dict]:
-        dense_limit = max(self.top_k *4, 8)
-        sparse_limit = max(self.top_k *4, 8)
+        dense_limit = max(self.top_k *4, 12)
+        sparse_limit = max(self.top_k *4, 12)
 
         dense_results= self._dense_search(query, dense_limit)
         sparse_results= self._sparse_search(query, sparse_limit)
@@ -51,19 +51,20 @@ class RetrievalService:
         fused = self._rrf_fuse(
             dense_items=dense_results,
             sparse_items=sparse_results,
-            limit=self.top_k,
+            limit=self.rerank_candidates,
             k=60,
 
         )
         ranked = fused[:self.top_k]
 
-        if self.reranker is not None:
+        if self.reranker is not None and fused:
             try:
-                return self.reranker.rerank(query, fused)
+                ranked= self.reranker.rerank(query, fused)
+                ranked = ranked[:self.top_k]
             except Exception as e:
                 print(f"Reranker failed: {e}")
                 ranked = fused[: self.top_k]
-        expanded = self._expand_neighbors(ranked)
+        expanded = self._expand_with_neighbors(ranked)
         return expanded[:self.final_context_limit]
 
     def _dense_search(self, query:str, limit:int) -> list[dict]:
@@ -81,6 +82,7 @@ class RetrievalService:
                     "score": float(getattr(point,"score",0.0)),
                     "doc_id":payload.get("doc_id"),
                     "chunk_id":payload.get("chunk_id"),
+                    "chunk_index":payload.get("chunk_index_id"),
                     "title":payload.get("title"),
                     "source_path":payload.get("source_path"),
                     "page_number":payload.get("page_number"),
@@ -126,6 +128,7 @@ class RetrievalService:
                         "score": float(final_score),
                         "doc_id": chunk["doc_id"],
                         "chunk_id": chunk["chunk_id"],
+                        "chunk_index": chunk.get("chunk_index"),
                         "title": chunk.get("title"),
                         "source_path": chunk.get("source_path"),
                         "page_number": chunk.get("page_number"),
@@ -212,21 +215,25 @@ class RetrievalService:
         for item in ranked_items:
             doc_id = item.get("doc_id")
             chunk_id = item.get("chunk_id")
-            chunk_index_id = item.get("chunk_index_id")
+            chunk_index = item.get("chunk_index")
 
             if chunk_id and chunk_id not in seen_chunk_ids:
                 expanded.append(item)
                 seen_chunk_ids.add(chunk_id)
 
-            if doc_id is None or chunk_index_id is None:
+            if doc_id is None or chunk_index is None:
                 continue
 
             try:
-                chunk_index_id=int(chunk_index_id)
+                chunk_index_int =int(chunk_index)
             except (ValueError, TypeError):
                 continue
                 
-            neighbors = self.sqlite_store.get_neighbor_chunk(doc_id=doc_id, chunk_index=chunk_index_int, window=self.neightbor_window)
+            neighbors = self.sqlite_store.get_neighbor_chunks(
+                doc_id=doc_id, 
+                chunk_index=chunk_index_int, 
+                window=self.neighbor_window)
+    
             for neighbor in neighbors:
                 neighbor_chunk_id= neighbor.get("chunk_id")
                 if not neighbor_chunk_id:
@@ -235,7 +242,7 @@ class RetrievalService:
                     continue
 
                 neighbor["source"]= item.get("source" , 0.0)
-                neighbor["neighbor_score"]= item.get("hybrid_score" , item.get("score",0.0))
+                neighbor["hybrid_score"]= item.get("hybrid_score" , item.get("score",0.0))
                 neighbor["source"] = "neighbor"
                 neighbor["anchor_chunk_id"]= chunk_id
                 neighbor["anchor_reranker_score"] = item.get("reranker_score")
@@ -243,9 +250,13 @@ class RetrievalService:
                 expanded.append(neighbor)
                 seen_chunk_ids.add(neighbor_chunk_id)
             
-            expanded.sort(key=lambda x: (str(x.get("doc_id") or ""), x.get("chunk_index")or 0))
-                
-            return expanded
+            expanded.sort(
+                key=lambda x: (
+                    str(x.get("doc_id") or ""),
+                    int(x.get("chunk_index") or 0),
+                )
+            )             
+        return expanded
             
 
     def _tokenize(self, text: str) -> list[str]:

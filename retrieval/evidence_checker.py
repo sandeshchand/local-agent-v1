@@ -6,9 +6,12 @@ import re
 @dataclass(slots=True)
 class EvidenceCheckResult:
     sufficient: bool
+    need_retry: bool
     quality_score: float
     overlap_ratio: float
     matched_terms: list[str]
+    missing_terms: list[str]
+    suggested_terms: list[str]
     reason: str
 
 class EvidenceChecker:
@@ -85,9 +88,12 @@ class EvidenceChecker:
         if not results:
             return EvidenceCheckResult(
                 sufficient=False,
+                need_retry=True,
                 quality_score=0.0,
                 overlap_ratio=0.0,
                 matched_terms=[],
+                missing_terms=[],
+                suggested_terms=[],
                 reason="No  retrieval results found"
             )
         
@@ -95,58 +101,133 @@ class EvidenceChecker:
         terms = self._extract_terms(query)
         if not terms:
             return EvidenceCheckResult(
-                sufficient=len(results) > 0,
-                quality_score=0.2 if results else 0.0,
+                sufficient= True,
+                need_retry=False,
+                quality_score=0.3,
                 overlap_ratio=0.0,
                 matched_terms=[],
-                reason="No stron query terms extracted, but results exist."
+                missing_terms=[],
+                suggested_terms=[],
+                reason="No strong query terms extracted, but results exist."
             )
-        top_chunks =results[:2]
-        best_ratio= 0.0
-        best_matches: list[str] = []
+        top_chunks =results[:3]
+        combined_text = " ".join((item.get("title") or " " + (item.get("text") or ""))
+        for item in top_chunks
+        ).lower()
 
-        query_lower = query.lower().strip()
-        exact_phrase_hit = False
-        title_hit = False
+        matched_terms = [term for term in terms if term in combined_text]
+        missing_terms = [term for term in terms if term not in matched_terms]
 
-        for item in top_chunks:
-            text = (item.get("text") or "").lower()
-            title = (item.get("title") or "").lower()
+        overlap_ratio = len(matched_terms) / max(len(terms),1)
 
-            if query_lower and query_lower in text:
-                exact_phrase_hit = True
+        query_lower = query.lower()
+        exact_phrase_hit = query_lower in combined_text
 
-            if any(term in title for term in terms):
-                title_hit = True
-            matches = [term for term in terms if term in text or term in title]
-            ratio = len(matches) / max(len(terms), 1)
+        list_intent = any(
+            word in query_lower for word in ["types", "categories", "list", "different types", "kinds"]
+        )
+        safety_intent = any(
+            word in query_lower for word in ["safety", "risk", "risks", "concern", "concerns", "trustworthiness"]
+        )
+        instructions_intent = any(
+            word in query_lower for word in ["instruction", "instructions","following", "follow"]
+        )
 
-            if ratio > best_ratio:
-                best_ratio = ratio
-                best_matches = matches
+        suggested_terms: list[str] = []
+        if list_intent:
+            suggested_terms.extend(["types", "text prompt", "image prompt", "video prompt", "categories"])
+        if safety_intent:
+             suggested_terms.extend([
+            "safety",
+            "jailbreak",
+            "harmful",
+            "misuse",
+            "privacy",
+            "multimodal",
+            "authenticity",
+        ])
+        if instructions_intent:
+            suggested_terms.extend([
+            "caption",
+            "captioner",
+            "descriptive captions",
+            "fine-tune",
+            "instruction following",
+        ])
 
-        quality_score = best_ratio
+        # Remove duplicates while preserving order 
+        suggested_terms = list(dict.fromkeys(suggested_terms))
 
+        quality_score = overlap_ratio
         if exact_phrase_hit:
             quality_score = min(1.0, quality_score + 0.2)
-        if title_hit:
-            quality_score = min(1.0, quality_score + 0.1)
         
-        sufficient = exact_phrase_hit or best_ratio > 0.45 or (best_ratio >= 0.34 and title_hit)
+        # Intent-specific sufficiency
+        if list_intent:
+            category_hits = sum(
+                1 for phrase in ["text prompt", "image prompt", "video prompt"]
+                if phrase in combined_text
+            )
+            sufficient = category_hits >=2 or overlap_ratio >= 0.25
+            need_retry = category_hits < 3
+            reason = (
+            f"list_intent=True, category_hits={category_hits}, "
+            f"overlap_ratio={overlap_ratio:.2f}, matched_terms={matched_terms}"
+            )
+        elif safety_intent:
+            safety_hits= sum(
+                1 for phrase in ["safety", "jailbreak", "harmful", "misuse", "privacy", "multimodal", "authenticity"]
+                if phrase in combined_text
+            )
+            sufficient = safety_hits >=2 or overlap_ratio >= 0.45
+            need_retry = safety_hits < 2
+            reason = (
+            f"safety_intent=True, safety_hits={safety_hits}, "
+            f"overlap_ratio={overlap_ratio:.2f}, matched_terms={matched_terms}"
+            )
+        elif instructions_intent:
+            instructions_keywords = [
+                                "caption",
+                                "captioner",
+                                "captioning",
+                                "descriptive",
+                                "description",
+                                "fine-tune",
+                                "fine-tuning",
+                                "training data",
+                                "instruction following",
+                                "follow text instructions",
+                                "user prompts",
+                                "text prompts",
+                            ]
 
-        reasons_parts = [
-            f"overlap_ratio={best_ratio:.2f}",
-            f"exact_phrase={exact_phrase_hit}",
-            f"title_hit={title_hit}",
-            f"matched_terms={best_matches}",
-        ]
+            instruction_hits = sum(
+                1 for phrase in instructions_keywords
+                if phrase in combined_text
+            )
+            sufficient = instruction_hits >=2 or overlap_ratio >= 0.35
+            need_retry = instruction_hits < 2
+            reason = (
+            f"instruction_intent=True, instruction_hits={instruction_hits}, "
+            f"overlap_ratio={overlap_ratio:.2f}, matched_terms={matched_terms}"
+            )
+        else:
+            sufficient = exact_phrase_hit or overlap_ratio >= 0.45
+            need_retry = not sufficient
+            reason = (
+            f"generic_check=True, exact_phrase={exact_phrase_hit}, "
+            f"overlap_ratio={overlap_ratio:.2f}, matched_terms={matched_terms}"
+            )  
 
         return EvidenceCheckResult(
             sufficient=sufficient,
+            need_retry=need_retry,
             quality_score=quality_score,
-            overlap_ratio=best_ratio,
-            matched_terms=best_matches,
-            reason=", ".join(reasons_parts),
+            overlap_ratio=overlap_ratio,
+            matched_terms=matched_terms,
+            missing_terms=missing_terms,
+            suggested_terms=suggested_terms,
+            reason=reason,
         )
         
     def _extract_terms(self, query: str) -> list[str]:

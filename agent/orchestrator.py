@@ -73,56 +73,71 @@ class Orchestrator:
 
             if action.action_type == "retrieve":
                 retrieval_query = action.retrieve_query or query
-                rewritten_query = self.query_rewriter.rewrite(query=retrieval_query, session_memory=memory)
-                final_query = rewritten_query if rewritten_query else retrieval_query
-                results = self.retrieval_service.search(final_query)
-                state.steps.append({
-                    "step": step_no,
-                    "type": "retrieve",
-                    "retrieval_query": retrieval_query,
-                    "final_query": final_query,
-                    "result_count": len(results),
-                    "notes": action.notes,
-                })
-                evidence = self.evidence_checker.evaluate(query, results)
-               
-                state.steps.append({
-                    "step": step_no,
-                    "type": "evidence_check",
-                    "sufficient": evidence.sufficient,
-                    "quality_score": evidence.quality_score,
-                    "overlap_ratio": evidence.overlap_ratio,
-                    "matched_terms": evidence.matched_terms,
-                    "reason": evidence.reason,
-                })
-                   
-                if not  results:
-                    state.final_answer = (
-                    "I could not find any relevant information in the indexed documents"
-                    "for that question.")
-                    state.retrieved_items = []
-                    state.done = True
-                    break
+                current_query = self.query_rewriter.rewrite(
+                    query=retrieval_query, session_memory=memory)
+                best_results:list[dict]=[]
+                best_evidence = None
+                max_retrieval_attempts = 3
 
-                if not evidence.sufficient:
-                    state.final_answer = (
-                    "The retrieved documents are not relevant to the question.")
-                    state.retrieved_items = results[:2]
-                    state.done = True
-                    break
-                selected_results = results[:3]
-                state.retrieved_items = selected_results
-                used_citations = selected_results
-              
-                answer = self.answer_service.answer_from_context(
-                    query= query, 
-                    results=selected_results,
-                    memory_context = self.memory_manager.format_memory_context(memory),
-                    tool_context="",
-                )
-                state.final_answer = answer
-                state.done = True
-                break 
+                for attempt in range(1,max_retrieval_attempts +1):
+                    results = self.retrieval_service.search(current_query)
+                    evidence = self.evidence_checker.evaluate(query,results)
+                    state.steps.append({
+                        "step": step_no,
+                        "type": "retrieve_attempt",
+                        "attempt":attempt,
+                        "retrieval_query": current_query,
+                        "result_count": len(results),
+                        "evidence_sufficient": evidence.sufficient,
+                        "need_retry":evidence.need_retry,
+                        "quality_score":evidence.quality_score,
+                        "reason":evidence.reason,
+                    })
+
+                    if best_evidence is None or evidence.quality_score > best_evidence.quality_score:
+                        best_evidence= evidence
+                        best_results = results
+                        
+
+                    if evidence.sufficient  and not evidence.need_retry:
+                        best_results = results
+                        best_evidence=evidence
+                        break
+                    
+                    current_query=self.query_rewriter.rewrite_for_retry(
+                        original_query=query,
+                        previous_query=current_query,
+                        missing_terms=evidence.missing_terms,
+                        suggested_terms=evidence.suggested_terms,
+                        failure_reason=evidence.reason,
+                    )
+                    
+                    state.retrieved_items = best_results
+                   
+                    if not best_results and attempt == max_retrieval_attempts:
+                       state.final_answer = (
+                            "I could not find any relevant information in the indexed documents"
+                            "for that question.")
+                       state.done = True
+                       break
+
+                    if best_evidence is not None and not best_evidence.sufficient:
+                        # If retrieval returned chunks , still allow grounded answering.
+                        # The answer prompt will say insufficient context if it cannot answer.
+                        if best_results:
+                            answer = self.answer_service.answer_from_context(
+                                query= query, 
+                                results=best_results[: self.retrieval_service.final_context_limit],
+                                memory_context = self.memory_manager.format_memory_context(memory),
+                                tool_context="",
+                            )
+                            state.final_answer = answer 
+
+                        else:
+                            state.final_answer = (
+                                "The retrieved documents are not relevant to the question.")
+                        state.done = True
+                        break
 
             if action.action_type == "tool_call" and action.tool_call:
                 tool_name = action.tool_call["name"]
@@ -139,7 +154,7 @@ class Orchestrator:
 
                 if tool_result.success:
                     tool_text = str(tool_result.output)
-                    state.final_answer = self.answer_service.answer_from_result(
+                    state.final_answer = self.answer_service.answer_from_tool_result(
                         query=query,
                         tool_context=tool_text,
                         memory_context=self.memory_manager.format_memory_context(memory),

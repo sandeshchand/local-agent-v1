@@ -1,58 +1,30 @@
 from __future__ import annotations
 
 import re
+from typing import Any
+
 
 class QueryRewriter:
     def __init__(self) -> None:
-        self.stopwords= {
-            "a", "an", "the", "and", "or", "but", "if", "then", "else", "when", "where", "why", "how",
-            "i", "you", "he", "she", "it", "we", "they", "me", "him", "her", "us", "them",
-            "my", "your", "his", "its", "our", "their",
-            "is", "am", "are", "was", "were", "be", "been", "being",
-            "have", "has", "had", "having",
-            "do", "does", "did", "doing",
-            "will", "would", "should", "could", "may", "might", "must",
-            "to", "of", "in", "on", "at", "by", "for", "with", "about", "as", "from",
-            "this", "that", "these", "those",
-            "what", "which", "who", "whom", "whose",
-            "some", "any", "no", "not", "all", "many", "much", "more", "most",
-            "such", "so", "very", "too", "just", "only", "also", "even",
-            "up", "down", "out", "off", "over", "under", "again", "further",
-            "then", "once", "here", "there", "when", "where", "why", "how",
-            "about", "against", "between", "into", "through", "during", "before", "after",
-            "above", "below", "to", "from", "up", "down", "in", "out", "on", "off",
-            "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how",
-            "about", "against", "between", "into", "through", "during", "before", "after",
-            "above", "below", "to", "from", "up", "down", "in", "out", "on", "off",
-            "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how",
-            "about", "against", "between", "into", "through", "during", "before", "after",
-            "above", "below", "to", "from", "up", "down", "in", "out", "on", "off",
-            "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how",
-            "about", "against", "between", "into", "through", "during", "before", "after",
-            "above", "below", "to", "from", "up", "down", "in", "out", "on", "off",
-            "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how",
-            "about", "against", "between", "into", "through", "during", "before", "after",
-            "above", "below", "to", "from", "up", "down", "in", "out", "on", "off",
-            "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how",
-            "about", "against", "between", "into", "through", "during", "before", "after",
-            "above", "below", "to", "from", "up", "down", "in", "out", "on", "off",
-            "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how",
-            "about", "against", "between", "into", "through", "during", "before", "after",
-            "above", "below", "to", "from", "up", "down", "in", "out", "on", "off",
-            "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how",
-            "about", "against", "between", "into", "through", "during", "before", "after",
-            "above", "below", "to", "from", "up", "down", "in", "out", "on", "off",
-            "over", "under"
+        self.stopwords = {
+            "a", "an", "the", "and", "or", "but", "if", "then",
+            "is", "are", "was", "were", "be", "been",
+            "what", "which", "who", "how", "why", "when", "where",
+            "of", "in", "on", "at", "by", "for", "with", "about",
+            "to", "from", "into", "through", "does", "do", "did",
         }
 
-    def rewrite(self, query: str, results: list[dict]| None = None, session_memory: list | None = None) -> str:
+    def rewrite(
+        self,
+        query: str,
+        results: list[dict] | None = None,
+        session_memory: list[Any] | None = None,
+    ) -> str:
+        # Conservative first-pass rewrite: mostly cleanup
         original_query = query.strip()
-        
-        # Remove punctuation
-        tokens  = re.findall(r'\b\w+\b', query.lower())
+        tokens = re.findall(r"\b\w+\b", original_query.lower())
 
-        cleaned: list[str] =[]
-
+        cleaned: list[str] = []
         for token in tokens:
             if len(token) < 3:
                 continue
@@ -60,26 +32,41 @@ class QueryRewriter:
                 continue
             cleaned.append(token)
 
-        deduped: list[str] = []
-        seen: set[str] = set()
+        candidate = " ".join(dict.fromkeys(cleaned)).strip()
+        return candidate or original_query
 
-        for token in cleaned:
-            if token not in seen:
-                seen.add(token)
-                deduped.append(token)
+    def rewrite_for_retry(
+        self,
+        original_query: str,
+        previous_query: str,
+        missing_terms: list[str] | None = None,
+        suggested_terms: list[str] | None = None,
+        failure_reason: str = "",
+    ) -> str:
+        terms: list[str] = []
 
-        candidate = " ".join(deduped).strip()
+        if suggested_terms:
+            terms.extend(suggested_terms)
 
-        if results:
-            top_title = (results[0].get("title") or "").lower()
-            if "sora" in top_title and  "sora" not in candidate:
-                candidate =f"{candidate} sora".strip()
-        
-        if not candidate:
-            return query
+        if missing_terms:
+            terms.extend(missing_terms)
 
-        if candidate.lower() == query.lower().strip():
-            return query
-        
-        return candidate
-            
+        query_lower = original_query.lower()
+
+        # General intent expansion, still domain-independent enough for papers/docs
+        if any(w in query_lower for w in ["types", "categories", "kinds"]):
+            terms.extend(["types", "categories", "section", "subsection"])
+
+        if any(w in query_lower for w in ["safety", "risk", "concern", "trustworthiness"]):
+            terms.extend(["safety", "risk", "misuse", "privacy", "harmful", "attack"])
+
+        if any(w in query_lower for w in ["instruction", "follow", "following"]):
+            terms.extend(["instruction", "caption", "captioner", "fine-tune", "descriptive"])
+
+        # Deduplicate
+        terms = list(dict.fromkeys(t for t in terms if t))
+
+        if not terms:
+            return previous_query
+
+        return f"{original_query} {' '.join(terms)}".strip()
