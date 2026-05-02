@@ -205,14 +205,9 @@ class RetrievalService:
         return results
 
     def _expand_with_neighbors(self, ranked_items: list[dict]) -> list[dict]:
-        """
-        Add previous/next chunks for each top-ranked chunk.
-        This improves context coverage while staying safe for multiple documents:
-        neighbors are fetched only by same doc_id + adjacent chunk_index.
-        """
         expanded: list[dict] = []
         seen_chunk_ids: set[str] = set()
-       
+
         for item in ranked_items:
             doc_id = item.get("doc_id")
             chunk_id = item.get("chunk_id")
@@ -227,49 +222,50 @@ class RetrievalService:
                 continue
 
             try:
-                chunk_index_int =int(chunk_index)
+                chunk_index_int = int(chunk_index)
             except (ValueError, TypeError):
                 continue
-                
-            neighbors = self.sqlite_store.get_neighbor_chunks(
-                doc_id=doc_id, 
-                chunk_index=chunk_index_int, 
-                window=self.neighbor_window)
 
-            before_neighbors:list[dict] = []
-            after_neighbors:list[dict] = []
-    
+            neighbors = self.sqlite_store.get_neighbor_chunks(
+                doc_id=doc_id,
+                chunk_index=chunk_index_int,
+                window=self.neighbor_window,
+            )
+
+            before_neighbors: list[dict] = []
+            after_neighbors: list[dict] = []
+
             for neighbor in neighbors:
-                neighbor_chunk_id= neighbor.get("chunk_id")
+                neighbor_chunk_id = neighbor.get("chunk_id")
                 if not neighbor_chunk_id or neighbor_chunk_id in seen_chunk_ids:
                     continue
 
-                neighbor["hybrid_score"]= item.get("hybrid_score" , item.get("score",0.0))
+                neighbor["hybrid_score"] = item.get("hybrid_score", item.get("score", 0.0))
                 neighbor["source"] = "neighbor"
                 neighbor["neighbor_role"] = "context"
-                neighbor["anchor_chunk_id"]= chunk_id
+                neighbor["anchor_chunk_id"] = chunk_id
                 neighbor["anchor_reranker_score"] = item.get("reranker_score")
 
                 try:
                     neighbor_chunk_index = int(neighbor.get("chunk_index"))
-                except(ValueError, TypeError):
+                except (ValueError, TypeError):
                     neighbor_chunk_index = chunk_index_int
 
                 if neighbor_chunk_index < chunk_index_int:
                     before_neighbors.append(neighbor)
                 elif neighbor_chunk_index > chunk_index_int:
                     after_neighbors.append(neighbor)
-                    
+
                 seen_chunk_ids.add(neighbor_chunk_id)
 
             if before_neighbors:
                 expanded.append(before_neighbors[-1])
+
             if after_neighbors:
                 expanded.append(after_neighbors[0])
 
-       
         return expanded
-            
+                
 
     def _tokenize(self, text: str) -> list[str]:
         return re.findall(r"\b\w+\b", text.lower())

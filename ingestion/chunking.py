@@ -40,64 +40,68 @@ def split_paragraphs(text:str)-> list[str]:
     parts = [part.strip() for part in text.split("\n\n")]
     return [part for part in parts if part]
 
-def split_sentences(text:str) -> list[str]:
-    """
-    Split into sentences like string for both Englisg and Chinese punctuation.
-    Always returns list[str], never list[list[str]]
-    """
+def split_sentences(text: str) -> list[str]:
     parts = re.split(r"(?<=[.!?。！？])\s+", text)
     parts = [part.strip() for part in parts if part.strip()]
     return parts if parts else [text.strip()]
 
-def _find_safe_end(text:str,start:int,proposed_end:int,window:int =80) ->int:
+
+def _find_safe_end(text: str, start: int, proposed_end: int, window: int = 80) -> int:
     if proposed_end >= len(text):
         return len(text)
-    
-    search_end= min(len(text), proposed_end + window)
-    segment= text[proposed_end:search_end]
-    match= re.search(r"[.!?。！？]", segment)
-    if match:
-        return proposed_end + match.end() + 1
 
-    match = re.search(r"[\s,;:]",segment)
+    search_end = min(len(text), proposed_end + window)
+    segment = text[proposed_end:search_end]
 
+    match = re.search(r"[.!?。！？]", segment)
     if match:
-        return proposed_end + match.end() 
+        return proposed_end + match.start() + 1
+
+    match = re.search(r"[\s,;:)]", segment)
+    if match:
+        return proposed_end + match.start()
 
     return proposed_end
-    
-def _find_safe_start(text:str,proposed_start:int,window:int =80) ->int:
-    if proposed_start <=0:
+
+
+def _find_safe_start(text: str, proposed_start: int, window: int = 80) -> int:
+    if proposed_start <= 0:
         return 0
-    
-    search_start= max(0, proposed_start - window)
-    segment= text[search_start:proposed_start]
-    matches= list(re.finditer(r"[.!?。！？]", segment))
+
+    search_start = max(0, proposed_start - window)
+    segment = text[search_start:proposed_start]
+
+    matches = list(re.finditer(r"[.!?。！？]\s+", segment))
     if matches:
-        return search_start + matches[-1].start()
-    
+        return search_start + matches[-1].end()
+
     matches = list(re.finditer(r"\s+", segment))
     if matches:
         return search_start + matches[-1].end()
 
     return proposed_start
 
-def chunk_large_text(text:str, chunk_size:int, chunk_overlap:int)-> list[str]:
+
+def chunk_large_text(text: str, chunk_size: int, chunk_overlap: int) -> list[str]:
     text = re.sub(r"\s+", " ", text).strip()
     if not text:
         return []
+
     chunks: list[str] = []
     start = 0
-    text_len= len(text)
+    text_len = len(text)
+
     while start < text_len:
         proposed_end = min(start + chunk_size, text_len)
         end = _find_safe_end(text, start, proposed_end)
+
         if end <= start:
             end = proposed_end
 
         chunk = text[start:end].strip()
         if chunk:
             chunks.append(chunk)
+
         if end >= text_len:
             break
 
@@ -108,9 +112,8 @@ def chunk_large_text(text:str, chunk_size:int, chunk_overlap:int)-> list[str]:
             next_start = end
 
         start = next_start
-     
-    return chunks
 
+    return chunks
 def recursive_split_text(text:str, chunk_size: int, chunk_overlap: int) -> list[str]:
     text = text.strip()
     if len(text) <= chunk_size:
