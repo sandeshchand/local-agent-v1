@@ -231,27 +231,60 @@ class SQLiteStore:
         conn.commit()
         return int(cursor.lastrowid)
 
-    def list_chunks_for_retrieval(self) -> list[dict[str, Any]]:
+    def list_chunks_for_retrieval(self,doc_id:str | None=None) -> list[dict]:
         conn = self.connect()
-        rows = conn.execute(
-            """
-            SELECT 
-                c.chunk_id,
-                c.doc_id,
-                c.chunk_index,
-                c.page_number,
-                c.text, 
-                c.token_estimate,
-                d.title,
-                d.source_path
-            FROM chunks c
-            JOIN documents d 
-                ON c.doc_id = d.doc_id
-            ORDER BY d.title, c.page_number, c.chunk_index
-            """
-        ).fetchall()
+        if doc_id:
+            rows = conn.execute(
+                """
+                SELECT 
+                    c.chunk_id,
+                    c.doc_id,
+                    c.chunk_index,
+                    c.page_number,
+                    c.text, 
+                    c.token_estimate,
+                    d.title,
+                    d.source_path
+                FROM chunks c
+                JOIN documents d 
+                    ON c.doc_id = d.doc_id
+                WHERE c.doc_id = ?
+                ORDER BY d.title, c.page_number, c.chunk_index
+                """,
+                (doc_id,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT 
+                    c.chunk_id,
+                    c.doc_id,
+                    c.chunk_index,
+                    c.page_number,
+                    c.text, 
+                    c.token_estimate,
+                    d.title,
+                    d.source_path
+                FROM chunks c
+                JOIN documents d 
+                    ON c.doc_id = d.doc_id
+                ORDER BY d.title, c.page_number, c.chunk_index
+                """
+            ).fetchall()
 
-        return [self._chunk_row_to_dict(row) for row in rows]
+        return [
+            {
+                "chunk_id":row["chunk_id"],
+                "doc_id":row["doc_id"],
+                "chunk_index":row["chunk_index"],
+                "page_number":row["page_number"],
+                "text":row["text"],
+                "token_estimate":row["token_estimate"],
+                "title":row["title"],
+                "source_path":row["source_path"],
+            }
+            for row in rows
+        ]
 
     def get_chunk_by_id(self, chunk_id: str) -> dict[str, Any] | None:
         conn = self.connect()

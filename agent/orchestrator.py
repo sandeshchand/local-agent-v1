@@ -102,6 +102,7 @@ class Orchestrator:
                 
                 if selected_results:
                     state.retrieved_items= selected_results
+                    used_citations= selected_results[:]
                     
                     answer = self.answer_service.answer_from_context(
                         query= query, 
@@ -112,6 +113,7 @@ class Orchestrator:
                     state.final_answer = answer
                 else:
                     state.retrieved_items=[]
+                    used_citations=[]
                     state.final_answer="Unable to find relevant information in the indexed documents."
                 state.done = True
                 break

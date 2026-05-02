@@ -75,9 +75,6 @@ Completed milestones:
 - **Milestone 2** — PDF ingestion and retrieval pipeline
 - **Milestone 3** — reusable RAG application core
 - **Milestone 3.5** — FastAPI web interface and UI improvements
-
-Next milestone:
-
 - **Milestone 4** — planner and orchestrator layer
 
 ---
@@ -343,9 +340,6 @@ Completed milestones:
 * **Milestone 2** — PDF ingestion and retrieval pipeline
 * **Milestone 3** — reusable RAG application core
 * **Milestone 3.5** — FastAPI web interface and UI improvements
-
-Next milestone:
-
 * **Milestone 4** — planner and orchestrator layer
 
 ---
@@ -419,15 +413,23 @@ Then re-ingest your documents.
 * direct-answer vs retrieve-only modes
 * Reranking
 * Evidence check + one retry loop
+* Hybrid Retrieval(dense + sparse retrieval)
+* Cross-encoder Reranking
+* Evidence Judgement & Evidence Selection
+
+
+### Current focus
+* Retrieval Stabilization on single-document evaluation
+* Citation quality
+* Multi-document retrieval hardening
 
 
 ### Planned
-* retrieval stabilization across multiple PDFs
 * MCP integration
-* richer trace/debug views
-* improved retrieval quality
 * better support for larger document sets
 * more advanced UI state and interaction patterns
+* Tool-aware routing
+* Better Evaluation dashboards
 
 ---
 

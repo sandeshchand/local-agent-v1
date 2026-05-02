@@ -41,7 +41,7 @@ class RetrievalService:
         )
     
 
-    def search(self, query: str) -> list[dict]:
+    def search(self, query: str, doc_id: str | None = None) -> list[dict]:
         """
         Hybrid retrieval pipeline:
         1. Dense vector retrieval from Qdrant
@@ -53,8 +53,8 @@ class RetrievalService:
         dense_limit = max(self.top_k *5, self.rerank_candidates)
         sparse_limit = max(self.top_k *5, self.rerank_candidates)
 
-        dense_results= self._dense_search(query, dense_limit)
-        sparse_results= self._sparse_search(query, sparse_limit)
+        dense_results= self._dense_search(query, dense_limit,doc_id=doc_id)
+        sparse_results= self._sparse_search(query, sparse_limit,doc_id=doc_id)
 
         fused = self._rrf_fuse(
             dense_items=dense_results,
@@ -80,13 +80,13 @@ class RetrievalService:
 
         return expanded[:self.final_context_limit]
 
-    def _dense_search(self, query:str, limit:int) -> list[dict]:
+    def _dense_search(self, query:str, limit:int,doc_id: str | None = None) -> list[dict]:
         query_vector = self.embedding_client.embed(query)
-        result = self.qdrant_store.search(query_vector=query_vector, limit=limit)
+        result = self.qdrant_store.search(query_vector=query_vector, limit=limit,doc_id=doc_id)
 
         points = getattr(result, "points", []) or []
-
         items: list[dict] = []
+
         for point in points:
             payload = getattr(point, "payload", {}) or {}
             items.append(
@@ -95,7 +95,7 @@ class RetrievalService:
                     "score": float(getattr(point,"score",0.0)),
                     "doc_id":payload.get("doc_id"),
                     "chunk_id":payload.get("chunk_id"),
-                    "chunk_index":payload.get("chunk_index_id"),
+                    "chunk_index":payload.get("chunk_index"),
                     "title":payload.get("title"),
                     "source_path":payload.get("source_path"),
                     "page_number":payload.get("page_number"),
@@ -104,8 +104,8 @@ class RetrievalService:
                 }
             )
         return items
-    def _sparse_search(self, query:str, limit:int) -> list[dict]:
-        chunks = self.sqlite_store.list_chunks_for_retrieval()
+    def _sparse_search(self, query:str, limit:int,doc_id: str | None = None) -> list[dict]:
+        chunks = self.sqlite_store.list_chunks_for_retrieval(doc_id=doc_id)
         if not chunks:
             return []
         
@@ -233,8 +233,11 @@ class RetrievalService:
                 
             neighbors = self.sqlite_store.get_neighbor_chunks(
                 doc_id=doc_id, 
-                chunk_index=chunk_index_int, 
+                chunk_index=int(chunk_index), 
                 window=self.neighbor_window)
+
+            before_neighbors= []
+            after_neighbors= []
     
             for neighbor in neighbors:
                 neighbor_chunk_id= neighbor.get("chunk_id")
@@ -242,23 +245,28 @@ class RetrievalService:
                     continue
                 if neighbor_chunk_id in seen_chunk_ids:
                     continue
-
-                neighbor["source"]= item.get("source" , 0.0)
                 neighbor["hybrid_score"]= item.get("hybrid_score" , item.get("score",0.0))
                 neighbor["source"] = "neighbor"
                 neighbor["neighbor_role"] = "context"
                 neighbor["anchor_chunk_id"]= chunk_id
                 neighbor["anchor_reranker_score"] = item.get("reranker_score")
 
-                expanded.append(neighbor)
+                try:
+                    neighbor_chunk_index = int(neighbor.get("chunk_index"))
+                except(ValueError, TypeError):
+                    neighbor_chunk_index = chunk_index_int
+                if neighbor_chunk_index < chunk_index_int:
+                    before_neighbors.append(neighbor)
+                else:
+                    after_neighbors.append(neighbor)
+
                 seen_chunk_ids.add(neighbor_chunk_id)
-        
-        expanded.sort(
-            key=lambda item: (
-                str(item.get("doc_id") or ""),
-                int(item.get("chunk_index") or 0),
-            )
-        )             
+
+            if before_neighbors:
+                before_neighbors.append(before_neighbors[-1])
+            if after_neighbors:
+                after_neighbors.append(after_neighbors[0])
+       
         return expanded
             
 

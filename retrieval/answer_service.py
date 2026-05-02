@@ -18,36 +18,21 @@ class AnswerService:
         context = build_context(results)
 
         return f"""
-        You are a precise and grounded AI assistant.
-
-        Your task is to answer the user's question using ONLY the approved evidence context.
+        You are answering using only the retrieved document context below.
 
         Rules:
-        1. Answer the exact question directly.
-        2. Use ONLY the approved evidence context.
-        3. Do not add unrelated background.
-        4. Do not invent facts or fill gaps with outside knowledge.
-        5. If the approved context contains multiple claims about the same topic, distinguish between:
-        - core/main answer
-        - supporting detail
-        - speculative or secondary interpretation
-        6. Prefer definitive statements over speculative statements.
-        7. Do not present speculative phrases such as "we speculate", "may", "might", or "likely" as confirmed facts.
-        8. If the approved context does not directly answer the question, respond exactly:
-        "The retrieved context does not directly answer this."
-        9. Use citation markers like [1], [2] only for statements supported by the approved context.
-        10. Keep the answer concise.
-
-        {memory_context}
-
-        [APPROVED EVIDENCE CONTEXT]
-        {context}
-
-        [TOOL RESULTS]
-        {tool_context}
-
+        1. Use only the provided context.
+        2. If the answer is not explicitly supported, says:
+            "The provided context does not contain enough information."
+        3. Do not use outside knowledge.
+        4. Prefer short, precise answers.
+        5. Cite the supporting chunks using [1],[2],[3].
+        
         Question:
         {query}
+
+        Context:
+        {context}
 
         Answer:
         """.strip()

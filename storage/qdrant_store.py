@@ -80,11 +80,25 @@ class QdrantStore:
         ]
         client.upsert(collection_name=self.collection_name, points=points)
 
-    def search(self, query_vector: list[float], limit: int = 5):
+    def search(self, query_vector: list[float], limit: int = 5,doc_id:str = None):
         client = self.connect()
+        query_filter = None
+        
+        if doc_id:
+            from qdrant_client.models import Filter, FieldCondition, MatchValue
+            query_filter = Filter(
+                must=[
+                    FieldCondition(
+                        key="doc_id",
+                        match=MatchValue(value=doc_id),
+                    ),
+                ]
+            )
+
         return client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
             limit=limit,
+            query_filter=query_filter,
             with_payload=True,
         )
