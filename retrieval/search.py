@@ -19,7 +19,7 @@ class RetrievalService:
             top_k: int = 5,
             use_reranker: bool = True,
             rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
-            rerank_candidates: int = 8,
+            rerank_candidates: int = 20,
             neighbor_window: int = 1,
             final_context_limit: int = 6,
             ) -> None:
@@ -42,8 +42,16 @@ class RetrievalService:
     
 
     def search(self, query: str) -> list[dict]:
-        dense_limit = max(self.top_k *4, 12)
-        sparse_limit = max(self.top_k *4, 12)
+        """
+        Hybrid retrieval pipeline:
+        1. Dense vector retrieval from Qdrant
+        2. Sparse retrieval from SQLite (BM25 + boosts)
+        3. RRF fusion over large candidate pool
+        4. Cross-encoder reranking 
+        5. Neighbor expansion for context coverage
+        """
+        dense_limit = max(self.top_k *5, self.rerank_candidates)
+        sparse_limit = max(self.top_k *5, self.rerank_candidates)
 
         dense_results= self._dense_search(query, dense_limit)
         sparse_results= self._sparse_search(query, sparse_limit)
@@ -55,16 +63,21 @@ class RetrievalService:
             k=60,
 
         )
+        if not fused:
+            return []
+            
         ranked = fused[:self.top_k]
 
-        if self.reranker is not None and fused:
+        if self.reranker is not None :
             try:
                 ranked= self.reranker.rerank(query, fused)
                 ranked = ranked[:self.top_k]
-            except Exception as e:
-                print(f"Reranker failed: {e}")
+            except Exception as exc:
+                print(f"Reranker failed: {exc}")
                 ranked = fused[: self.top_k]
+
         expanded = self._expand_with_neighbors(ranked)
+
         return expanded[:self.final_context_limit]
 
     def _dense_search(self, query:str, limit:int) -> list[dict]:
@@ -103,23 +116,18 @@ class RetrievalService:
             return []
      
         scores = bm25.get_scores(query_tokens)
-        query_lower= query.lower().strip()
-        query_term = set(query_tokens)
 
         scored_items:list[tuple[float, dict[str, Any]]] = []
         for chunk, score in zip(chunks, scores):
-            text_lower = chunk["text"].lower()
-            title_lower = (chunk.get("title", "") or "").lower()
-
-            boost = 0.0
-            if query_lower  and query_lower in title_lower:
-                boost += 2.0
-            if any(term in title_lower for term in query_term):
-                boost += 1.0
-            if any(term in text_lower for term in query_term):
-                boost += 0.5
+            title_text = f"{chunk.get('title') or ''}{chunk.get('text') or ''}"
+            title_text_lower = title_text.lower()
             
-            final_score = float(score) + boost
+            query_terms = set(query_tokens)
+            overlap_boost = sum(
+                0.25 for term in query_terms if term in title_text_lower 
+            )
+
+            final_score = float(score) + overlap_boost
             scored_items.append(
                 (
                     final_score,
@@ -139,6 +147,7 @@ class RetrievalService:
             )
         scored_items.sort(key=lambda x: x[0], reverse=True)
         return [item[1] for item in scored_items[:limit]]
+
             
     def _rrf_fuse(
         self, 
@@ -150,29 +159,30 @@ class RetrievalService:
         fused_items: dict[str, dict] = {}
 
         for rank,item in enumerate(dense_items, start=1):
-            key = item["chunk_id"]
-            if not key:
+            chunk_id = item["chunk_id"]
+            if not chunk_id:
                 continue
 
-            fused_scores[key]= fused_scores.get(key, 0.0) + 1.0 /(k + rank)
+            fused_scores[chunk_id]= fused_scores.get(chunk_id, 0.0) + 1.0 /(k + rank)
 
-            if key not in fused_items:
-                fused_items[key] = dict(item)
-                fused_items[key]["dense_rank"]= rank
+            if chunk_id not in fused_items:
+                fused_items[chunk_id] = dict(item)
+                
+            fused_items[chunk_id]["dense_rank"]= rank
         
         for rank,item in enumerate(sparse_items, start=1):
-            key = item["chunk_id"]
-            if not key:
+            chunk_id = item.get("chunk_id")
+            if not chunk_id:
                 continue
 
-            fused_scores[key]= fused_scores.get(key, 0.0) + 1.0 /(k + rank)
+            fused_scores[chunk_id]= fused_scores.get(chunk_id, 0.0) + 1.0 /(k + rank)
 
-            if key not in fused_items:
-                fused_items[key] = dict(item)
+            if chunk_id not in fused_items:
+                fused_items[chunk_id] = dict(item)
             else:
-                if not fused_items[key].get("text") and item.get("text"):
-                    fused_items[key]["text"] = item["text"]
-            fused_items[key]["sparse_rank"] = rank
+                if not fused_items[chunk_id].get("text") and item.get("text"):
+                    fused_items[chunk_id]["text"] = item["text"]
+            fused_items[chunk_id]["sparse_rank"] = rank
         
         ranked = sorted(
             fused_items.items(),
@@ -184,11 +194,6 @@ class RetrievalService:
         seen: set[tuple[str | None ,int | None ,str | None]] = set()
 
         for chunk_id, item in ranked:
-           key = (item.get("doc_id"), item.get("page_number"), item.get("chunk_id"))
-           if key in seen:
-               continue
-           seen.add(key)
-
            item["score"] = fused_scores[chunk_id]
            item["hybrid_score"] = fused_scores[chunk_id]
            item["source"] = "hybrid"
@@ -202,12 +207,8 @@ class RetrievalService:
     def _expand_with_neighbors(self, ranked_items: list[dict]) -> list[dict]:
         """
         Add previous/next chunks for each top-ranked chunk.
-
-        Important:
-        - Only expands within the same doc_id.
-        - Preserves ranked chunks first.
-        - Adds neighbor chunks after their anchor chunk.
-        - Deduplicates by chunk_id.
+        This improves context coverage while staying safe for multiple documents:
+        neighbors are fetched only by same doc_id + adjacent chunk_index.
         """
         expanded: list[dict] = []
         seen_chunk_ids: set[str] = set()
@@ -218,6 +219,7 @@ class RetrievalService:
             chunk_index = item.get("chunk_index")
 
             if chunk_id and chunk_id not in seen_chunk_ids:
+                item["neighbor_role"] = "anchor"
                 expanded.append(item)
                 seen_chunk_ids.add(chunk_id)
 
@@ -244,18 +246,19 @@ class RetrievalService:
                 neighbor["source"]= item.get("source" , 0.0)
                 neighbor["hybrid_score"]= item.get("hybrid_score" , item.get("score",0.0))
                 neighbor["source"] = "neighbor"
+                neighbor["neighbor_role"] = "context"
                 neighbor["anchor_chunk_id"]= chunk_id
                 neighbor["anchor_reranker_score"] = item.get("reranker_score")
 
                 expanded.append(neighbor)
                 seen_chunk_ids.add(neighbor_chunk_id)
-            
-            expanded.sort(
-                key=lambda x: (
-                    str(x.get("doc_id") or ""),
-                    int(x.get("chunk_index") or 0),
-                )
-            )             
+        
+        expanded.sort(
+            key=lambda item: (
+                str(item.get("doc_id") or ""),
+                int(item.get("chunk_index") or 0),
+            )
+        )             
         return expanded
             
 

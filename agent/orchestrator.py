@@ -13,6 +13,7 @@ from retrieval.evidence_checker import EvidenceChecker
 from retrieval.query_rewriter import QueryRewriter
 from retrieval.search import RetrievalService
 from storage.sqlite_store import SQLiteStore
+from retrieval.evidence_judge import EvidenceJudge
 
 class Orchestrator:
     def __init__(self, 
@@ -38,6 +39,7 @@ class Orchestrator:
 
         self.evidence_checker = EvidenceChecker()
         self.query_rewriter = QueryRewriter()
+        self.evidence_judge = EvidenceJudge(self.answer_service.chat_client)
 
     def handle_query(self, query: str, session_id: str= "default") -> dict:
         self.memory_manager.save_user_turn(session_id, query)
@@ -73,71 +75,46 @@ class Orchestrator:
 
             if action.action_type == "retrieve":
                 retrieval_query = action.retrieve_query or query
-                current_query = self.query_rewriter.rewrite(
-                    query=retrieval_query, session_memory=memory)
-                best_results:list[dict]=[]
-                best_evidence = None
-                max_retrieval_attempts = 3
-
-                for attempt in range(1,max_retrieval_attempts +1):
-                    results = self.retrieval_service.search(current_query)
-                    evidence = self.evidence_checker.evaluate(query,results)
-                    state.steps.append({
-                        "step": step_no,
-                        "type": "retrieve_attempt",
-                        "attempt":attempt,
-                        "retrieval_query": current_query,
-                        "result_count": len(results),
-                        "evidence_sufficient": evidence.sufficient,
-                        "need_retry":evidence.need_retry,
-                        "quality_score":evidence.quality_score,
-                        "reason":evidence.reason,
-                    })
-
-                    if best_evidence is None or evidence.quality_score > best_evidence.quality_score:
-                        best_evidence= evidence
-                        best_results = results
-                        
-
-                    if evidence.sufficient  and not evidence.need_retry:
-                        best_results = results
-                        best_evidence=evidence
-                        break
+                results = self.retrieval_service.search(retrieval_query)
+                selected_results, judgments = self.evidence_judge.select_evidence(
+                    query,
+                    results,
+                    max_items=4,
                     
-                    current_query=self.query_rewriter.rewrite_for_retry(
-                        original_query=query,
-                        previous_query=current_query,
-                        missing_terms=evidence.missing_terms,
-                        suggested_terms=evidence.suggested_terms,
-                        failure_reason=evidence.reason,
+                )
+                state.steps.append({
+                    "step": step_no,
+                    "type": "retrieve",
+                    "retrieval_query": retrieval_query,
+                    "result_count": len(results),
+                    "selected_count": len(selected_results),
+                    "evidence_judgements": [
+                        {
+                            "label":j.label,
+                            "reason":j.reason,
+                            "chunk_id":j.item.get("chunk_id"),
+                            "page_number":j.item.get("page_number"),
+                        }
+                        for j in judgments
+                    ],
+                    "notes":action.notes,
+                })
+                
+                if selected_results:
+                    state.retrieved_items= selected_results
+                    
+                    answer = self.answer_service.answer_from_context(
+                        query= query, 
+                        results=selected_results,
+                        memory_context = self.memory_manager.format_memory_context(memory),
+                        tool_context="",
                     )
-                    
-                    state.retrieved_items = best_results
-                   
-                    if not best_results and attempt == max_retrieval_attempts:
-                       state.final_answer = (
-                            "I could not find any relevant information in the indexed documents"
-                            "for that question.")
-                       state.done = True
-                       break
-
-                    if best_evidence is not None and not best_evidence.sufficient:
-                        # If retrieval returned chunks , still allow grounded answering.
-                        # The answer prompt will say insufficient context if it cannot answer.
-                        if best_results:
-                            answer = self.answer_service.answer_from_context(
-                                query= query, 
-                                results=best_results[: self.retrieval_service.final_context_limit],
-                                memory_context = self.memory_manager.format_memory_context(memory),
-                                tool_context="",
-                            )
-                            state.final_answer = answer 
-
-                        else:
-                            state.final_answer = (
-                                "The retrieved documents are not relevant to the question.")
-                        state.done = True
-                        break
+                    state.final_answer = answer
+                else:
+                    state.retrieved_items=[]
+                    state.final_answer="Unable to find relevant information in the indexed documents."
+                state.done = True
+                break
 
             if action.action_type == "tool_call" and action.tool_call:
                 tool_name = action.tool_call["name"]

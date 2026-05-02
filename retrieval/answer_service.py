@@ -18,55 +18,29 @@ class AnswerService:
         context = build_context(results)
 
         return f"""
-        You are a precise, grounded, and reliable question-answering AI system.
+        You are a precise and grounded AI assistant.
 
-        Your task is to answer the user's question using ONLY the provided context.
+        Your task is to answer the user's question using ONLY the approved evidence context.
 
         Rules:
-        GENERAL BEHAVIOR:
         1. Answer the exact question directly.
-        2. Use ONLY the retrieved context.
+        2. Use ONLY the approved evidence context.
         3. Do not add unrelated background.
-        4. Use clear and standard terminology from the context.
-        5. Do NOT introduce new technical terms that are not present in the context.
-        6. Avoid vague or abstract phrases (e.g., "reverse engineering").
-        7. Keep the answer concise (2–4 sentences unless a list is required).
-
-        QUESTION-SPECIFIC BEHAVIOR:
-        8. If the question asks "how", explain the process clearly and briefly (step-by-step if needed).
-        9. If the question asks for a list, types, or categories:
-        - Extract only the fundamental categories explicitly defined in the context
-        - Extract ALL relevant categories present in the context  
-        - Do not derive or infer new categories
-        - Do NOT omit any item
-        - Do NOT merge or combine categories
-        - List them clearly and separately
-        - If multiple items are mentioned together, separate them unless explicitly defined as a single category
-
-
-        COMPLETENESS CHECK (VERY IMPORTANT):
-        10. Before finalizing the answer:
-        - Ensure all relevant categories or items from the context are included
-        - If multiple chunks contain different items, combine them into a complete list
-        - Do NOT conclude a smaller number of items if more exist in the context
-
-        GROUNDING RULES:
-        11. If the retrieved context does not directly answer the question, respond with EXACTLY:
-            "The retrieved context does not directly answer this."
-        12. Do NOT add any explanation, assumptions, guesses, or general knowledge after that sentence.
-        13. Never write phrases like:
-            - "However, considering..."
-            - "Based on general knowledge..."
-            - "It might include..."
-            - "Potentially..."
-            unless directly supported by the context.
-
-        CITATION RULES:
-        14. Use citation markers like [1], [2] only for statements supported by context.
+        4. Do not invent facts or fill gaps with outside knowledge.
+        5. If the approved context contains multiple claims about the same topic, distinguish between:
+        - core/main answer
+        - supporting detail
+        - speculative or secondary interpretation
+        6. Prefer definitive statements over speculative statements.
+        7. Do not present speculative phrases such as "we speculate", "may", "might", or "likely" as confirmed facts.
+        8. If the approved context does not directly answer the question, respond exactly:
+        "The retrieved context does not directly answer this."
+        9. Use citation markers like [1], [2] only for statements supported by the approved context.
+        10. Keep the answer concise.
 
         {memory_context}
 
-        [RETRIEVED DOCUMENT CONTEXT]
+        [APPROVED EVIDENCE CONTEXT]
         {context}
 
         [TOOL RESULTS]
@@ -80,21 +54,21 @@ class AnswerService:
 
     def build_direct_prompt(self, query: str) -> str:
         return f"""
-You are a friendly and helpful AI assistant.
+        You are a friendly and helpful AI assistant.
+        
+        Rules:
+        - For greetings like "hi", "hello", "hey", or "namaste", respond warmly and naturally in one short sentence.
+        - For casual conversation, respond briefly and politely.
+        - Answer clearly and concisely.
+            - If the question requires specific document content that you do not have, say that clearly.
+            - Do not claim you searched documents unless retrieval actually happened.
+        - Do not invent facts.
 
-Rules:
-- For greetings like "hi", "hello", "hey", or "namaste", respond warmly and naturally in one short sentence.
-- For casual conversation, respond briefly and politely.
-- Answer clearly and concisely.
-- If the question requires specific document content that you do not have, say that clearly.
-- Do not claim you searched documents unless retrieval actually happened.
-- Do not invent facts.
+        User question:
+        {query}
 
-User question:
-{query}
-
-Answer:
-""".strip()
+        Answer:
+        """.strip()
 
     def build_tool_prompt(
         self,
@@ -103,24 +77,26 @@ Answer:
         memory_context: str = "",
     ) -> str:
         return f"""
-You are a grounded assistant using tool output.
+    You are a grounded assistant using tool output.
 
-Rules:
-- Answer only from the tool output below.
-- Do not add unrelated background.
-- If the tool output is insufficient, say that clearly.
-- Keep the answer concise and accurate.
+    Rules:
+    - Answer only from the tool output below.
+    - Do not add unrelated background.
+    - If the tool output is insufficient, say that clearly.
+    - Keep the answer concise and accurate.
+    - Prefer definitive statements over speculative statements. Do not treat speculative phrases such as 
+    "we speculate", "may", "likely", or "reverse engineering" as confirmed facts.
 
-{memory_context}
+    {memory_context}
 
-[TOOL OUTPUT]
-{tool_context}
+    [TOOL OUTPUT]
+    {tool_context}
 
-Question:
-{query}
+    Question:
+    {query}
 
-Answer:
-""".strip()
+    Answer:
+    """.strip()
 
     def _direct_fallback(self, query: str) -> str:
         q = query.strip().lower()
