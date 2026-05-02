@@ -233,18 +233,17 @@ class RetrievalService:
                 
             neighbors = self.sqlite_store.get_neighbor_chunks(
                 doc_id=doc_id, 
-                chunk_index=int(chunk_index), 
+                chunk_index=chunk_index_int, 
                 window=self.neighbor_window)
 
-            before_neighbors= []
-            after_neighbors= []
+            before_neighbors:list[dict] = []
+            after_neighbors:list[dict] = []
     
             for neighbor in neighbors:
                 neighbor_chunk_id= neighbor.get("chunk_id")
-                if not neighbor_chunk_id:
+                if not neighbor_chunk_id or neighbor_chunk_id in seen_chunk_ids:
                     continue
-                if neighbor_chunk_id in seen_chunk_ids:
-                    continue
+
                 neighbor["hybrid_score"]= item.get("hybrid_score" , item.get("score",0.0))
                 neighbor["source"] = "neighbor"
                 neighbor["neighbor_role"] = "context"
@@ -255,17 +254,19 @@ class RetrievalService:
                     neighbor_chunk_index = int(neighbor.get("chunk_index"))
                 except(ValueError, TypeError):
                     neighbor_chunk_index = chunk_index_int
+
                 if neighbor_chunk_index < chunk_index_int:
                     before_neighbors.append(neighbor)
-                else:
+                elif neighbor_chunk_index > chunk_index_int:
                     after_neighbors.append(neighbor)
-
+                    
                 seen_chunk_ids.add(neighbor_chunk_id)
 
             if before_neighbors:
-                before_neighbors.append(before_neighbors[-1])
+                expanded.append(before_neighbors[-1])
             if after_neighbors:
-                after_neighbors.append(after_neighbors[0])
+                expanded.append(after_neighbors[0])
+
        
         return expanded
             

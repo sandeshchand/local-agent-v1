@@ -41,9 +41,13 @@ def split_paragraphs(text:str)-> list[str]:
     return [part for part in parts if part]
 
 def split_sentences(text:str) -> list[str]:
-    parts = re.split(r"(?<=[。！？])\s+", text)
-    parts = [part.split() for part in parts if part.strip()]
-    return parts if parts else [text.split()]
+    """
+    Split into sentences like string for both Englisg and Chinese punctuation.
+    Always returns list[str], never list[list[str]]
+    """
+    parts = re.split(r"(?<=[.!?。！？])\s+", text)
+    parts = [part.strip() for part in parts if part.strip()]
+    return parts if parts else [text.strip()]
 
 def _find_safe_end(text:str,start:int,proposed_end:int,window:int =80) ->int:
     if proposed_end >= len(text):
@@ -51,9 +55,14 @@ def _find_safe_end(text:str,start:int,proposed_end:int,window:int =80) ->int:
     
     search_end= min(len(text), proposed_end + window)
     segment= text[proposed_end:search_end]
-    match= re.search(r"[。！？]", segment)
+    match= re.search(r"[.!?。！？]", segment)
     if match:
-        return proposed_end + match.start()
+        return proposed_end + match.end() + 1
+
+    match = re.search(r"[\s,;:]",segment)
+
+    if match:
+        return proposed_end + match.end() 
 
     return proposed_end
     
@@ -63,9 +72,13 @@ def _find_safe_start(text:str,proposed_start:int,window:int =80) ->int:
     
     search_start= max(0, proposed_start - window)
     segment= text[search_start:proposed_start]
-    match= list(re.finditer(r"[。！？]", segment))
-    if match:
-        return search_start + match[-1].start()
+    matches= list(re.finditer(r"[.!?。！？]", segment))
+    if matches:
+        return search_start + matches[-1].start()
+    
+    matches = list(re.finditer(r"\s+", segment))
+    if matches:
+        return search_start + matches[-1].end()
 
     return proposed_start
 
@@ -91,7 +104,7 @@ def chunk_large_text(text:str, chunk_size:int, chunk_overlap:int)-> list[str]:
         next_start = max(0, end - chunk_overlap)
         next_start = _find_safe_start(text, next_start)
 
-        if next_start >= start:
+        if next_start <= start:
             next_start = end
 
         start = next_start
