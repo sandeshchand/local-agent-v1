@@ -66,6 +66,7 @@ def run_ask(deps: AppDependencies, query:str) ->None:
     print(f"Running agent for query: {query}")
     result = deps.orchestrator.handle_query(query)
     
+
     print(f"\nMode selected: {result['mode']}")
     print(f"Reason: {result['reason']}")
     
@@ -86,6 +87,7 @@ def run_ask(deps: AppDependencies, query:str) ->None:
             
             print(
                 f"[{idx}] page= {item.get('page_number')}\n"
+                f"section {item.get('section_title')}\n"
                 f"hybrid_score={hybrid_score_str}\n"
                 f"reranker_score={reranker_score_str}"
             )
@@ -107,7 +109,10 @@ def run_ask(deps: AppDependencies, query:str) ->None:
         print("\nCitations Summary:")
         for idx, item in enumerate(result["citations"], start=1):
             print(
-                f"[{idx}] {item.get('title')} | page {item.get('page_number')} | {item.get('source_path')}")
+                f"[{idx}] {item.get('title')} | "
+                f"section {item.get('section_title')} | "
+                f"page {item.get('page_number')} | {item.get('source_path')}"
+            )
 
 
 def run_list_docs(deps:AppDependencies)->None:

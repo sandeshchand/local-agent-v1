@@ -13,6 +13,7 @@ class ChunkRecord:
     page_number: int
     text: str
     token_estimate: int
+    section_title: str | None = None
 
 def normalize_page_text(text:str)-> str:
     text= text.replace("\r\n","\n").replace("\r","\n")
@@ -193,6 +194,7 @@ def chunk_pages(
                         page_number=page.page_number,
                         text=chunk_text,
                         token_estimate=max(1, len(chunk_text) // 4),
+                        section_title=page.section_title,
                     )
                 )
                 chunk_index += 1

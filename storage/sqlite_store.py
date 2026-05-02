@@ -57,6 +57,17 @@ class SQLiteStore:
                 FOREIGN KEY (doc_id) REFERENCES documents(doc_id)
         )
         """)
+        columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(chunks)").fetchall()
+        }
+        if "section_title" not in columns:
+            conn.execute(
+                """
+                ALTER TABLE chunks 
+                ADD COLUMN section_title TEXT
+                """
+            )
 
         conn.execute(
             """
@@ -181,8 +192,8 @@ class SQLiteStore:
         conn = self.connect()
         conn.executemany(
             """
-            INSERT INTO chunks (chunk_id, doc_id, chunk_index, page_number, text, token_estimate)
-            VALUES (:chunk_id, :doc_id, :chunk_index, :page_number, :text, :token_estimate)
+            INSERT INTO chunks (chunk_id, doc_id, chunk_index, page_number, text, token_estimate,section_title)
+            VALUES (:chunk_id, :doc_id, :chunk_index, :page_number, :text, :token_estimate,:section_title)
             """,
             chunks,
         )
@@ -243,6 +254,7 @@ class SQLiteStore:
                     c.page_number,
                     c.text, 
                     c.token_estimate,
+                    c.section_title,
                     d.title,
                     d.source_path
                 FROM chunks c
@@ -263,6 +275,7 @@ class SQLiteStore:
                     c.page_number,
                     c.text, 
                     c.token_estimate,
+                    c.section_title,
                     d.title,
                     d.source_path
                 FROM chunks c
@@ -280,6 +293,7 @@ class SQLiteStore:
                 "page_number":row["page_number"],
                 "text":row["text"],
                 "token_estimate":row["token_estimate"],
+                "section_title":row["section_title"],
                 "title":row["title"],
                 "source_path":row["source_path"],
             }
@@ -297,6 +311,7 @@ class SQLiteStore:
                 c.page_number,
                 c.text, 
                 c.token_estimate,
+                c.section_title,
                 d.title,
                 d.source_path
             FROM chunks c
@@ -337,6 +352,7 @@ class SQLiteStore:
                 c.page_number,
                 c.text, 
                 c.token_estimate,
+                c.section_title,
                 d.title,
                 d.source_path
             FROM chunks c
@@ -363,6 +379,7 @@ class SQLiteStore:
         "page_number": row["page_number"],
         "text": row["text"],
         "token_estimate": row["token_estimate"],
+        "section_title": row["section_title"] if "section_title" in row.keys() else None,
         "title": row["title"],
         "source_path": row["source_path"],
     }

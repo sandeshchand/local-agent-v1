@@ -98,6 +98,7 @@ class RetrievalService:
                     "chunk_index":payload.get("chunk_index"),
                     "title":payload.get("title"),
                     "source_path":payload.get("source_path"),
+                    "section_title":payload.get("section_title"),
                     "page_number":payload.get("page_number"),
                     "text":payload.get("text",""),
                     "source":"dense",
@@ -119,13 +120,22 @@ class RetrievalService:
 
         scored_items:list[tuple[float, dict[str, Any]]] = []
         for chunk, score in zip(chunks, scores):
-            title_text = f"{chunk.get('title') or ''}{chunk.get('text') or ''}"
-            title_text_lower = title_text.lower()
-            
-            query_terms = set(query_tokens)
-            overlap_boost = sum(
-                0.25 for term in query_terms if term in title_text_lower 
+            section_text = (
+                f"{chunk.get('section_title') or ''} "
+                f"{chunk.get('title', '')} "
+                f"{chunk.get('text', '')} "
+
             )
+            section_text_lower = section_text.lower()
+            query_terms = set(query_tokens)
+            section_title_lower= (chunk.get("section_title") or "").lower()
+            
+            overlap_boost = 0.0
+            for term in query_terms:
+                if term in section_title_lower:
+                    overlap_boost +=1.25
+                elif term in section_text_lower:
+                    overlap_boost +=0.25
 
             final_score = float(score) + overlap_boost
             scored_items.append(
@@ -139,6 +149,7 @@ class RetrievalService:
                         "chunk_index": chunk.get("chunk_index"),
                         "title": chunk.get("title"),
                         "source_path": chunk.get("source_path"),
+                        "section_title": chunk.get("section_title"),
                         "page_number": chunk.get("page_number"),
                         "text": chunk["text"],
                         "source": "sparse",
