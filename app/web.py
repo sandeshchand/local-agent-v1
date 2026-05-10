@@ -8,10 +8,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from agent.orchestrator import Orchestrator
-from agent.planner import Planner
-from retrieval.query_rewriter import QueryRewriter
-from retrieval.evidence_checker import EvidenceChecker
 
 
 from app.api_models import (
@@ -29,8 +25,6 @@ from app.dependencies import AppDependencies
 from ingestion.file_loader import discover_pdf_files
 from ingestion.pipeline import IngestionPipeline
 from observability.traces import save_trace
-from retrieval.answer_service import AnswerService
-from retrieval.search import RetrievalService
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -89,29 +83,7 @@ def list_documents():
 def chat(request_data: ChatRequest):
     deps = get_deps()
 
-    planner = Planner(chat_client=deps.chat_client)
-    retrieval = RetrievalService(
-        qdrant_store=deps.qdrant_store,
-        sqlite_store=deps.sqlite_store,
-        embedding_client=deps.embedding_client,
-        top_k=deps.config.top_k,
-        use_reranker=deps.config.use_reranker,
-        rerank_model=deps.config.rerank_model,
-        rerank_candidates=deps.config.rerank_candidates,
-    )
-    answer_service = AnswerService(chat_client=deps.chat_client)
-    evidence_checker= EvidenceChecker()
-    query_rewriter = QueryRewriter()
-
-    orchestrator = Orchestrator(
-        planner=planner,
-        retrieval_service=retrieval,
-        answer_service=answer_service,
-        evidence_checker=evidence_checker,
-        query_rewriter=query_rewriter,
-    )
-
-    results = orchestrator.handle_query(request_data.query)
+    results = deps.orchestrator.handle_query(request_data.query)
 
     trace_id = save_trace(
         sqlite_store=deps.sqlite_store,
@@ -126,7 +98,7 @@ def chat(request_data: ChatRequest):
         trace_id=trace_id,
         mode=results["mode"],
         reason=results["reason"],
-        retrieval_query=results["retrieval_query"], 
+        retrieval_query=results.get("retrieval_query"), 
         citations=build_citations(results["citations"]),
     )
 

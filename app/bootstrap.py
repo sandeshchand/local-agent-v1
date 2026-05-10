@@ -46,6 +46,9 @@ def bootstrap_app(env_file: str | Path = ".env") -> AppDependencies:
         embedding_client=embedding_client,
         sqlite_store=sqlite_store,
         top_k=config.top_k,
+        use_reranker=config.use_reranker,
+        rerank_model=config.rerank_model,
+        rerank_candidates=config.rerank_candidates,
     )
     answer_service = AnswerService(
         chat_client=chat_client
