@@ -31,7 +31,7 @@ class DocumentRouter:
             routing_text =(
                 f"{doc['title']}"
                 f"{basename}"
-                f"{doc.get('section_title','')}"
+                f"{doc.get('section_titles','')}"
                 
             ).strip()
             corpus.append(self._tokenize(routing_text))

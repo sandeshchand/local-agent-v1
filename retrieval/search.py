@@ -102,7 +102,7 @@ class RetrievalService:
         per_doc_limit = max(4, limit // max(1, len(candidate_doc_ids)))
         for doc_id in candidate_doc_ids:
             combined.extend(
-                self._dense_search(query, per_doc_limit,doc_id=doc_id)
+                self._dense_search(query=query, limit=per_doc_limit,doc_id=doc_id)
                 )
             
         combined.sort(key=lambda x: x.get("score",0.0),reverse=True)
@@ -146,7 +146,7 @@ class RetrievalService:
             chunks = [
                 chunk
                 for chunk in self.sqlite_store.list_chunks_for_retrieval()
-                if chunk.get("doc_id") in allowed
+                if chunk["doc_id"] in allowed
             ]
         else:
             chunks = self.sqlite_store.list_chunks_for_retrieval(doc_id=doc_id)
