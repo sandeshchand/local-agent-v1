@@ -13,6 +13,7 @@ from app.ollama_client import OllamaChatClient, OllamaEmbeddingClient
 from app.tool_registry import ToolRegistry
 from retrieval.answer_service import AnswerService
 from retrieval.search import RetrievalService
+from retrieval.doc_router import DocumentRouter
 from storage.qdrant_store import  QdrantStore
 from storage.sqlite_store import SQLiteStore
 
@@ -32,6 +33,7 @@ def bootstrap_app(env_file: str | Path = ".env") -> AppDependencies:
 
     sqlite_store = SQLiteStore(config.sqlite_path)
     sqlite_store.initialize()
+    doc_router = DocumentRouter(sqlite_store=sqlite_store)
 
     qdrant_store = QdrantStore(
         storage_path=config.qdrant_path,
@@ -73,6 +75,7 @@ def bootstrap_app(env_file: str | Path = ".env") -> AppDependencies:
         memory_manager=memory_manager,
         verifier=verifier,
         sqlite_store=sqlite_store,
+        doc_router=doc_router,
         max_steps=3,
     )
    

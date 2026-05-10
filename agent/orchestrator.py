@@ -8,6 +8,7 @@ from agent.verifier import Verifier
 from agent.planner import Planner
 from app.tool_registry import ToolRegistry
 from observability.traces import save_trace
+from retrieval.doc_router import DocumentRouter
 from retrieval.answer_service import AnswerService
 from retrieval.evidence_checker import EvidenceChecker
 from retrieval.query_rewriter import QueryRewriter
@@ -24,8 +25,8 @@ class Orchestrator:
                 memory_manager: MemoryManager,
                 verifier: Verifier,
                 sqlite_store: SQLiteStore,
+                doc_router:DocumentRouter | None = None,
                 max_steps: int = 3,       
-              
             ) -> None:
         self.planner = planner
         self.retrieval_service = retrieval_service
@@ -36,6 +37,7 @@ class Orchestrator:
         self.sqlite_store = sqlite_store
         self.tool_router = ToolRouter()
         self.max_steps = max_steps
+        self.doc_router = doc_router 
 
         self.evidence_checker = EvidenceChecker()
         self.query_rewriter = QueryRewriter()
@@ -75,7 +77,16 @@ class Orchestrator:
 
             if action.action_type == "retrieve":
                 retrieval_query = action.retrieve_query or query
-                results = self.retrieval_service.search(retrieval_query)
+                candidate_doc_ids:list[str] | None = None
+                routed_docs:list[dict]  = []
+                if self.doc_router is not None:
+                    routed_docs = self.doc_router.route(retrieval_query, top_n=3)
+                    candidate_doc_ids = [doc["doc_id"] for doc in routed_docs]
+
+                results = self.retrieval_service.search(
+                    query=retrieval_query,
+                    candidate_doc_ids=candidate_doc_ids,
+                )
                 selected_results, judgments = self.evidence_judge.select_evidence(
                     query,
                     results,
@@ -86,6 +97,14 @@ class Orchestrator:
                     "step": step_no,
                     "type": "retrieve",
                     "retrieval_query": retrieval_query,
+                    "routed_docs":[
+                        {
+                            "doc_id":doc["doc_id"],
+                            "title":doc["title"],
+                            "routing_score":doc.get("routing_score",0.0)
+                        }
+                        for doc in routed_docs
+                        ],
                     "result_count": len(results),
                     "selected_count": len(selected_results),
                     "evidence_judgements": [

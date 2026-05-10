@@ -58,6 +58,7 @@ class IngestionPipeline:
                 "source_path": parsed_doc.source_path,
                 "title": parsed_doc.title,
                 "page_number": chunk.page_number,
+                "section_title": chunk.section_title,
                 "text": chunk.text,
             }
 

@@ -41,7 +41,12 @@ class RetrievalService:
         )
     
 
-    def search(self, query: str, doc_id: str | None = None) -> list[dict]:
+    def search(
+        self,
+        query: str, 
+        doc_id: str | None = None,  
+        candidate_doc_ids: list[str] | None = None,  
+        ) -> list[dict]:
         """
         Hybrid retrieval pipeline:
         1. Dense vector retrieval from Qdrant
@@ -53,8 +58,12 @@ class RetrievalService:
         dense_limit = max(self.top_k *5, self.rerank_candidates)
         sparse_limit = max(self.top_k *5, self.rerank_candidates)
 
-        dense_results= self._dense_search(query, dense_limit,doc_id=doc_id)
-        sparse_results= self._sparse_search(query, sparse_limit,doc_id=doc_id)
+        if candidate_doc_ids:
+            dense_results= self._dense_search_many_docs(query, dense_limit,candidate_doc_ids=candidate_doc_ids)
+            sparse_results= self._sparse_search(query, sparse_limit,candidate_doc_ids=candidate_doc_ids)
+        else:
+            dense_results= self._dense_search(query, dense_limit,doc_id=doc_id)
+            sparse_results= self._sparse_search(query, sparse_limit,doc_id=doc_id)
 
         fused = self._rrf_fuse(
             dense_items=dense_results,
@@ -79,6 +88,25 @@ class RetrievalService:
         expanded = self._expand_with_neighbors(ranked)
 
         return expanded[:self.final_context_limit]
+
+    def _dense_search_many_docs(
+        self, 
+        query:str, 
+        limit:int,
+        candidate_doc_ids: list[str],
+        ) -> list[dict]:
+        combined: list[dict] = []
+        if not candidate_doc_ids:
+            return combined
+        
+        per_doc_limit = max(4, limit // max(1, len(candidate_doc_ids)))
+        for doc_id in candidate_doc_ids:
+            combined.extend(
+                self._dense_search(query, per_doc_limit,doc_id=doc_id)
+                )
+            
+        combined.sort(key=lambda x: x.get("score",0.0),reverse=True)
+        return combined[:limit]  
 
     def _dense_search(self, query:str, limit:int,doc_id: str | None = None) -> list[dict]:
         query_vector = self.embedding_client.embed(query)
@@ -105,10 +133,24 @@ class RetrievalService:
                 }
             )
         return items
-    def _sparse_search(self, query:str, limit:int,doc_id: str | None = None) -> list[dict]:
-        chunks = self.sqlite_store.list_chunks_for_retrieval(doc_id=doc_id)
-        if not chunks:
-            return []
+    def _sparse_search(
+        self, 
+        query:str, 
+        limit:int,
+        doc_id: str | None = None,
+        candidate_doc_ids: list[str] | None = None,
+        ) -> list[dict]:
+
+        if candidate_doc_ids:
+            allowed = set(candidate_doc_ids)
+            chunks = [
+                chunk
+                for chunk in self.sqlite_store.list_chunks_for_retrieval()
+                if chunk.get("doc_id") in allowed
+            ]
+        else:
+            chunks = self.sqlite_store.list_chunks_for_retrieval(doc_id=doc_id)
+       
         
         tokenized_corpus = [self._tokenize(chunk["text"]) for chunk in chunks]
         bm25 = BM25Okapi(tokenized_corpus)

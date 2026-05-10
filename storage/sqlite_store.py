@@ -384,6 +384,36 @@ class SQLiteStore:
         "source_path": row["source_path"],
     }
         
+    def list_documents_for_routing(self) -> list[dict[str, Any]]:
+        conn=self.connect()
+        rows=conn.execute(
+            """
+            SELECT
+                d.doc_id,
+                d.title,
+                d.source_path,
+                d.page_count,
+                d.indexed_at,
+                COALESCE(GROUP_CONCAT(DISTINCT c.section_title), '') AS section_titles
+            FROM documents d
+            LEFT JOIN chunks c 
+                ON d.doc_id = c.doc_id
+            GROUP BY d.doc_id, d.title, d.source_path, d.page_count, d.indexed_at
+            ORDER BY d.indexed_at DESC;
+            """
+        ).fetchall()
+        return [
+            {
+                "doc_id": row["doc_id"],
+                "title": row["title"],
+                "source_path": row["source_path"],
+                "page_count": row["page_count"],
+                "indexed_at": row["indexed_at"],
+                "section_titles": row["section_titles"] or "",
+            }
+            for row in rows
+        ]
+
     def close(self) -> None:
         if self._connection is not None:
             self._connection.close()

@@ -5,7 +5,7 @@ from typing import Literal
 
 
 EvidenceLabel = Literal[
-    "MAIN_ANSWER",
+    "DEFINITIVE",
     "SUPPORTING_DETAIL",
     "BACKGROUND",
     "CONFLICTING_OR_SPECULATIVE",
