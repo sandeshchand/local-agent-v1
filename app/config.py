@@ -29,7 +29,7 @@ class AppConfig(BaseModel):
 
 
 def load_config(env_file: str | Path = ".env") -> AppConfig:
-    load_dotenv(dotenv_path=env_file)
+    load_dotenv(dotenv_path=env_file, override=True)
 
     data = {
         "OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL"),

@@ -423,6 +423,87 @@ Then re-ingest your documents.
 * Citation quality
 * Multi-document retrieval hardening
 
+---
+
+## Retrieval Quality Workflow
+
+Phase 1 focuses on making retrieval measurable before adding larger agent features.
+
+### Sora Retrieval Evaluation
+
+The project includes a focused single-document retrieval benchmark:
+
+```text
+test/eval_sora.json
+```
+
+It checks whether retrieval returns the expected pages and answer keywords for the SORA PDF.
+
+Run it with:
+
+```powershell
+.\venv\Scripts\python.exe scripts\eval_retrieval.py --eval-file test\eval_sora.json --output eval\retrieval_report.json
+```
+
+The report is written to:
+
+```text
+eval/retrieval_report.json
+```
+
+Use this before and after retrieval changes. A good retrieval change should improve or preserve:
+
+* expected page coverage
+* expected keyword coverage
+* section-title relevance
+* citation-ready chunk quality
+
+### Sora Answer Evaluation
+
+After retrieval looks healthy, run the full answer-quality benchmark:
+
+```powershell
+.\venv\Scripts\python.exe scripts\eval_answers.py --eval-file test\eval_sora_answers.json --output eval\answer_report.json
+```
+
+The report is written to:
+
+```text
+eval/answer_report.json
+```
+
+This checks:
+
+* required fact coverage
+* optional detail coverage
+* citation presence
+* abstention failures
+* unwanted drift
+
+Use retrieval evaluation first, then answer evaluation. If retrieval is high but answer quality is low, tune answer synthesis rather than chunk search.
+
+### Current Retrieval Improvements
+
+The retrieval pipeline now includes:
+
+* query expansion for common Sora/RAG evaluation intents
+* hybrid dense + BM25 retrieval
+* cross-encoder reranking
+* neighbor expansion
+* section-aware context expansion
+* section-title matched expansion
+* dynamic parent-child retrieval: child chunks are used for search, then larger parent context blocks are assembled from neighboring chunks for answer generation
+* extractive fallback for supported answers when the local LLM over-abstains
+
+For best results after changing chunking or PDF parsing, reset local indexes and re-ingest:
+
+```powershell
+Remove-Item app.db
+Remove-Item -Recurse qdrant_data
+New-Item -ItemType Directory qdrant_data
+.\venv\Scripts\python.exe app\main.py ingest --path data\raw\documents\SORA.pdf
+```
+
 
 ### Planned
 * MCP integration

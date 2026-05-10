@@ -1,0 +1,72 @@
+[
+  {
+    "id": "sora_01",
+    "question": "What is Sora?",
+    "must_have": ["text-to-video", "OpenAI", "February 2024", "realistic or imaginative", "one-minute"],
+    "should_have": ["physical world", "world simulator"],
+    "must_not_have": ["does not contain enough information"]
+  },
+  {
+    "id": "sora_02",
+    "question": "What core model architecture does Sora use?",
+    "must_have": ["diffusion transformer", "time-space compressor", "ViT", "CLIP"],
+    "should_have": ["tokenized latent", "LLM-augmented", "visual prompts"],
+    "must_not_have": ["cascade diffusion model architecture", "does not contain enough information"]
+  },
+  {
+    "id": "sora_03",
+    "question": "Why does Sora train on videos and images at their native sizes?",
+    "must_have": ["native", "durations", "resolutions", "aspect ratios", "composition", "framing"],
+    "should_have": ["square", "flexible"],
+    "must_not_have": ["does not contain enough information"]
+  },
+  {
+    "id": "sora_04",
+    "question": "How does Sora turn visual data into model input?",
+    "must_have": ["lower-dimensional latent space", "spacetime patches", "compressed", "diffusion transformer"],
+    "should_have": ["unified visual representation", "patchifies"],
+    "must_not_have": ["does not contain enough information"]
+  },
+  {
+    "id": "sora_05",
+    "question": "What video compression approaches does the review discuss for Sora?",
+    "must_have": ["spatial-patch compression", "spatial-temporal-patch compression", "patch-level compression", "flexible"],
+    "should_have": ["VAE", "VQ-VAE", "scalable"],
+    "must_not_have": ["does not contain enough information"]
+  },
+  {
+    "id": "sora_06",
+    "question": "How are spacetime latent patches handled before they are fed into the diffusion transformer?",
+    "must_have": ["Patch n", "PNP", "fixed-length sequences", "padding", "super long context window", "3D consistency"],
+    "should_have": ["greedy", "dropping tokens"],
+    "must_not_have": ["does not contain enough information"]
+  },
+  {
+    "id": "sora_07",
+    "question": "How does Sora improve language understanding and prompt following?",
+    "must_have": ["DALL", "captioner", "video", "descriptive caption", "fine-tuning", "GPT-4V"],
+    "should_have": ["prompt extension", "instruction following"],
+    "must_not_have": ["space-time VAE", "does not contain enough information"]
+  },
+  {
+    "id": "sora_08",
+    "question": "What does the review say about prompt engineering for Sora?",
+    "must_have": ["text prompts", "image prompts", "video prompts", "visual anchor", "video extension", "video editing", "video connection"],
+    "should_have": ["mood", "scene", "aligned"],
+    "must_not_have": ["does not contain enough information"]
+  },
+  {
+    "id": "sora_09",
+    "question": "What simulation capabilities does Sora demonstrate?",
+    "must_have": ["3D consistency", "dynamic camera motion", "long-range coherence", "object persistence", "interactions with the world", "Minecraft"],
+    "should_have": ["digital environments", "multi-character"],
+    "must_not_have": ["does not contain enough information"]
+  },
+  {
+    "id": "sora_10",
+    "question": "What limitations of Sora does the review highlight?",
+    "must_have": ["cause-and-effect", "spatial", "temporal", "irrelevant animals or people", "human-computer interaction", "usage limitations", "one-minute"],
+    "should_have": ["public release", "safety", "precise edits"],
+    "must_not_have": ["does not contain enough information"]
+  }
+]

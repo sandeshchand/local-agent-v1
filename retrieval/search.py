@@ -20,8 +20,11 @@ class RetrievalService:
             use_reranker: bool = True,
             rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
             rerank_candidates: int = 20,
-            neighbor_window: int = 1,
-            final_context_limit: int = 6,
+            neighbor_window: int = 2,
+            final_context_limit: int = 24,
+            use_parent_context: bool = True,
+            parent_window: int = 3,
+            parent_max_chars: int = 4200,
             ) -> None:
         self.qdrant_store = qdrant_store
         self.sqlite_store = sqlite_store
@@ -30,6 +33,9 @@ class RetrievalService:
         self.rerank_candidates = max(rerank_candidates, top_k)
         self.neighbor_window = neighbor_window
         self.final_context_limit = final_context_limit
+        self.use_parent_context = use_parent_context
+        self.parent_window = parent_window
+        self.parent_max_chars = parent_max_chars
 
         self.reranker = (
             CrossEncoderReranker(
@@ -86,6 +92,13 @@ class RetrievalService:
                 ranked = fused[: self.top_k]
 
         expanded = self._expand_with_neighbors(ranked)
+        expanded = self._expand_with_section_context(query, expanded)
+        expanded = self._expand_with_title_matched_sections(query, expanded)
+
+        if self.use_parent_context:
+            parent_contexts = self._build_parent_contexts(expanded)
+            if parent_contexts:
+                return parent_contexts[:self.final_context_limit]
 
         return expanded[:self.final_context_limit]
 
@@ -312,12 +325,218 @@ class RetrievalService:
                 seen_chunk_ids.add(neighbor_chunk_id)
 
             if before_neighbors:
-                expanded.append(before_neighbors[-1])
+                expanded.extend(before_neighbors)
 
             if after_neighbors:
-                expanded.append(after_neighbors[0])
+                expanded.extend(after_neighbors)
 
         return expanded
+
+    def _expand_with_section_context(self, query: str, items: list[dict]) -> list[dict]:
+        expanded = list(items)
+        seen_chunk_ids = {item.get("chunk_id") for item in expanded if item.get("chunk_id")}
+        query_terms = set(self._tokenize(query))
+        stop_terms = {
+            "what",
+            "does",
+            "review",
+            "sora",
+            "with",
+            "from",
+            "that",
+            "this",
+            "into",
+            "their",
+            "about",
+        }
+        query_terms = {term for term in query_terms if len(term) >= 4 and term not in stop_terms}
+
+        for anchor in items:
+            doc_id = anchor.get("doc_id")
+            section_title = anchor.get("section_title")
+            if not doc_id or not section_title:
+                continue
+
+            section_chunks = [
+                chunk
+                for chunk in self.sqlite_store.list_chunks_for_retrieval(doc_id=doc_id)
+                if chunk.get("section_title") == section_title
+                and chunk.get("chunk_id") not in seen_chunk_ids
+            ]
+            scored: list[tuple[int, dict]] = []
+            for chunk in section_chunks:
+                section_text = " ".join(
+                    [
+                        chunk.get("section_title") or "",
+                        chunk.get("text") or "",
+                    ]
+                ).lower()
+                overlap = sum(1 for term in query_terms if term in section_text)
+                if overlap:
+                    scored.append((overlap, chunk))
+
+            scored.sort(key=lambda pair: pair[0], reverse=True)
+            for _, chunk in scored[:2]:
+                chunk["source"] = "section_context"
+                chunk["neighbor_role"] = "section_context"
+                chunk["anchor_chunk_id"] = anchor.get("chunk_id")
+                chunk["hybrid_score"] = anchor.get("hybrid_score", anchor.get("score", 0.0))
+                expanded.append(chunk)
+                seen_chunk_ids.add(chunk.get("chunk_id"))
+
+        return expanded
+
+    def _expand_with_title_matched_sections(self, query: str, items: list[dict]) -> list[dict]:
+        expanded = list(items)
+        seen_chunk_ids = {item.get("chunk_id") for item in expanded if item.get("chunk_id")}
+        doc_ids = list(dict.fromkeys(item.get("doc_id") for item in expanded if item.get("doc_id")))
+        if not doc_ids:
+            return expanded
+
+        query_terms = self._meaningful_query_terms(query)
+        if not query_terms:
+            return expanded
+
+        scored: list[tuple[int, dict]] = []
+        for doc_id in doc_ids:
+            for chunk in self.sqlite_store.list_chunks_for_retrieval(doc_id=doc_id):
+                chunk_id = chunk.get("chunk_id")
+                if not chunk_id or chunk_id in seen_chunk_ids:
+                    continue
+
+                section_title = (chunk.get("section_title") or "").lower()
+                text = (chunk.get("text") or "").lower()
+                title_hits = sum(1 for term in query_terms if term in section_title)
+                if title_hits == 0:
+                    continue
+                text_hits = sum(1 for term in query_terms if term in text)
+                score = (title_hits * 5) + text_hits
+                scored.append((score, chunk))
+
+        scored.sort(key=lambda pair: pair[0], reverse=True)
+        for _, chunk in scored[:6]:
+            chunk["source"] = "section_title_match"
+            chunk["neighbor_role"] = "section_title_match"
+            chunk["hybrid_score"] = chunk.get("hybrid_score", chunk.get("score", 0.0))
+            expanded.append(chunk)
+            seen_chunk_ids.add(chunk.get("chunk_id"))
+
+        return expanded
+
+    def _meaningful_query_terms(self, query: str) -> set[str]:
+        stop_terms = {
+            "what",
+            "does",
+            "review",
+            "sora",
+            "with",
+            "from",
+            "that",
+            "this",
+            "into",
+            "their",
+            "about",
+            "core",
+            "model",
+            "use",
+        }
+        return {
+            term
+            for term in self._tokenize(query)
+            if len(term) >= 4 and term not in stop_terms
+        }
+
+    def _build_parent_contexts(self, items: list[dict]) -> list[dict]:
+        parent_items: list[dict] = []
+        seen_parent_keys: set[tuple[str, int, int]] = set()
+
+        for item in items:
+            doc_id = item.get("doc_id")
+            chunk_index = item.get("chunk_index")
+            if doc_id is None or chunk_index is None:
+                continue
+
+            try:
+                anchor_index = int(chunk_index)
+            except (TypeError, ValueError):
+                continue
+
+            start_index = max(0, anchor_index - self.parent_window)
+            end_index = anchor_index + self.parent_window
+            parent_key = (str(doc_id), start_index, end_index)
+            if parent_key in seen_parent_keys:
+                continue
+            seen_parent_keys.add(parent_key)
+
+            chunks = self.sqlite_store.get_neighbor_chunks(
+                doc_id=str(doc_id),
+                chunk_index=anchor_index,
+                window=self.parent_window,
+            )
+            if not chunks:
+                continue
+
+            parent_text_parts: list[str] = []
+            total_chars = 0
+            for chunk in chunks:
+                text = (chunk.get("text") or "").strip()
+                if not text:
+                    continue
+                chunk_header = (
+                    f"[child chunk {chunk.get('chunk_index')} | "
+                    f"page {chunk.get('page_number')} | "
+                    f"section {chunk.get('section_title') or 'Unknown'}]\n"
+                )
+                block = f"{chunk_header}{text}"
+                if total_chars + len(block) > self.parent_max_chars:
+                    remaining = self.parent_max_chars - total_chars
+                    if remaining > 300:
+                        parent_text_parts.append(block[:remaining].rstrip() + "...")
+                    break
+                parent_text_parts.append(block)
+                total_chars += len(block)
+
+            if not parent_text_parts:
+                continue
+
+            page_numbers = [
+                chunk.get("page_number")
+                for chunk in chunks
+                if chunk.get("page_number") is not None
+            ]
+            chunk_indexes = [
+                chunk.get("chunk_index")
+                for chunk in chunks
+                if chunk.get("chunk_index") is not None
+            ]
+            first_chunk = chunks[0]
+            parent_items.append(
+                {
+                    "id": f"{doc_id}-parent-{start_index}-{end_index}",
+                    "chunk_id": f"{doc_id}-parent-{start_index}-{end_index}",
+                    "doc_id": doc_id,
+                    "chunk_index": anchor_index,
+                    "child_chunk_ids": [
+                        chunk.get("chunk_id")
+                        for chunk in chunks
+                        if chunk.get("chunk_id")
+                    ],
+                    "child_chunk_indexes": chunk_indexes,
+                    "title": item.get("title") or first_chunk.get("title"),
+                    "source_path": item.get("source_path") or first_chunk.get("source_path"),
+                    "section_title": item.get("section_title") or first_chunk.get("section_title"),
+                    "page_number": min(page_numbers) if page_numbers else item.get("page_number"),
+                    "page_numbers": sorted(set(page_numbers)),
+                    "text": "\n\n".join(parent_text_parts),
+                    "source": "parent_context",
+                    "neighbor_role": "parent_context",
+                    "anchor_chunk_id": item.get("chunk_id"),
+                    "hybrid_score": item.get("hybrid_score", item.get("score", 0.0)),
+                    "reranker_score": item.get("reranker_score"),
+                }
+            )
+
+        return parent_items
                 
 
     def _tokenize(self, text: str) -> list[str]:

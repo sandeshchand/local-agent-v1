@@ -84,7 +84,7 @@ def parse_pdf(pdf_path: str | Path)-> ParsedDocument:
             text=text,
             fallback=current_section_title
         )
-        if current_section_title:
+        if page_section_title:
             current_section_title = page_section_title
         pages.append(
             ParsedPage(

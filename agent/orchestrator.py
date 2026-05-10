@@ -76,7 +76,7 @@ class Orchestrator:
                 break
 
             if action.action_type == "retrieve":
-                retrieval_query = action.retrieve_query or query
+                retrieval_query = self.query_rewriter.rewrite(action.retrieve_query or query)
                 candidate_doc_ids:list[str] | None = None
                 routed_docs:list[dict]  = []
                 if self.doc_router is not None:
@@ -90,7 +90,7 @@ class Orchestrator:
                 selected_results, judgments = self.evidence_judge.select_evidence(
                     query,
                     results,
-                    max_items=4,
+                    max_items=8,
                     
                 )
                 state.steps.append({
@@ -209,6 +209,7 @@ class Orchestrator:
             "tool_results": [r.model_dump() for r in state.tool_results],
             "verification": verification.model_dump(),
         }   
+
 
   
 
