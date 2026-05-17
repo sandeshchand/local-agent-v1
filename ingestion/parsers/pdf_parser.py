@@ -31,11 +31,78 @@ NUMBERED_HEADING_PATTERN = re.compile(
     r"^\s*\d+(\.\d+){0,3}\s+[A-Z][A-Za-z0-9 ,:/()'’\-]{2,}$"
 )
 
+BOILERPLATE_HEADING_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in [
+        r"^https?://",
+        r"https?://\S+",
+        r"^\d{1,2}/\d{1,2}/\d{2,4},\s+\d{1,2}:\d{2}\s+[AP]M\b",
+        r"^\d+\s*/\s*\d+$",
+        r"^member-only story\b",
+        r"^listen\s+share\s+more\b",
+        r"^follow$",
+        r"^responses?\s*\(\d+\)$",
+        r"^see all from\b",
+        r"^more from\b",
+        r"^recommended from medium\b",
+        r"^read next:?$",
+        r"^photo by\b",
+        r"^image by\b",
+        r"^published in\b",
+        r"^open in app$",
+        r"^search$",
+        r"^previous$",
+        r"^written by\b",
+        r"^in by$",
+        r"^subscribe\b",
+        r"^upgrade to paid\b",
+        r"^before you go:?$",
+        r"^further reads?:?$",
+        r"^see more recommendations\b",
+        r"^create your own chatbot\b",
+        r"^\d+\s+min read\b",
+        r"^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\b",
+    ]
+]
+
+TERMINAL_HEADING_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in [
+        r"^no responses yet$",
+        r"^responses?\s*(\(\d+\))?$",
+        r"^read next:?$",
+        r"^more from\b",
+        r"^recommended from\b",
+        r"^see more recommendations\b",
+        r"^before you go:?$",
+        r"^further reads?:?$",
+    ]
+]
+
+
+def is_boilerplate_heading(line: str) -> bool:
+    normalized = re.sub(r"\s+", " ", line.strip())
+    if not normalized:
+        return False
+    if any(pattern.search(normalized) for pattern in BOILERPLATE_HEADING_PATTERNS):
+        return True
+    if " | by " in normalized and " | " in normalized and len(normalized) > 90:
+        return True
+    return False
+
+
+def is_terminal_heading(line: str) -> bool:
+    normalized = re.sub(r"\s+", " ", line.strip())
+    return any(pattern.search(normalized) for pattern in TERMINAL_HEADING_PATTERNS)
+
+
 def is_heading_line(line:str)->bool:
     line = line.strip()
     if not line:
         return False
     if len(line) > 120:
+        return False
+    if is_boilerplate_heading(line):
         return False
 
     if NUMBERED_HEADING_PATTERN.match(line):
@@ -44,13 +111,20 @@ def is_heading_line(line:str)->bool:
     if HEADING_PATTERN.match(line):
         # reject lines that look like normal paragraphs
         word_count = len(line.split())
-        if word_count <=12 and not line.endswith("."):
+        titleish_words = sum(1 for word in line.split() if word[:1].isupper() or word.isupper())
+        if word_count <=12 and not line.endswith(".") and titleish_words >= max(1, word_count // 2):
             return True
     return False
 
 def extract_page_sections_title(text:str, fallback:str | None = None) ->str| None:
     lines = [line.strip() for line in text.splitlines() if line.strip()]
-    for line in lines[:12]:
+    clean_lines = []
+    for line in lines:
+        if is_terminal_heading(line):
+            break
+        if not is_boilerplate_heading(line):
+            clean_lines.append(line)
+    for line in clean_lines[:16]:
         if is_heading_line(line):
             return line
     return fallback

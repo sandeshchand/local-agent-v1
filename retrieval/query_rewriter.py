@@ -32,7 +32,7 @@ class QueryRewriter:
             cleaned.append(token)
 
         candidate = " ".join(dict.fromkeys(cleaned)).strip()
-        expansion_terms = self._domain_expansion_terms(original_query)
+        expansion_terms = self._intent_expansion_terms(original_query)
         expanded = " ".join(dict.fromkeys([original_query, candidate, *expansion_terms])).strip()
         return expanded or original_query
 
@@ -55,15 +55,7 @@ class QueryRewriter:
         query_lower = original_query.lower()
 
         # General intent expansion, still domain-independent enough for papers/docs
-        if any(w in query_lower for w in ["types", "categories", "kinds"]):
-            terms.extend(["types", "categories", "section", "subsection"])
-
-        if any(w in query_lower for w in ["safety", "risk", "concern", "trustworthiness"]):
-            terms.extend(["safety", "risk", "misuse", "privacy", "harmful", "attack"])
-
-        if any(w in query_lower for w in ["instruction", "follow", "following"]):
-            terms.extend(["instruction", "caption", "captioner", "fine-tune", "descriptive"])
-        terms.extend(self._domain_expansion_terms(original_query))
+        terms.extend(self._intent_expansion_terms(original_query))
 
         # Deduplicate
         terms = list(dict.fromkeys(t for t in terms if t))
@@ -73,123 +65,35 @@ class QueryRewriter:
 
         return f"{original_query} {' '.join(terms)}".strip()
 
-    def _domain_expansion_terms(self, query: str) -> list[str]:
+    def _intent_expansion_terms(self, query: str) -> list[str]:
         query_lower = query.lower()
         terms: list[str] = []
 
-        if "architecture" in query_lower or "core model" in query_lower:
-            terms.extend(
-                [
-                    "diffusion transformer",
-                    "time-space compressor",
-                    "spacetime latent patches",
-                    "ViT",
-                    "CLIP",
-                    "conditioning",
-                    "tokenized latent",
-                ]
-            )
+        if any(word in query_lower for word in ["input", "prompt", "instruction", "query"]):
+            terms.extend(["input", "prompt", "instruction", "user", "natural language", "text"])
 
-        if "native" in query_lower or "sizes" in query_lower or "aspect ratio" in query_lower:
-            terms.extend(
-                [
-                    "variable durations",
-                    "resolutions",
-                    "aspect ratios",
-                    "flexible sizes",
-                    "composition",
-                    "framing",
-                    "square crop",
-                ]
-            )
+        if any(word in query_lower for word in ["application", "applications", "areas", "use case", "uses"]):
+            terms.extend(["applications", "use cases", "areas", "domains", "industries", "sectors", "examples"])
 
-        if "visual data" in query_lower or "model input" in query_lower:
-            terms.extend(
-                [
-                    "unified visual representation",
-                    "lower-dimensional latent space",
-                    "spacetime patches",
-                    "compressed video",
-                    "diffusion transformer",
-                ]
-            )
+        if any(word in query_lower for word in ["architecture", "framework", "component", "components", "core model"]):
+            terms.extend(["architecture", "framework", "components", "module", "model", "mechanism"])
 
-        if "compression" in query_lower:
-            terms.extend(
-                [
-                    "video compression network",
-                    "spatial-patch compression",
-                    "spatial-temporal-patch compression",
-                    "patch-level compression",
-                    "VAE",
-                    "VQ-VAE",
-                ]
-            )
+        if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
+            terms.extend(["representation", "encoding", "tokens", "patches", "latent", "compressed", "input", "encoder", "transformer"])
 
-        if "spacetime latent" in query_lower or "fed into" in query_lower:
-            terms.extend(
-                [
-                    "Patch n Pack",
-                    "PNP",
-                    "fixed-length sequences",
-                    "padding tokens",
-                    "super long context window",
-                    "3D consistency",
-                ]
-            )
+        if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):
+            terms.extend(["native", "duration", "resolution", "aspect ratio", "format", "composition", "framing", "crop", "resize"])
 
-        if "language" in query_lower or "prompt following" in query_lower or "instruction" in query_lower:
-            terms.extend(
-                [
-                    "DALL-E 3",
-                    "captioner",
-                    "descriptive captions",
-                    "video descriptive caption pairs",
-                    "fine-tune Sora",
-                    "GPT-4V",
-                    "prompt extension",
-                ]
-            )
+        if any(word in query_lower for word in ["follow", "following", "detailed", "language", "understanding"]):
+            terms.extend(["instruction", "following", "caption", "description", "fine-tune", "training", "prompt"])
 
-        if "prompt engineering" in query_lower:
-            terms.extend(
-                [
-                    "text prompt",
-                    "image prompt",
-                    "video prompt",
-                    "visual anchor",
-                    "video extension",
-                    "video editing",
-                    "video connection",
-                ]
-            )
+        if any(word in query_lower for word in ["limitation", "limitations", "risk", "challenge", "weakness", "constraint"]):
+            terms.extend(["limitations", "challenges", "constraints", "failure", "risk", "issue", "accuracy", "usage"])
 
-        if "simulation" in query_lower or "capabilities" in query_lower:
-            terms.extend(
-                [
-                    "3D consistency",
-                    "dynamic camera motion",
-                    "long-range coherence",
-                    "object permanence",
-                    "interactions with the world",
-                    "Minecraft",
-                    "digital environments",
-                ]
-            )
+        if any(word in query_lower for word in ["different", "earlier", "previous", "compare", "compared"]):
+            terms.extend(["different", "previous", "earlier", "compared", "unlike", "improvement"])
 
-        if "limitation" in query_lower or "limitations" in query_lower:
-            terms.extend(
-                [
-                    "physical principles",
-                    "cause and effect",
-                    "spatial",
-                    "temporal",
-                    "irrelevant animals or people",
-                    "human-computer interaction",
-                    "usage limitation",
-                    "public access",
-                    "one minute",
-                ]
-            )
+        if any(word in query_lower for word in ["capability", "capabilities", "simulate", "simulation", "simulator", "ability"]):
+            terms.extend(["capabilities", "ability", "simulate", "simulation", "environment", "world", "consistency", "coherence"])
 
         return list(dict.fromkeys(terms))

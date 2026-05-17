@@ -54,6 +54,7 @@ app.db
 
 # Vector store / local storage
 qdrant_data/
+qdrant_data_old/
 data/qdrant/
 data/sqlite/
 
@@ -61,6 +62,8 @@ data/sqlite/
 data/processed/
 data/evals/
 data/logs/
+eval/*_report.json
+eval/.tmp_selected_eval.json
 query_results.txt
 write_test.txt
 

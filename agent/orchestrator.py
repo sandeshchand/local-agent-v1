@@ -93,6 +93,7 @@ class Orchestrator:
                     max_items=8,
                     
                 )
+                answer_results = self._merge_answer_context(selected_results, results, max_items=8)
                 state.steps.append({
                     "step": step_no,
                     "type": "retrieve",
@@ -107,6 +108,7 @@ class Orchestrator:
                         ],
                     "result_count": len(results),
                     "selected_count": len(selected_results),
+                    "answer_context_count": len(answer_results),
                     "evidence_judgements": [
                         {
                             "label":j.label,
@@ -119,13 +121,13 @@ class Orchestrator:
                     "notes":action.notes,
                 })
                 
-                if selected_results:
-                    state.retrieved_items= selected_results
-                    used_citations= selected_results[:]
+                if answer_results:
+                    state.retrieved_items= answer_results
+                    used_citations= answer_results[:]
                     
                     answer = self.answer_service.answer_from_context(
                         query= query, 
-                        results=selected_results,
+                        results=answer_results,
                         memory_context = self.memory_manager.format_memory_context(memory),
                         tool_context="",
                     )
@@ -173,8 +175,33 @@ class Orchestrator:
         verification = self.verifier.verify(
             answer=state.final_answer,
             retrieved_items=used_citations,
+            query=query,
         
         )
+
+        if used_citations and verification.status != "verified":
+            repaired_answer = self.answer_service.repair_answer(
+                query=query,
+                answer=state.final_answer,
+                results=used_citations,
+                issues=verification.issues,
+            )
+            repaired_verification = self.verifier.verify(
+                answer=repaired_answer,
+                retrieved_items=used_citations,
+                query=query,
+            )
+            state.steps.append(
+                {
+                    "type": "answer_repair",
+                    "issues": verification.issues,
+                    "repaired": repaired_answer != state.final_answer,
+                    "verification_after_repair": repaired_verification.model_dump(),
+                }
+            )
+            if repaired_verification.status == "verified" or repaired_answer != state.final_answer:
+                state.final_answer = repaired_answer
+                verification = repaired_verification
 
         self.memory_manager.save_assistant_turn(
             session_id=session_id,
@@ -209,6 +236,26 @@ class Orchestrator:
             "tool_results": [r.model_dump() for r in state.tool_results],
             "verification": verification.model_dump(),
         }   
+
+    def _merge_answer_context(
+        self,
+        selected_results: list[dict],
+        retrieved_results: list[dict],
+        max_items: int,
+    ) -> list[dict]:
+        merged: list[dict] = []
+        seen: set[str] = set()
+
+        for item in [*selected_results, *retrieved_results]:
+            item_id = str(item.get("chunk_id") or item.get("id") or id(item))
+            if item_id in seen:
+                continue
+            seen.add(item_id)
+            merged.append(item)
+            if len(merged) >= max_items:
+                break
+
+        return merged
 
 
   

@@ -127,33 +127,44 @@ Return only valid JSON:
         score = self._query_overlap_count(query, item) * 2
 
         query_lower = query.lower()
-        if "limitation" in query_lower:
-            limitation_phrases = [
-                "physical principles",
-                "cause and effect",
-                "physical plausibility",
-                "simulation of motion",
-                "spatial",
-                "temporal",
-                "irrelevant animals",
-                "irrelevant animals or people",
-                "human-computer interaction",
-                "hci",
-                "usage limitation",
-                "public access",
-                "safety and readiness",
-                "one minute",
+        query_terms = self._query_terms(query)
+        section_text = " ".join(
+            [
+                item.get("section_title") or "",
+                item.get("title") or "",
             ]
-            score += sum(3 for phrase in limitation_phrases if phrase in evidence_text)
-            page_number = item.get("page_number")
-            try:
-                page_int = int(page_number)
-            except (TypeError, ValueError):
-                page_int = 0
-            if 22 <= page_int <= 23:
-                score += 8
+        ).lower()
+
+        important_query_phrases = self._query_phrases(query_lower)
+        score += sum(6 for phrase in important_query_phrases if phrase in section_text)
+        score += sum(3 for phrase in important_query_phrases if phrase in evidence_text)
+        if query_terms and all(term in evidence_text for term in query_terms):
+            score += 4
+
+        for term in self._intent_terms(query_lower):
+            if term in section_text:
+                score += 5
+            if term in evidence_text:
+                score += 2
 
         return score
+
+    def _query_phrases(self, query_lower: str) -> list[str]:
+        phrases: list[str] = []
+        for separator in [" about ", " say about ", " does ", " do "]:
+            if separator in query_lower:
+                tail = query_lower.split(separator, 1)[1]
+                tail = re.sub(r"\?$", "", tail).strip()
+                if len(tail.split()) >= 2:
+                    phrases.append(tail)
+        words = [
+            word
+            for word in re.findall(r"\b[a-zA-Z][a-zA-Z0-9\-]{3,}\b", query_lower)
+            if word not in self._stop_words()
+        ]
+        for index in range(len(words) - 1):
+            phrases.append(f"{words[index]} {words[index + 1]}")
+        return list(dict.fromkeys(phrases))
 
     def _has_query_overlap(self, query: str, item: dict) -> bool:
         query_terms = self._query_terms(query)
@@ -162,19 +173,21 @@ Return only valid JSON:
 
         evidence_text = self._evidence_text(item)
         matches = self._query_overlap_count(query, item)
-        phrase_hits = sum(
-            1
-            for phrase in [
-                "spatial-patch compression",
-                "spatial-temporal-patch compression",
-                "patch-level compression",
-            ]
-            if phrase in evidence_text
-        )
-        return matches >= min(2, len(query_terms)) or phrase_hits >= 1
+        intent_hits = sum(1 for term in self._intent_terms(query.lower()) if term in evidence_text)
+        return matches >= min(2, len(query_terms)) or intent_hits >= 1
 
     def _query_terms(self, query: str) -> set[str]:
         stop_words = {
+            *self._stop_words(),
+        }
+        return {
+            token
+            for token in re.findall(r"\b\w+\b", query.lower())
+            if len(token) >= 4 and token not in stop_words
+        }
+
+    def _stop_words(self) -> set[str]:
+        return {
             "the",
             "and",
             "for",
@@ -183,7 +196,6 @@ Return only valid JSON:
             "does",
             "review",
             "discuss",
-            "sora",
             "are",
             "how",
             "why",
@@ -191,11 +203,13 @@ Return only valid JSON:
             "that",
             "from",
             "into",
-        }
-        return {
-            token
-            for token in re.findall(r"\b\w+\b", query.lower())
-            if len(token) >= 4 and token not in stop_words
+            "about",
+            "they",
+            "their",
+            "before",
+            "after",
+            "using",
+            "uses",
         }
 
     def _evidence_text(self, item: dict) -> str:
@@ -206,3 +220,25 @@ Return only valid JSON:
                 item.get("text") or "",
             ]
         ).lower()
+
+    def _intent_terms(self, query_lower: str) -> list[str]:
+        terms: list[str] = []
+        if any(word in query_lower for word in ["input", "prompt", "instruction", "query"]):
+            terms.extend(["input", "prompt", "instruction", "user", "text", "natural language"])
+        if any(word in query_lower for word in ["application", "applications", "areas", "use case", "uses"]):
+            terms.extend(["application", "applications", "use case", "domain", "area", "industry", "sector"])
+        if any(word in query_lower for word in ["architecture", "framework", "component", "core model"]):
+            terms.extend(["architecture", "framework", "component", "module", "mechanism"])
+        if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
+            terms.extend(["representation", "encoding", "token", "patch", "latent", "compressed", "input"])
+        if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):
+            terms.extend(["native", "duration", "resolution", "aspect ratio", "format", "composition", "framing", "crop", "resize"])
+        if any(word in query_lower for word in ["follow", "following", "detailed", "language", "understanding"]):
+            terms.extend(["instruction", "following", "caption", "description", "training", "fine-tune", "prompt"])
+        if any(word in query_lower for word in ["limitation", "limitations", "risk", "challenge", "weakness", "constraint"]):
+            terms.extend(["limitation", "challenge", "constraint", "failure", "risk", "issue", "accuracy", "usage"])
+        if any(word in query_lower for word in ["different", "earlier", "previous", "compare", "compared"]):
+            terms.extend(["different", "previous", "earlier", "compared", "unlike", "improvement"])
+        if any(word in query_lower for word in ["capability", "capabilities", "simulate", "simulation", "simulator", "ability"]):
+            terms.extend(["capability", "ability", "simulate", "simulation", "environment", "world", "consistency", "coherence"])
+        return list(dict.fromkeys(terms))

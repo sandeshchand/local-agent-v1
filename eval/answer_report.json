@@ -1,27 +1,26 @@
 {
-  "average_score": 6.14,
+  "average_score": 6.65,
   "items": [
     {
       "id": "sora_01",
       "question": "What is Sora?",
-      "score": 9.5,
-      "key_score": 5.5,
-      "optional_score": 0.5,
+      "score": 6.8,
+      "key_score": 3.3,
+      "optional_score": 0.0,
       "citation_score": 1.5,
       "focus_score": 2.0,
       "matched_must_have": [
         "text-to-video",
         "OpenAI",
-        "February 2024",
+        "February 2024"
+      ],
+      "missing_must_have": [
         "realistic or imaginative",
         "one-minute"
       ],
-      "missing_must_have": [],
-      "matched_should_have": [
-        "physical world"
-      ],
+      "matched_should_have": [],
       "triggered_must_not_have": [],
-      "answer": "- **Definition/Category:** Sora is a text-to-video generative AI model [1].\n- **Creator/source/date:** It was released by OpenAI in February 2024 [1].\n- **Main capability:** The model can generate videos of realistic or imaginative scenes from text instructions, showing potential in simulating the physical world. It excels at creating detailed videos with various characters within elaborately crafted settings and can produce videos up to one minute long while maintaining consistent storytelling [1, 5].\n- **Important scope or limit:** Sora's performance is limited by its inconsistent handling of physical principles and complex interactions among objects, often failing in accurately depicting specific examples of cause and effect. It also generates movements that do not always adhere to realistic physical modeling [7].\n\nCitation:\n[1] Yixin Liu et al., \"Sora: A Review on Background, Technology, Limitations, and Opportunities of Large Vision Models,\" SORA (2024).",
+      "answer": "Sora: A Review on Background, Technology, Limitations, and Opportunities of Large Vision Models Yixin Liu1* Kai Zhang1* Yuan Li1* Zhiling Yan1* Chujie Gao1* Ruoxi Chen1* Zhengqing Yuan1* Yue Huang1* Hanchi Sun1* Jianfeng Gao2 Lifang He1 Lichao Sun1† 1Lehigh University 2Microsoft Research Abstract Sora is a text-to-video generative AI model, released by OpenAI in February 2024. [1] Based on public technical reports and reverse engineering, this paper presents a comprehensive review of the model’s background, related technologies, applications, remaining challenges, and future directions of text-to-video AI models. [1] We discuss the main challenges and limitations that need to be addressed to widely deploy Sora, such as ensuring safe and unbiased video generation. [1] This enables the generation of diverse training scenarios for robots, mitigating the limitations imposed by the scarcity of real- world data. [4]",
       "citations": [
         {
           "rank": 1,
@@ -66,16 +65,6 @@
         },
         {
           "rank": 5,
-          "chunk_id": "58617e8e36236d01-parent-79-85",
-          "page": 21,
-          "pages": [
-            21,
-            22
-          ],
-          "section": "5 Discussion"
-        },
-        {
-          "rank": 6,
           "chunk_id": "58617e8e36236d01-parent-82-88",
           "page": 22,
           "pages": [
@@ -85,7 +74,7 @@
           "section": "5 Discussion"
         },
         {
-          "rank": 7,
+          "rank": 6,
           "chunk_id": "58617e8e36236d01-parent-83-89",
           "page": 22,
           "pages": [
@@ -95,8 +84,18 @@
           "section": "5 Discussion"
         },
         {
-          "rank": 8,
+          "rank": 7,
           "chunk_id": "58617e8e36236d01-parent-8-14",
+          "page": 3,
+          "pages": [
+            3,
+            4
+          ],
+          "section": "1 Introduction"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-6-12",
           "page": 3,
           "pages": [
             3,
@@ -109,26 +108,25 @@
     {
       "id": "sora_02",
       "question": "What core model architecture does Sora use?",
-      "score": 8.62,
-      "key_score": 4.12,
-      "optional_score": 1.0,
+      "score": 6.92,
+      "key_score": 2.75,
+      "optional_score": 0.67,
       "citation_score": 1.5,
       "focus_score": 2.0,
       "matched_must_have": [
         "diffusion transformer",
-        "time-space compressor",
         "CLIP"
       ],
       "missing_must_have": [
+        "time-space compressor",
         "ViT"
       ],
       "matched_should_have": [
-        "tokenized latent",
         "LLM-augmented",
         "visual prompts"
       ],
       "triggered_must_not_have": [],
-      "answer": "Name the core model architecture and list the supported components.\n\n- Core Architecture Name: Diffusion Transformer [4]\n\n- Components/Parts:\n  - Time-space compressor (maps original video into latent space)\n  - Vision Transformer (processes tokenized latent representation and outputs denoised latent representation) [26]\n  - CLIP-like conditioning mechanism (receives LLM-augmented user instructions and potentially visual prompts to guide the diffusion model) [4]\n\n- Conditioning/Input Mechanism: \n  The CLIP-like conditioning mechanism receives LLM-augmented user instructions and potentially visual prompts to guide the diffusion model.",
+      "answer": "While numerous LLMs, such as Chat- GPT and GPT-4, exhibit emergent abilities, vision models demonstrating comparable capabilities have been scarce until the advent of Sora. [1] Utilizing the diffusion transformer architecture [4] (see Section 3.2.4),Sora is the first model to embrace the diversity of visual data and can sample in a wide array of video and image formats, ranging from widescreen 1920x1080p videos to vertical 1080x1920p videos and everything in between without compromising their original dimensions. [1] According to Sora’s technical report, it is the first vision model to exhibit confirmed emergent abilities, marking a significant milestone in the field of computer vision. [1] (3) A CLIP-like [26] conditioning mechanism receives LLM-augmented user instructions and potentially visual prompts to guide the diffusion model to generate styled or themed videos. [1]",
       "citations": [
         {
           "rank": 1,
@@ -154,17 +152,6 @@
         },
         {
           "rank": 3,
-          "chunk_id": "58617e8e36236d01-parent-22-28",
-          "page": 6,
-          "pages": [
-            6,
-            7,
-            8
-          ],
-          "section": "3.2 Data Pre-processing"
-        },
-        {
-          "rank": 4,
           "chunk_id": "58617e8e36236d01-parent-23-29",
           "page": 7,
           "pages": [
@@ -174,7 +161,7 @@
           "section": "3.2.2 Unified Visual Representation"
         },
         {
-          "rank": 5,
+          "rank": 4,
           "chunk_id": "58617e8e36236d01-parent-37-43",
           "page": 10,
           "pages": [
@@ -185,7 +172,7 @@
           "section": "3.2.6 Diffusion Transformer"
         },
         {
-          "rank": 6,
+          "rank": 5,
           "chunk_id": "58617e8e36236d01-parent-24-30",
           "page": 7,
           "pages": [
@@ -196,7 +183,7 @@
           "section": "3.2.2 Unified Visual Representation"
         },
         {
-          "rank": 7,
+          "rank": 6,
           "chunk_id": "58617e8e36236d01-parent-16-22",
           "page": 5,
           "pages": [
@@ -206,7 +193,7 @@
           "section": "2.2 Advanced Concepts"
         },
         {
-          "rank": 8,
+          "rank": 7,
           "chunk_id": "58617e8e36236d01-parent-17-23",
           "page": 5,
           "pages": [
@@ -215,6 +202,17 @@
             7
           ],
           "section": "2.2 Advanced Concepts"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-22-28",
+          "page": 6,
+          "pages": [
+            6,
+            7,
+            8
+          ],
+          "section": "3.2 Data Pre-processing"
         }
       ]
     },
@@ -237,7 +235,7 @@
       "missing_must_have": [],
       "matched_should_have": [],
       "triggered_must_not_have": [],
-      "answer": "While numerous LLMs, such as Chat- GPT and GPT-4, exhibit emergent abilities, vision models demonstrating comparable capabilities have been scarce until the advent of Sora. [1] 3.2 Data Pre-processing 3.2.1 Variable Durations, Resolutions, Aspect Ratios One distinguishing feature of Sora is its ability to train on, understand, and generate videos and images at their native sizes [3] as illustrated in Figure 5. [1] [child chunk 24 | page 7 | section 3.2 Data Pre-processing] Utilizing the diffusion transformer architecture [4] (see Section 3.2.4),Sora is the first model to embrace the diversity of visual data and can sample in a wide array of video and image formats, ranging from widescreen 1920x1080p videos to vertical 1080x1920p videos and everything in between without compromising their original dimensions. [1] Training on data in their native sizes signif- icantly improves composition and framing in the generated videos. [1]",
+      "answer": "While numerous LLMs, such as Chat- GPT and GPT-4, exhibit emergent abilities, vision models demonstrating comparable capabilities have been scarce until the advent of Sora. [1] 3.2 Data Pre-processing 3.2.1 Variable Durations, Resolutions, Aspect Ratios One distinguishing feature of Sora is its ability to train on, understand, and generate videos and images at their native sizes [3] as illustrated in Figure 5. [1] Utilizing the diffusion transformer architecture [4] (see Section 3.2.4),Sora is the first model to embrace the diversity of visual data and can sample in a wide array of video and image formats, ranging from widescreen 1920x1080p videos to vertical 1080x1920p videos and everything in between without compromising their original dimensions. [1] Training on data in their native sizes significantly improves composition and framing in the generated videos. [1]",
       "citations": [
         {
           "rank": 1,
@@ -284,17 +282,6 @@
         },
         {
           "rank": 5,
-          "chunk_id": "58617e8e36236d01-parent-25-31",
-          "page": 7,
-          "pages": [
-            7,
-            8,
-            9
-          ],
-          "section": "3.2.2 Unified Visual Representation"
-        },
-        {
-          "rank": 6,
           "chunk_id": "58617e8e36236d01-parent-21-27",
           "page": 6,
           "pages": [
@@ -305,7 +292,7 @@
           "section": "3.2 Data Pre-processing"
         },
         {
-          "rank": 7,
+          "rank": 6,
           "chunk_id": "58617e8e36236d01-parent-19-25",
           "page": 6,
           "pages": [
@@ -313,6 +300,17 @@
             7
           ],
           "section": "2.2 Advanced Concepts"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-25-31",
+          "page": 7,
+          "pages": [
+            7,
+            8,
+            9
+          ],
+          "section": "3.2.2 Unified Visual Representation"
         },
         {
           "rank": 8,
@@ -329,10 +327,10 @@
     {
       "id": "sora_04",
       "question": "How does Sora turn visual data into model input?",
-      "score": 2.88,
+      "score": 4.88,
       "key_score": 1.38,
-      "optional_score": 0.0,
-      "citation_score": 0.0,
+      "optional_score": 0.5,
+      "citation_score": 1.5,
       "focus_score": 1.5,
       "matched_must_have": [
         "diffusion transformer"
@@ -342,23 +340,14 @@
         "spacetime patches",
         "compressed"
       ],
-      "matched_should_have": [],
+      "matched_should_have": [
+        "unified visual representation"
+      ],
       "triggered_must_not_have": [],
-      "answer": "Sora processes diverse visual inputs by transforming them into a unified representation to facilitate large-scale training of generative models. Here's how Sora handles the processing and generation of video content:\n\n1. **Patchification and Token Embedding**:\n   - **Initial Patchification**: Sora uses spatial-temporal patchification, extracting non-overlapping or overlapping tubelets that span the spatiotemporal input volume.\n   - **Token Embedding**: These patches are then embedded into tokens.\n\n2. **Handling Variability in Latent Space Dimensions**:\n   - The number of latent feature chunks or patches can vary across different video types. This variability needs to be managed before feeding patches into the diffusion transformer's input layers.\n   \n3. **Patch Packing (PNP)**: \n   - Sora likely uses a method called Patch n’ Pack (PNP) which packs multiple patches from different images into a single sequence, inspired by example packing in natural language processing.\n   - This method helps accommodate efficient training on variable length inputs and token dropping as data augmentation.\n\n4. **Token Packing**:\n   - For packing tokens, Sora might use a simple greedy approach that adds examples to the first sequence with enough remaining space. If no more examples fit, padding tokens are used to fill sequences for batched operations.\n   \n5. **Handling Different Video Durations**:\n   - Spacetime latent patches from long-duration videos can be packed into one sequence, while those from several short-duration videos are concatenated in another sequence.\n\n6. **Token Dropping Control**:\n   - Token dropping is controlled by either dropping similar tokens or using a token drop rate scheduler.\n   \n7. **Maintaining 3D Consistency**:\n   - To ensure fine-grained details during training, Sora likely uses a super long context window and packs all tokens from videos, although this approach can be computationally expensive.\n\nBy following these steps, Sora efficiently processes various video inputs into a unified latent space for the diffusion transformer to generate high-fidelity video outputs.",
+      "answer": "Just as the original design of diffusion transformers seeks simplicity and scalability [31], Sora’s strategy of training on data at their native sizes eschews traditional AI reliance on human-derived abstractions, favoring instead a generalist method that scales with computational power. [1] In the rest of this section, we try to reverse engineer the architecture design of Sora and discuss related technologies to achieve this amazing feature. [1] 3.2.2 Unified Visual Representation To effectively process diverse visual inputs including images and videos with varying durations, resolutions, and aspect ratios, a crucial approach involves transforming all forms of visual data into a unified represen- tation, which facilitates the large-scale training of generative models. [1] To address this, one can either sample a specific num- ber of frames (padding or temporal interpolation [34] may be needed for much shorter videos) or define a universally extended (super long) input length for subsequent processing (more details are described in Section 3.2.4); Utilization of pre-trained visual encoders – for processing videos of high resolution, lever- aging existing pre-trained visual encoders, such as the V AE encoder from Stable Diffusion [19], is advis- able for most researchers while Sora’s team is expected to train their own compression network with a decoder (the video generator) from scratch via the manner employed in training latent diffusion models [19, 35, 36]. [2]",
       "citations": [
         {
           "rank": 1,
-          "chunk_id": "58617e8e36236d01-parent-24-30",
-          "page": 7,
-          "pages": [
-            7,
-            8,
-            9
-          ],
-          "section": "3.2.2 Unified Visual Representation"
-        },
-        {
-          "rank": 2,
           "chunk_id": "58617e8e36236d01-parent-26-32",
           "page": 8,
           "pages": [
@@ -368,7 +357,7 @@
           "section": "3.2.2 Unified Visual Representation"
         },
         {
-          "rank": 3,
+          "rank": 2,
           "chunk_id": "58617e8e36236d01-parent-27-33",
           "page": 8,
           "pages": [
@@ -378,8 +367,19 @@
           "section": "3.2.2 Unified Visual Representation"
         },
         {
-          "rank": 4,
+          "rank": 3,
           "chunk_id": "58617e8e36236d01-parent-25-31",
+          "page": 7,
+          "pages": [
+            7,
+            8,
+            9
+          ],
+          "section": "3.2.2 Unified Visual Representation"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-24-30",
           "page": 7,
           "pages": [
             7,
@@ -401,20 +401,20 @@
         },
         {
           "rank": 6,
-          "chunk_id": "58617e8e36236d01-parent-34-40",
-          "page": 10,
+          "chunk_id": "58617e8e36236d01-parent-22-28",
+          "page": 6,
           "pages": [
-            10,
-            11
+            6,
+            7,
+            8
           ],
-          "section": "3.2.4 Spacetime Latent Patches"
+          "section": "3.2 Data Pre-processing"
         },
         {
           "rank": 7,
-          "chunk_id": "58617e8e36236d01-parent-33-39",
-          "page": 9,
+          "chunk_id": "58617e8e36236d01-parent-34-40",
+          "page": 10,
           "pages": [
-            9,
             10,
             11
           ],
@@ -436,37 +436,26 @@
     {
       "id": "sora_05",
       "question": "What video compression approaches does the review discuss for Sora?",
-      "score": 4.58,
-      "key_score": 2.75,
+      "score": 8.83,
+      "key_score": 5.5,
       "optional_score": 0.33,
-      "citation_score": 0.0,
+      "citation_score": 1.5,
       "focus_score": 1.5,
       "matched_must_have": [
         "spatial-patch compression",
-        "spatial-temporal-patch compression"
-      ],
-      "missing_must_have": [
+        "spatial-temporal-patch compression",
         "patch-level compression",
         "flexible"
       ],
+      "missing_must_have": [],
       "matched_should_have": [
         "VAE"
       ],
       "triggered_must_not_have": [],
-      "answer": "The document discusses several video compression techniques that SORA employs to handle the complexities of processing videos with varying resolutions, aspect ratios, and durations. The main methods include:\n\n1. **Spatial-Patch Compression**: \n   - Transforms each frame into fixed-size patches.\n   - Uses 2D models like Vision Transformer (ViT) or Masked Autoencoder (MAE) to split the image/frame into smaller parts for efficient processing.\n\n2. **Spatial-Temporal Patch Compression**:\n   - Extends spatial patch compression by including temporal information.\n   - Involves transforming video frames into fixed-size patches and then organizing these patches temporally.\n   - The approach uses 3D convolutions to integrate both spatial and temporal dimensions, capturing dynamic changes in videos.\n\n3. **Temporal Information Aggregation**:\n   - An additional mechanism required because the primary focus is on spatial patch compression.\n   - Needed for aggregating temporal information within the model to capture dynamic changes over time.\n\n4. **Patch n’ Pack (PNP)**:\n   - A method suggested by SORA’s technical report to handle variability in latent space dimensions.\n   - PNP packs multiple patches from different images into a single sequence, as demonstrated in Figure 10.\n\n5. **Utilization of Pre-trained Visual Encoders**:\n   - For processing high-resolution videos, leveraging pre-trained visual encoders like the VAE encoder from Stable Diffusion is recommended for most researchers.\n   - SORA’s team will train their own compression network with a decoder (the video generator) from scratch using techniques employed in training latent diffusion models.\n\n### Summary of Techniques:\n- **Spatial Patch Compression**: Efficiently manages large-scale data by splitting images into smaller parts.\n- **Spatial-Temporal Patch Compression**: Integrates both spatial and temporal dimensions, capturing dynamic changes in videos.\n- **Temporal Information Aggregation**: Necessary to handle varying durations of training videos.\n- **Patch n’ Pack (PNP)**: Addresses variability in latent space dimensions.\n- **Pre-trained Visual Encoders**: Utilized for high-resolution video processing.\n\nThese techniques collectively enable SORA to effectively compress and manage video data with varying characteristics.",
+      "answer": "Similar to spatial-patch compression, employing spatial- temporal-patch compression with predetermined convolution kernel parameters – such as fixed kernel sizes, strides, and output channels – results in variations in the dimensions of the latent space due to the differing characteristics of video inputs. [1] To mitigate this challenge, the approaches adopted for spatial patchification are equally applicable and effective in this context. [1] In summary, we reverse engineer the two patch-level compression approaches based on V AE or its vari- ant like VQ-VQE because operations on patches are more flexible to process different types of videos. [1] To address this, one can either sample a specific num- ber of frames (padding or temporal interpolation [34] may be needed for much shorter videos) or define a universally extended (super long) input length for subsequent processing (more details are described in Section 3.2.4); Utilization of pre-trained visual encoders – for processing videos of high resolution, lever- aging existing pre-trained visual encoders, such as the V AE encoder from Stable Diffusion [19], is advis- able for most researchers while Sora’s team is expected to train their own compression network with a decoder (the video generator) from scratch via the manner employed in training latent diffusion models [19, 35, 36]. [2]",
       "citations": [
         {
           "rank": 1,
-          "chunk_id": "58617e8e36236d01-parent-34-40",
-          "page": 10,
-          "pages": [
-            10,
-            11
-          ],
-          "section": "3.2.4 Spacetime Latent Patches"
-        },
-        {
-          "rank": 2,
           "chunk_id": "58617e8e36236d01-parent-32-38",
           "page": 9,
           "pages": [
@@ -477,18 +466,7 @@
           "section": "3.2.4 Spacetime Latent Patches"
         },
         {
-          "rank": 3,
-          "chunk_id": "58617e8e36236d01-parent-37-43",
-          "page": 10,
-          "pages": [
-            10,
-            11,
-            12
-          ],
-          "section": "3.2.6 Diffusion Transformer"
-        },
-        {
-          "rank": 4,
+          "rank": 2,
           "chunk_id": "58617e8e36236d01-parent-30-36",
           "page": 9,
           "pages": [
@@ -496,6 +474,27 @@
             10
           ],
           "section": "3.2.2 Unified Visual Representation"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-29-35",
+          "page": 8,
+          "pages": [
+            8,
+            9,
+            10
+          ],
+          "section": "3.2.2 Unified Visual Representation"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-31-37",
+          "page": 9,
+          "pages": [
+            9,
+            10
+          ],
+          "section": "3.2.4 Spacetime Latent Patches"
         },
         {
           "rank": 5,
@@ -510,27 +509,6 @@
         },
         {
           "rank": 6,
-          "chunk_id": "58617e8e36236d01-parent-29-35",
-          "page": 8,
-          "pages": [
-            8,
-            9,
-            10
-          ],
-          "section": "3.2.2 Unified Visual Representation"
-        },
-        {
-          "rank": 7,
-          "chunk_id": "58617e8e36236d01-parent-31-37",
-          "page": 9,
-          "pages": [
-            9,
-            10
-          ],
-          "section": "3.2.4 Spacetime Latent Patches"
-        },
-        {
-          "rank": 8,
           "chunk_id": "58617e8e36236d01-parent-33-39",
           "page": 9,
           "pages": [
@@ -539,46 +517,9 @@
             11
           ],
           "section": "3.2.4 Spacetime Latent Patches"
-        }
-      ]
-    },
-    {
-      "id": "sora_06",
-      "question": "How are spacetime latent patches handled before they are fed into the diffusion transformer?",
-      "score": 5.67,
-      "key_score": 3.67,
-      "optional_score": 0.5,
-      "citation_score": 0.0,
-      "focus_score": 1.5,
-      "matched_must_have": [
-        "Patch n",
-        "PNP",
-        "padding",
-        "super long context window"
-      ],
-      "missing_must_have": [
-        "fixed-length sequences",
-        "3D consistency"
-      ],
-      "matched_should_have": [
-        "greedy"
-      ],
-      "triggered_must_not_have": [],
-      "answer": "To handle the variability in latent space dimensions before feeding patches into the input layers of the diffusion transformer, Sora likely employs several strategies:\n\n1. **Patchification and Token Embedding**: These steps are first performed in the compression network to convert video data into a form suitable for processing by the diffusion transformer.\n\n2. **Spacetime Latent Patches**:\n   - Spacetime patches capture both spatial and temporal dimensions of video data.\n   - Techniques like 3D convolution can be used to integrate spatial-temporal information effectively.\n\n3. **Patch Packing**: \n   - The method discussed, such as Patch n' Pack (PNP), involves packing multiple patches from different images into a single sequence.\n   - This approach helps manage the variability in latent space dimensions by consolidating patches from various video types into uniform sequences suitable for batched operations.\n\n4. **Token Dropping**:\n   - Token dropping can be treated as data augmentation, allowing some tokens to be dropped or ignored during training to control the number of tokens per sequence.\n   - This approach is used to manage padding and ensure efficient packing by tuning the sequence length.\n\n5. **Greedy Packing Approach**: \n   - A simple greedy algorithm adds examples (patches) to the first sequence with enough remaining space.\n   - Once no more patches can fit, sequences are filled with padding tokens to achieve fixed sequence lengths required for batched operations.\n   \n6. **Context Window Management**:\n   - Using a super long context window is another approach that helps in packing all tokens from videos into one sequence despite computational costs.\n\nBy combining these strategies, Sora ensures effective handling of the variability in latent space dimensions while maintaining efficiency and performance during training and inference phases of the diffusion transformer model.",
-      "citations": [
-        {
-          "rank": 1,
-          "chunk_id": "58617e8e36236d01-parent-36-42",
-          "page": 10,
-          "pages": [
-            10,
-            11,
-            12
-          ],
-          "section": "3.2.6 Diffusion Transformer"
         },
         {
-          "rank": 2,
+          "rank": 7,
           "chunk_id": "58617e8e36236d01-parent-37-43",
           "page": 10,
           "pages": [
@@ -589,7 +530,40 @@
           "section": "3.2.6 Diffusion Transformer"
         },
         {
-          "rank": 3,
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-34-40",
+          "page": 10,
+          "pages": [
+            10,
+            11
+          ],
+          "section": "3.2.4 Spacetime Latent Patches"
+        }
+      ]
+    },
+    {
+      "id": "sora_06",
+      "question": "How are spacetime latent patches handled before they are fed into the diffusion transformer?",
+      "score": 3.5,
+      "key_score": 0.0,
+      "optional_score": 0.0,
+      "citation_score": 1.5,
+      "focus_score": 2.0,
+      "matched_must_have": [],
+      "missing_must_have": [
+        "Patch n",
+        "PNP",
+        "fixed-length sequences",
+        "padding",
+        "super long context window",
+        "3D consistency"
+      ],
+      "matched_should_have": [],
+      "triggered_must_not_have": [],
+      "answer": "Similar to spatial-patch compression, employing spatial- temporal-patch compression with predetermined convolution kernel parameters – such as fixed kernel sizes, strides, and output channels – results in variations in the dimensions of the latent space due to the differing characteristics of video inputs. [1] To mitigate this challenge, the approaches adopted for spatial patchification are equally applicable and effective in this context. [1] 3.2.4 Spacetime Latent Patches There is a pivotal concern remaining in the compression network part: How to handle the variability in latent space dimensions (i.e., the number of latent feature chunks or patches from different video types) before feeding patches into the input layers of the diffusion transformer. [1] Here the patchification and token embedding steps need to be completed in the compression network, but Sora may further patchify the latent for trans- former token as Diffusion Transformer does [4]. [1]",
+      "citations": [
+        {
+          "rank": 1,
           "chunk_id": "58617e8e36236d01-parent-32-38",
           "page": 9,
           "pages": [
@@ -600,7 +574,38 @@
           "section": "3.2.4 Spacetime Latent Patches"
         },
         {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-34-40",
+          "page": 10,
+          "pages": [
+            10,
+            11
+          ],
+          "section": "3.2.4 Spacetime Latent Patches"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-31-37",
+          "page": 9,
+          "pages": [
+            9,
+            10
+          ],
+          "section": "3.2.4 Spacetime Latent Patches"
+        },
+        {
           "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-33-39",
+          "page": 9,
+          "pages": [
+            9,
+            10,
+            11
+          ],
+          "section": "3.2.4 Spacetime Latent Patches"
+        },
+        {
+          "rank": 5,
           "chunk_id": "58617e8e36236d01-parent-35-41",
           "page": 10,
           "pages": [
@@ -611,20 +616,11 @@
           "section": "3.2.6 Diffusion Transformer"
         },
         {
-          "rank": 5,
-          "chunk_id": "58617e8e36236d01-parent-34-40",
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-36-42",
           "page": 10,
           "pages": [
             10,
-            11
-          ],
-          "section": "3.2.4 Spacetime Latent Patches"
-        },
-        {
-          "rank": 6,
-          "chunk_id": "58617e8e36236d01-parent-38-44",
-          "page": 11,
-          "pages": [
             11,
             12
           ],
@@ -632,50 +628,50 @@
         },
         {
           "rank": 7,
-          "chunk_id": "58617e8e36236d01-parent-31-37",
-          "page": 9,
+          "chunk_id": "58617e8e36236d01-parent-37-43",
+          "page": 10,
           "pages": [
-            9,
-            10
+            10,
+            11,
+            12
           ],
-          "section": "3.2.4 Spacetime Latent Patches"
+          "section": "3.2.6 Diffusion Transformer"
         },
         {
           "rank": 8,
-          "chunk_id": "58617e8e36236d01-parent-33-39",
-          "page": 9,
+          "chunk_id": "58617e8e36236d01-parent-6-12",
+          "page": 3,
           "pages": [
-            9,
-            10,
-            11
+            3,
+            4
           ],
-          "section": "3.2.4 Spacetime Latent Patches"
+          "section": "1 Introduction"
         }
       ]
     },
     {
       "id": "sora_07",
       "question": "How does Sora improve language understanding and prompt following?",
-      "score": 6.58,
-      "key_score": 4.58,
+      "score": 7.67,
+      "key_score": 3.67,
       "optional_score": 0.5,
-      "citation_score": 0.0,
-      "focus_score": 1.5,
+      "citation_score": 1.5,
+      "focus_score": 2.0,
       "matched_must_have": [
-        "DALL",
         "captioner",
         "video",
-        "descriptive caption",
-        "fine-tuning"
-      ],
-      "missing_must_have": [
+        "fine-tuning",
         "GPT-4V"
       ],
+      "missing_must_have": [
+        "DALL",
+        "descriptive caption"
+      ],
       "matched_should_have": [
-        "instruction following"
+        "prompt extension"
       ],
       "triggered_must_not_have": [],
-      "answer": "Sora enhances its instruction-following ability through several key processes:\n\n1. **Instruction Tuning**: Sora uses a method similar to that employed by DALL·E 3, where LLMs are fine-tuned on tasks formatted as instructions (instruction tuning). This process significantly improves the model's capability to understand and follow instructions accurately.\n\n2. **Descriptive Caption Engineering**: A crucial step involves training an image captioner to generate long and detailed captions for images. These captions are then used to fine-tune Sora, ensuring that the model can better understand visual data and produce videos that precisely meet user specifications. This is akin to the caption improvement method DALL·E 3 uses.\n\n3. **Text Prompt Engineering**: For text-to-video tasks, crafting detailed descriptions (text prompts) is essential. These descriptions guide the model in producing visually striking and relevant outputs while meeting specific user requirements.\n\n4. **Addressing Data Quality Issues**: The approach acknowledges that poor quality data, such as noisy or short captions, can lead to issues like keyword neglect and misunderstanding of user intentions. By re-capturing images with detailed, descriptive captions, these challenges are mitigated.\n\nIn summary, Sora's instruction-following ability is enhanced through a combination of fine-tuning on structured instructions, training detailed image captioners, crafting precise text prompts, and ensuring high-quality input data.",
+      "answer": "Sora improves language understanding and prompt following through several key processes: 1. **Instruction Tuning**: Sora employs instruction tuning, fine-tuning the model on a variety of tasks formatted as instructions [1]. 2. **Caption Improvement Method**: A video captioner is trained to generate detailed captions from videos, which are then used to fine-tune the text-to-video model [3][4]. 3. **Prompt Extension Step**: GPT-4V is used to expand user inputs into detailed descriptive prompts, ensuring alignment with training data formats [3][5]. These methods enhance Sora's ability to accurately follow instructions and generate relevant video content.",
       "citations": [
         {
           "rank": 1,
@@ -765,25 +761,25 @@
     {
       "id": "sora_08",
       "question": "What does the review say about prompt engineering for Sora?",
-      "score": 3.07,
-      "key_score": 1.57,
+      "score": 5.86,
+      "key_score": 2.36,
       "optional_score": 0.0,
-      "citation_score": 0.0,
-      "focus_score": 1.5,
+      "citation_score": 1.5,
+      "focus_score": 2.0,
       "matched_must_have": [
+        "text prompts",
         "image prompts",
-        "video prompts"
+        "visual anchor"
       ],
       "missing_must_have": [
-        "text prompts",
-        "visual anchor",
+        "video prompts",
         "video extension",
         "video editing",
         "video connection"
       ],
       "matched_should_have": [],
       "triggered_must_not_have": [],
-      "answer": "The capabilities of Sora and similar models have seen remarkable enhancements through advanced prompt engineering. Prompt engineering allows users to guide AI models like Sora to generate content that aligns with their intent. For Sora specifically:\n\n1. **Video Captioning**: To improve its instruction-following ability, Sora trains a video captioner capable of producing detailed descriptive captions. This process involves using techniques such as CoCa architecture (VideoCoCa), which processes multiple frames from videos and generates detailed captions.\n\n2. **Prompt Extension Step**: After training the video captioner, Sora uses an additional step where GPT-4V is used to expand user inputs into more detailed descriptive prompts. This ensures that user instructions align better with the format of the descriptive captions in the training data.\n\n3. **Instruction Following**: The instruction-following ability is crucial for generating one-minute-long videos that are faithful to user intents. This capability is developed through fine-tuning on highly detailed descriptions, ensuring the model can understand and accurately follow complex instructions.\n\n4. **Growing Interest in Video Prompts**: While previous studies focused more on text and image prompts, there's a growing interest in video prompts for generating video content, as demonstrated by Sora’s use of video captioning techniques.\n\nIn summary, prompt engineering plays a vital role in guiding Sora to generate content that meets user expectations accurately.",
+      "answer": "- The review emphasizes the importance of prompt engineering for text-to-video models like Sora, particularly in crafting detailed text and image prompts [3]. Text prompts should include specific details and actions to guide the model accurately. Image prompts serve as visual anchors, helping convert static images into dynamic narratives [5]. - Examples from the document illustrate how DALL·E-generated images can be used to prompt Sora, resulting in videos that match user expectations [5]. - The process involves generating detailed captions for training data and using GPT-4V to expand user inputs into comprehensive prompts [2].",
       "citations": [
         {
           "rank": 1,
@@ -797,49 +793,27 @@
         },
         {
           "rank": 2,
-          "chunk_id": "58617e8e36236d01-parent-61-67",
-          "page": 16,
+          "chunk_id": "58617e8e36236d01-parent-57-63",
+          "page": 15,
           "pages": [
+            15,
             16,
-            17,
-            18
+            17
           ],
-          "section": "3.5.3 Video Prompt"
+          "section": "3.5 Prompt Engineering"
         },
         {
           "rank": 3,
-          "chunk_id": "58617e8e36236d01-parent-62-68",
-          "page": 17,
+          "chunk_id": "58617e8e36236d01-parent-58-64",
+          "page": 16,
           "pages": [
-            17,
-            18
+            16,
+            17
           ],
-          "section": "3.5.3 Video Prompt"
+          "section": "3.5 Prompt Engineering"
         },
         {
           "rank": 4,
-          "chunk_id": "58617e8e36236d01-parent-63-69",
-          "page": 17,
-          "pages": [
-            17,
-            18,
-            19
-          ],
-          "section": "3.6.1 Safety Concern"
-        },
-        {
-          "rank": 5,
-          "chunk_id": "58617e8e36236d01-parent-64-70",
-          "page": 17,
-          "pages": [
-            17,
-            18,
-            19
-          ],
-          "section": "3.6.1 Safety Concern"
-        },
-        {
-          "rank": 6,
           "chunk_id": "58617e8e36236d01-parent-56-62",
           "page": 15,
           "pages": [
@@ -850,35 +824,56 @@
           "section": "3.5 Prompt Engineering"
         },
         {
-          "rank": 7,
-          "chunk_id": "58617e8e36236d01-parent-54-60",
-          "page": 15,
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-61-67",
+          "page": 16,
           "pages": [
-            15,
-            16
+            16,
+            17,
+            18
           ],
-          "section": "3.4.2 Text-to-Image"
+          "section": "3.5.3 Video Prompt"
         },
         {
-          "rank": 8,
-          "chunk_id": "58617e8e36236d01-parent-57-63",
-          "page": 15,
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-59-65",
+          "page": 16,
           "pages": [
-            15,
             16,
             17
           ],
-          "section": "3.5 Prompt Engineering"
+          "section": "3.5.3 Video Prompt"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-60-66",
+          "page": 16,
+          "pages": [
+            16,
+            17,
+            18
+          ],
+          "section": "3.5.3 Video Prompt"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-62-68",
+          "page": 17,
+          "pages": [
+            17,
+            18
+          ],
+          "section": "3.5.3 Video Prompt"
         }
       ]
     },
     {
       "id": "sora_09",
       "question": "What simulation capabilities does Sora demonstrate?",
-      "score": 8.0,
+      "score": 9.5,
       "key_score": 5.5,
       "optional_score": 0.5,
-      "citation_score": 0.0,
+      "citation_score": 1.5,
       "focus_score": 2.0,
       "matched_must_have": [
         "3D consistency",
@@ -893,7 +888,7 @@
         "digital environments"
       ],
       "triggered_must_not_have": [],
-      "answer": "Sora demonstrates several capabilities in improving simulation abilities, particularly by simulating various aspects of the physical world and digital environments:\n\n1. **3D Consistency**: Sora exhibits 3D consistency with dynamic camera motion and long-range coherence that includes object persistence and simple interactions with the world. This is notable because it does not rely on explicit 3D modeling.\n\n2. **Simulation of Digital Environments**: Sora intriguingly simulates digital environments like Minecraft, controlled by a basic policy while maintaining visual fidelity. This suggests that scaling video models effectively can lead to emergent abilities in generating highly realistic and consistent content from text instructions.\n\nOverall, these capabilities highlight the potential for large-scale vision models to simulate complex interactions and environments with increasing realism and coherence.",
+      "answer": "Despite lacking explicit 3D modeling, Sora exhibits 3D consistency with dynamic camera motion and long-range coherence that includes object persistence and simulates simple interactions with the world. [1] Moreover, Sora intriguingly simulates digital environments like Minecraft, controlled by a basic policy while maintaining visual fidelity. [1] The model can generate detailed scenes that include multiple characters that perform specific actions against intricate backgrounds. [1] Sora’s capabilities have profound implications in various aspects: • Improving simulation abilities: Training Sora at scale is attributed to its remarkable ability to simulate various aspects of the physical world. [1]",
       "citations": [
         {
           "rank": 1,
@@ -907,16 +902,6 @@
         },
         {
           "rank": 2,
-          "chunk_id": "58617e8e36236d01-parent-6-12",
-          "page": 3,
-          "pages": [
-            3,
-            4
-          ],
-          "section": "1 Introduction"
-        },
-        {
-          "rank": 3,
           "chunk_id": "58617e8e36236d01-parent-8-14",
           "page": 3,
           "pages": [
@@ -926,7 +911,7 @@
           "section": "1 Introduction"
         },
         {
-          "rank": 4,
+          "rank": 3,
           "chunk_id": "58617e8e36236d01-parent-9-15",
           "page": 3,
           "pages": [
@@ -937,7 +922,39 @@
           "section": "1 Introduction"
         },
         {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-6-12",
+          "page": 3,
+          "pages": [
+            3,
+            4
+          ],
+          "section": "1 Introduction"
+        },
+        {
           "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-5-11",
+          "page": 2,
+          "pages": [
+            2,
+            3,
+            4
+          ],
+          "section": "1 Introduction"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-4-10",
+          "page": 2,
+          "pages": [
+            2,
+            3,
+            4
+          ],
+          "section": "1 Introduction"
+        },
+        {
+          "rank": 7,
           "chunk_id": "58617e8e36236d01-parent-86-92",
           "page": 22,
           "pages": [
@@ -947,36 +964,14 @@
           "section": "5.2 Opportunities"
         },
         {
-          "rank": 6,
-          "chunk_id": "58617e8e36236d01-parent-88-94",
-          "page": 23,
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-85-91",
+          "page": 22,
           "pages": [
-            23,
-            24
-          ],
-          "section": "5.2 Opportunities"
-        },
-        {
-          "rank": 7,
-          "chunk_id": "58617e8e36236d01-parent-81-87",
-          "page": 21,
-          "pages": [
-            21,
             22,
             23
           ],
-          "section": "5 Discussion"
-        },
-        {
-          "rank": 8,
-          "chunk_id": "58617e8e36236d01-parent-18-24",
-          "page": 5,
-          "pages": [
-            5,
-            6,
-            7
-          ],
-          "section": "2.2 Advanced Concepts"
+          "section": "5.2 Opportunities"
         }
       ]
     },
@@ -1000,7 +995,7 @@
       ],
       "matched_should_have": [],
       "triggered_must_not_have": [],
-      "answer": "[child chunk 84 | page 22 | section 5 Discussion] Sora, as a simulation platform, exhibits a range of limitations that under- mine its effectiveness in accurately depicting complex scenarios. [1] This issue extends to the simulation of motion, where Sora generates movements that challenge realistic physical modeling, such as unnatural transformations of objects or the incorrect simulation of rigid structures like chairs, leading to unrealistic physical interactions. [1] The challenge further increases when simulating complex interactions among objects and characters, occasionally producing outcomes that lean towards the humorous. [1] This advancement signifies a major step forward in AI-powered creative tools, enabling users to transform written stories into vivid videos with a level of detail and sophistication that was previously unattainable. [2] 5.1 Limitations Challenges in Physical Realism. [2] Sora, while showing potential in the video gener- ation domain, faces significant limitations in HCI. [2]",
+      "answer": "Sora, as a simulation platform, exhibits a range of limitations that under- mine its effectiveness in accurately depicting complex scenarios. [1] This issue extends to the simulation of motion, where Sora generates movements that challenge realistic physical modeling, such as unnatural transformations of objects or the incorrect simulation of rigid structures like chairs, leading to unrealistic physical interactions. [1] The challenge further increases when simulating complex interactions among objects and characters, occasionally producing outcomes that lean towards the humorous. [1] This advancement signifies a major step forward in AI-powered creative tools, enabling users to transform written stories into vivid videos with a level of detail and sophistication that was previously unattainable. [2] 5.1 Limitations Challenges in Physical Realism. [2] Sora, while showing potential in the video generation domain, faces significant limitations in HCI. [2]",
       "citations": [
         {
           "rank": 1,

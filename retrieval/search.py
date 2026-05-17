@@ -96,7 +96,7 @@ class RetrievalService:
         expanded = self._expand_with_title_matched_sections(query, expanded)
 
         if self.use_parent_context:
-            parent_contexts = self._build_parent_contexts(expanded)
+            parent_contexts = self._build_parent_contexts(expanded, query=query)
             if parent_contexts:
                 return parent_contexts[:self.final_context_limit]
 
@@ -170,6 +170,7 @@ class RetrievalService:
         query_tokens= self._tokenize(query)
         if not query_tokens:
             return []
+        focus_phrases = self._focus_phrases(query)
      
         scores = bm25.get_scores(query_tokens)
 
@@ -186,6 +187,11 @@ class RetrievalService:
             section_title_lower= (chunk.get("section_title") or "").lower()
             
             overlap_boost = 0.0
+            for phrase in focus_phrases:
+                if phrase in section_title_lower:
+                    overlap_boost += 8.0
+                elif phrase in section_text_lower:
+                    overlap_boost += 5.0
             for term in query_terms:
                 if term in section_title_lower:
                     overlap_boost +=1.25
@@ -446,9 +452,12 @@ class RetrievalService:
             if len(term) >= 4 and term not in stop_terms
         }
 
-    def _build_parent_contexts(self, items: list[dict]) -> list[dict]:
+    def _build_parent_contexts(self, items: list[dict], query: str = "") -> list[dict]:
         parent_items: list[dict] = []
         seen_parent_keys: set[tuple[str, int, int]] = set()
+        focus_phrases = self._focus_phrases(query)
+        focus_terms = self._focus_terms(query)
+        focus_units = focus_phrases or focus_terms
 
         for item in items:
             doc_id = item.get("doc_id")
@@ -475,13 +484,34 @@ class RetrievalService:
             )
             if not chunks:
                 continue
+            matching_chunk_positions: set[int] = set()
+            if focus_units:
+                for position, chunk in enumerate(chunks):
+                    text_lower = (chunk.get("text") or "").lower()
+                    if any(unit in text_lower for unit in focus_units):
+                        matching_chunk_positions.add(position)
+                for position in list(matching_chunk_positions):
+                    if position + 1 < len(chunks):
+                        matching_chunk_positions.add(position + 1)
+                    if position > 0:
+                        matching_chunk_positions.add(position - 1)
 
             parent_text_parts: list[str] = []
             total_chars = 0
-            for chunk in chunks:
+            included_focus_chunk = False
+            for position, chunk in enumerate(chunks):
                 text = (chunk.get("text") or "").strip()
                 if not text:
                     continue
+                if focus_units:
+                    focused_text = self._focused_text(text, focus_units)
+                    if focused_text:
+                        text = focused_text
+                        included_focus_chunk = True
+                    elif position in matching_chunk_positions:
+                        text = text[:2200].strip()
+                    else:
+                        continue
                 chunk_header = (
                     f"[child chunk {chunk.get('chunk_index')} | "
                     f"page {chunk.get('page_number')} | "
@@ -495,6 +525,9 @@ class RetrievalService:
                     break
                 parent_text_parts.append(block)
                 total_chars += len(block)
+
+            if focus_units and not included_focus_chunk:
+                continue
 
             if not parent_text_parts:
                 continue
@@ -541,5 +574,115 @@ class RetrievalService:
 
     def _tokenize(self, text: str) -> list[str]:
         return re.findall(r"\b\w+\b", text.lower())
+
+    def _focus_terms(self, query: str) -> set[str]:
+        generic_terms = {
+            "what",
+            "which",
+            "from",
+            "paper",
+            "document",
+            "key",
+            "feature",
+            "features",
+            "main",
+            "some",
+            "tell",
+            "about",
+            "explain",
+            "describe",
+            "according",
+            "review",
+            "use",
+            "uses",
+            "using",
+            "docker",
+        }
+        original_tokens = re.findall(r"\b[A-Za-z][A-Za-z0-9_-]{3,}\b", query)
+        terms: set[str] = set()
+        for token in original_tokens:
+            lower = token.lower()
+            if lower in generic_terms:
+                continue
+            if any(char.isupper() for char in token[1:]) or token[:1].isupper():
+                terms.add(lower)
+            elif len(lower) >= 8:
+                terms.add(lower)
+        return terms
+
+    def _focus_phrases(self, query: str) -> set[str]:
+        generic_terms = {
+            "what",
+            "which",
+            "from",
+            "paper",
+            "document",
+            "article",
+            "key",
+            "features",
+            "main",
+            "some",
+            "tell",
+            "about",
+            "explain",
+            "describe",
+            "according",
+            "review",
+            "how",
+            "why",
+            "does",
+            "used",
+        }
+        phrases: set[str] = set()
+
+        for match in re.finditer(
+            r"\b[A-Z][A-Za-z0-9_-]*\b(?:\s+\b[A-Z][A-Za-z0-9_-]*\b)+",
+            query,
+        ):
+            phrase_tokens = [
+                token
+                for token in re.findall(r"\b[A-Za-z][A-Za-z0-9_-]*\b", match.group(0))
+                if token.lower() not in generic_terms
+            ]
+            if len(phrase_tokens) < 2:
+                continue
+            phrase = " ".join(token.lower() for token in phrase_tokens)
+            phrases.add(phrase)
+            last = phrase_tokens[-1]
+            if last.lower().endswith("s") and len(last) > 4:
+                phrases.add(" ".join([*(token.lower() for token in phrase_tokens[:-1]), last[:-1].lower()]))
+        return phrases
+
+    def _focused_text(self, text: str, focus_terms: set[str], radius: int = 2200) -> str:
+        text_lower = text.lower()
+        matches = [
+            text_lower.find(term)
+            for term in focus_terms
+            if text_lower.find(term) != -1
+        ]
+        matches = [match for match in matches if match >= 0]
+        if not matches:
+            return ""
+
+        anchor = min(matches)
+        start = max(0, anchor - radius // 3)
+        end = min(len(text), anchor + radius)
+
+        sentence_start = max(
+            text.rfind(". ", 0, start),
+            text.rfind("\n", 0, start),
+        )
+        if sentence_start >= 0:
+            start = sentence_start + 1
+
+        sentence_end_candidates = [
+            text.find(". ", end),
+            text.find("\n", end),
+        ]
+        sentence_end_candidates = [candidate for candidate in sentence_end_candidates if candidate != -1]
+        if sentence_end_candidates:
+            end = min(sentence_end_candidates) + 1
+
+        return text[start:end].strip()
                        
         

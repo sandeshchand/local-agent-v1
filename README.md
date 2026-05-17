@@ -1,202 +1,107 @@
-# 🚀 Local Agentic RAG System
+# Local Agentic RAG System
 
-A local-first **Agentic AI system** that extends traditional RAG into a multi-step, decision-driven pipeline with planning, retrieval, reasoning, and verification.
+A local-first Agentic Retrieval-Augmented Generation system for asking grounded questions over multiple PDF documents.
 
----
-
-## 🔍 Overview
-
-This project implements an **Agentic Retrieval-Augmented Generation (RAG)** system where the model dynamically decides how to respond instead of following a fixed pipeline.
-
-Unlike traditional RAG (retrieve → generate), this system introduces:
-
-- 🧠 **Planner** → decides execution strategy  
-- 🔄 **Orchestrator** → manages multi-step workflow  
-- 🔍 **Hybrid Retrieval** → dense + BM25 + reranking  
-- 🧪 **Evidence Checking** → ensures relevant context  
-- ✅ **Verification Layer** → validates grounded answers  
-- 🧰 **Tool Integration** → enables action-based responses  
-
----
-
-## ⚙️ Architecture Flow
-
-User Query  
-→ Planner (decide action)  
-→ Retrieval (Hybrid Search + Reranker)  
-→ Evidence Filtering  
-→ Answer Generation (LLM)  
-→ Verification  
-→ Final Response  
-
----
-
-## 🚀 Key Features
-
-- Agentic decision-making instead of static pipelines  
-- Hybrid search (semantic + keyword)  
-- Cross-encoder reranking for precision  
-- Evidence-aware answer generation  
-- Grounding and hallucination reduction  
-- Modular architecture for extensibility  
-
----
-
-## 🛠 Tech Stack
-
-- Python  
-- FastAPI  
-- Qdrant (Vector DB)  
-- SQLite (metadata + traces)  
-- Ollama (local LLM + embeddings)  
-
----
-
-## Architecture
-
-The project is organized into modular layers:
-
-- **`app/`** — app entrypoints, configuration, dependency wiring, FastAPI layer
-- **`ingestion/`** — PDF parsing, chunking, and indexing
-- **`retrieval/`** — embedding, search, context building, answer generation
-- **`storage/`** — SQLite and Qdrant access
-- **`observability/`** — trace logging and future evaluation hooks
-- **`templates/` + `static/`** — web UI
-
-This structure keeps the current system simple while making it easier to evolve into a larger agent-based application.
-
----
+The project now supports multi-PDF ingestion, document routing, hybrid retrieval, answer generation, verification, answer repair, trace logging, and repeatable RAG quality evaluation.
 
 ## Current Status
 
-Completed milestones:
+Completed:
 
-- **Milestone 1** — local infrastructure setup
-- **Milestone 2** — PDF ingestion and retrieval pipeline
-- **Milestone 3** — reusable RAG application core
-- **Milestone 3.5** — FastAPI web interface and UI improvements
-- **Milestone 4** — planner and orchestrator layer
+- Local Ollama chat and embedding integration
+- SQLite metadata, conversation memory, and trace storage
+- Qdrant vector storage
+- PDF parsing, cleanup, chunking, and ingestion
+- Multi-document indexing
+- Planner and orchestration layer
+- Document router for multi-PDF questions
+- Hybrid retrieval: dense search plus BM25
+- Cross-encoder reranking
+- Neighbor and parent-context expansion
+- Evidence selection
+- Grounded answer generation
+- Generic verifier
+- Answer repair after verifier failure
+- Multi-document gold QA evaluation
 
----
+Still in progress:
+
+- Better handling of scanned/image-only PDFs
+- Better citation polish
+- Larger benchmark coverage across new daily PDFs
+- Stronger regression gates before every code change
+- Optional dashboard for evaluation reports
+
+## Architecture Flow
+
+```text
+User query
+-> Planner
+-> ToolRouter
+-> DocumentRouter
+-> RetrievalService
+   -> dense vector search
+   -> BM25 sparse search
+   -> RRF fusion
+   -> cross-encoder reranking
+   -> context expansion
+-> EvidenceJudge
+-> AnswerService
+-> Verifier
+-> optional Answer Repair
+-> Trace saved to SQLite
+-> Final answer with citations
+```
 
 ## Repository Structure
 
 ```text
-local-agent-v1/
-├── app/
-├── ingestion/
-│   └── parsers/
-├── retrieval/
-├── storage/
-├── observability/
-├── static/
-├── templates/
-├── scripts/
-├── data/
-│   ├── raw/
-│   │   └── documents/
-│   ├── processed/
-│   ├── qdrant/
-│   ├── sqlite/
-│   └── logs/
-├── tests/
-├── .env.example
-├── .gitignore
-├── pyproject.toml
-└── README.md
-
-
----
-
-## Prerequisites
-
-Before running the project, make sure you have:
-
-* **Python 3.10+**
-* **Git**
-* **Ollama installed and running locally**
-
-You will also need two local Ollama models:
-
-* one **chat model**
-* one **embedding model**
-
-Example models used in this project:
-
-* `qwen2.5:7b-instruct`
-* `nomic-embed-text`
-
----
-
-## Installation
-
-### 1. Clone the repository
-
-```bash
-git clone <your-repo-url>
-cd local-agent-v1
+app/          FastAPI, CLI, config, dependency wiring
+agent/        planner, tool router, orchestrator, verifier, memory
+ingestion/    PDF parsing, cleanup, chunking, indexing
+retrieval/    search, reranking, routing, evidence, answer generation
+storage/      SQLite and Qdrant adapters
+scripts/      ingestion/evaluation helper scripts
+test/         gold QA and evaluation datasets
+eval/         generated evaluation reports
+data/         local source PDFs
 ```
 
-### 2. Create a virtual environment
+## Setup
 
-#### Windows (Command Prompt)
+Create and activate the virtual environment.
 
-```bat
+Command Prompt:
+
+```cmd
 python -m venv venv
 venv\Scripts\activate
 ```
 
-#### Windows (PowerShell)
+PowerShell:
 
 ```powershell
 python -m venv venv
 venv\Scripts\Activate.ps1
 ```
 
-#### Linux / macOS
+Install the project:
 
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install project dependencies
-
-```bash
+```cmd
 pip install -e .
 ```
 
----
+Pull local Ollama models:
 
-## Ollama Setup
-
-Install Ollama on your machine and make sure it is running locally.
-
-Then pull the required models:
-
-```bash
+```cmd
 ollama pull qwen2.5:7b-instruct
 ollama pull nomic-embed-text
 ```
 
-You can change the chat model later depending on your hardware and performance needs.
+Create `.env`:
 
----
-
-## Environment Setup
-
-Copy the example environment file:
-
-### Windows
-
-```bat
+```cmd
 copy .env.example .env
-```
-
-### Linux / macOS
-
-```bash
-cp .env.example .env
 ```
 
 Example `.env`:
@@ -213,38 +118,35 @@ CHUNK_OVERLAP=120
 DEBUG=true
 ```
 
-### Notes
+## Ingest PDFs
 
-* `CHAT_MODEL` should be a local Ollama chat model
-* `EMBED_MODEL` should be a local Ollama embedding model
-* `TOP_K` controls how many chunks are retrieved
-* `CHUNK_SIZE` and `CHUNK_OVERLAP` control PDF chunking behavior
-
----
-
-## Prepare Document Folder
-
-Place your PDFs inside:
+Place PDFs under:
 
 ```text
 data/raw/documents/
 ```
 
-Example:
+Ingest all documents:
 
-```text
-data/raw/documents/SORA.pdf
+```cmd
+venv\Scripts\python.exe app\main.py ingest --path data\raw\documents
 ```
 
----
+List indexed documents:
 
-## Running the Application
+```cmd
+venv\Scripts\python.exe app\main.py list-docs
+```
 
-### Option 1 — Run the FastAPI web app
+Ask from command line:
 
-Start the server:
+```cmd
+venv\Scripts\python.exe app\main.py ask --query "What are the key features of WatchTower?"
+```
 
-```bash
+Run the web app:
+
+```cmd
 uvicorn app.web:app --reload
 ```
 
@@ -254,277 +156,161 @@ Then open:
 http://127.0.0.1:8000
 ```
 
-From the web UI, you can:
+## Gold QA Evaluation
 
-* ingest a PDF file or folder
-* browse indexed documents
-* ask questions in the chat window
-
----
-
-### Option 2 — Run from CLI
-
-#### Ingest a file or folder
-
-```bash
-python app/main.py ingest --path data/raw/documents
-```
-
-#### Ask a question
-
-```bash
-python app/main.py ask --query "What is Sora?"
-```
-
-#### List indexed documents
-
-```bash
-python app/main.py list-docs
-```
-
----
-
-## Recommended First Run
-
-A safe first run looks like this:
-
-1. place one PDF inside `data/raw/documents/`
-2. start the FastAPI server
-3. ingest that PDF from the UI
-4. ask a simple question like:
+The current multi-document gold QA file is:
 
 ```text
-What is Sora?
+test/eval_multi_doc_rag.json
 ```
 
-Then try a more specific question like:
+It covers Sora, Docker, and machine-learning PDFs. Each item contains:
+
+- `question`
+- `expected_doc_title`
+- `expected_answer`
+- `must_have`
+- `should_have`
+- `must_not_have`
+
+Run the full benchmark:
+
+```cmd
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file test\eval_multi_doc_rag.json --output eval\rag_quality_report.json
+```
+
+Run selected questions while debugging:
+
+```cmd
+venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_watchtower_features,ml_crfs
+```
+
+Use as a quality gate:
+
+```cmd
+venv\Scripts\python.exe scripts\eval_rag_quality.py --fail-under-average 8 --fail-under-item 7
+```
+
+Scoring combines:
+
+- required fact coverage
+- optional detail coverage
+- citation presence
+- correct document routing
+- verifier status
+- unwanted drift
+
+Target:
+
+- Average score should stay above `8/10`.
+- Each important item should stay above `7/10`.
+- New PDFs should add at least 3-5 gold questions.
+
+Latest recorded baseline:
+
+- Date: 2026-05-17
+- Average score: `8.14/10`
+- Passed: `11/15` items at `>= 8/10`
+- Main weak areas: Sora visual-input details, Sora limitations, Isolation Forest use cases, Random Kitchen Sinks details.
+
+## How To Add Gold QA For A New PDF
+
+For each new document, add questions to `test/eval_multi_doc_rag.json`:
+
+1. Definition question: what is the main concept/tool/model?
+2. Feature question: what are the key features/components?
+3. How/why question: mechanism or reason.
+4. Limitation question: risks, constraints, weaknesses.
+5. Comparison/application question if the paper supports it.
+
+Use `must_have` for facts that must appear in a good answer. Use `should_have` for helpful but optional facts. Use `must_not_have` for likely drift from other PDFs.
+
+## Orchestration Layer
+
+The orchestration layer is implemented in:
 
 ```text
-How does Sora represent the visual world?
+agent/orchestrator.py
 ```
 
----
+It currently performs:
 
-## Storage
+- session memory save/load
+- planning
+- direct-answer routing for casual messages
+- retrieval routing for document questions
+- document routing across multiple PDFs
+- retrieval and evidence selection
+- answer generation
+- verification
+- answer repair when verification fails
+- trace saving to SQLite
 
-### SQLite
+Smoke checks:
 
-Used for:
+```cmd
+venv\Scripts\python.exe app\main.py ask --query "hi"
+venv\Scripts\python.exe app\main.py ask --query "What are the key features of WatchTower?"
+venv\Scripts\python.exe app\main.py ask --query "What are Conditional Random Fields used for?"
+```
 
-* document registry
-* chunk metadata
-* trace logging
+Expected behavior:
 
-### Qdrant
+- `hi` should use `direct_answer`.
+- PDF questions should use `retrieve_only`.
+- Retrieved answers should include citations.
+- `verification.status` should normally be `verified`.
 
-Used for:
+## Reset Local Index
 
-* vector storage
-* semantic search
+Only reset when chunking/parsing changes or the DB/index is inconsistent.
 
-### Local Filesystem
+Command Prompt:
 
-Used for:
-
-* source PDFs
-* local runtime data
-* future processed outputs
-
----
-
-## Current Status
-
-Completed milestones:
-
-* **Milestone 1** — local infrastructure setup
-* **Milestone 2** — PDF ingestion and retrieval pipeline
-* **Milestone 3** — reusable RAG application core
-* **Milestone 3.5** — FastAPI web interface and UI improvements
-* **Milestone 4** — planner and orchestrator layer
-
----
-
-## Troubleshooting
-
-### Ollama timeout during answer generation
-
-If answer generation is slow:
-
-* use a smaller chat model
-* reduce `TOP_K`
-* reduce context size
-* increase Ollama client timeout
-
-### PDF gives weak retrieval results
-
-Possible reasons:
-
-* the PDF is scanned or image-based
-* extracted text quality is poor
-* chunk size may need tuning
-
-### Frontend loads but chat does not respond
-
-Check:
-
-* FastAPI server is running
-* Ollama is running
-* the correct models are available
-* browser console shows no JavaScript errors
-
-### Database or index looks inconsistent
-
-During development, it is often easiest to reset local state:
-
-#### Windows
-
-```bat
-del app.db
-rmdir /s /q qdrant_data
+```cmd
+ren app.db app.old.db
+ren qdrant_data qdrant_data_old
 mkdir qdrant_data
+venv\Scripts\python.exe app\main.py ingest --path data\raw\documents
 ```
 
-#### Linux / macOS
-
-```bash
-rm -f app.db
-rm -rf qdrant_data
-mkdir -p qdrant_data
-```
-
-Then re-ingest your documents.
-
----
-
-## Roadmap
-
-### Completed
-
-* local infrastructure
-* Ollama integration
-* Qdrant integration
-* SQLite integration
-* PDF ingestion pipeline
-* semantic retrieval
-* answer generation
-* FastAPI chat UI
-* improved frontend usability
-* planner + orchestrator
-* direct-answer vs retrieve-only modes
-* Reranking
-* Evidence check + one retry loop
-* Hybrid Retrieval(dense + sparse retrieval)
-* Cross-encoder Reranking
-* Evidence Judgement & Evidence Selection
-
-
-### Current focus
-* Retrieval Stabilization on single-document evaluation
-* Citation quality
-* Multi-document retrieval hardening
-
----
-
-## Retrieval Quality Workflow
-
-Phase 1 focuses on making retrieval measurable before adding larger agent features.
-
-### Sora Retrieval Evaluation
-
-The project includes a focused single-document retrieval benchmark:
-
-```text
-test/eval_sora.json
-```
-
-It checks whether retrieval returns the expected pages and answer keywords for the SORA PDF.
-
-Run it with:
+PowerShell:
 
 ```powershell
-.\venv\Scripts\python.exe scripts\eval_retrieval.py --eval-file test\eval_sora.json --output eval\retrieval_report.json
-```
-
-The report is written to:
-
-```text
-eval/retrieval_report.json
-```
-
-Use this before and after retrieval changes. A good retrieval change should improve or preserve:
-
-* expected page coverage
-* expected keyword coverage
-* section-title relevance
-* citation-ready chunk quality
-
-### Sora Answer Evaluation
-
-After retrieval looks healthy, run the full answer-quality benchmark:
-
-```powershell
-.\venv\Scripts\python.exe scripts\eval_answers.py --eval-file test\eval_sora_answers.json --output eval\answer_report.json
-```
-
-The report is written to:
-
-```text
-eval/answer_report.json
-```
-
-This checks:
-
-* required fact coverage
-* optional detail coverage
-* citation presence
-* abstention failures
-* unwanted drift
-
-Use retrieval evaluation first, then answer evaluation. If retrieval is high but answer quality is low, tune answer synthesis rather than chunk search.
-
-### Current Retrieval Improvements
-
-The retrieval pipeline now includes:
-
-* query expansion for common Sora/RAG evaluation intents
-* hybrid dense + BM25 retrieval
-* cross-encoder reranking
-* neighbor expansion
-* section-aware context expansion
-* section-title matched expansion
-* dynamic parent-child retrieval: child chunks are used for search, then larger parent context blocks are assembled from neighboring chunks for answer generation
-* extractive fallback for supported answers when the local LLM over-abstains
-
-For best results after changing chunking or PDF parsing, reset local indexes and re-ingest:
-
-```powershell
-Remove-Item app.db
-Remove-Item -Recurse qdrant_data
+Rename-Item app.db app.old.db
+Rename-Item qdrant_data qdrant_data_old
 New-Item -ItemType Directory qdrant_data
-.\venv\Scripts\python.exe app\main.py ingest --path data\raw\documents\SORA.pdf
+.\venv\Scripts\python.exe app\main.py ingest --path data\raw\documents
 ```
 
+## Evaluation Process We Follow
 
-### Planned
-* MCP integration
-* better support for larger document sets
-* more advanced UI state and interaction patterns
-* Tool-aware routing
-* Better Evaluation dashboards
+1. Add/update gold QA first.
+2. Run targeted eval for failing cases with `--ids`.
+3. Fix retrieval, evidence selection, answer generation, or verifier depending on the failure.
+4. Run full benchmark.
+5. Accept the change only if quality stays above the gate.
 
----
+Use the report fields:
 
-## Limitations
+- `missing_must_have`: answer missed required facts.
+- `triggered_must_not_have`: answer drifted into wrong content.
+- `top_routed_doc`: document router selected the wrong PDF.
+- `verification`: verifier/grounding issues.
+- `answer`: inspect the actual generated answer.
 
-Current limitations include:
+## Known Limitations
 
-* optimized mainly for text-based PDFs
-* no OCR pipeline yet for scanned/image-only PDFs
-* no streaming token output yet
-* no authentication or multi-user support
-* frontend is still intentionally lightweight
-* planner/orchestrator is not implemented yet
+- Scanned PDFs need OCR support.
+- Medium-style PDFs can still contain noisy boilerplate.
+- Local LLM output can vary between runs.
+- Some answer polish and citation formatting still need work.
+- Evaluation is only as good as the gold QA coverage.
 
----
+## Next Engineering Steps
 
-
+1. Expand gold QA to 30-50 questions across more PDFs.
+2. Add a small regression command that runs before every commit.
+3. Improve scanned-PDF/OCR ingestion.
+4. Improve citation formatting and remove duplicated citation text.
+5. Add a simple evaluation summary dashboard or HTML report.

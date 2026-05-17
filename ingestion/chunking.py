@@ -15,15 +15,99 @@ class ChunkRecord:
     token_estimate: int
     section_title: str | None = None
 
+
+BOILERPLATE_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in [
+        r"^https?://",
+        r"https?://\S+",
+        r"^\d{1,2}/\d{1,2}/\d{2,4},\s+\d{1,2}:\d{2}\s+[AP]M\b",
+        r"^\d+\s*/\s*\d+$",
+        r"^member-only story\b",
+        r"^listen\s+share\s+more\b",
+        r"^follow$",
+        r"^responses?\s*\(\d+\)$",
+        r"^see all from\b",
+        r"^more from\b",
+        r"^recommended from medium\b",
+        r"^read next:?$",
+        r"^photo by\b",
+        r"^image by\b",
+        r"^published in\b",
+        r"^open in app$",
+        r"^search$",
+        r"^previous$",
+        r"^written by\b",
+        r"^in by$",
+        r"^subscribe\b",
+        r"^upgrade to paid\b",
+        r"^before you go:?$",
+        r"^further reads?:?$",
+        r"^see more recommendations\b",
+        r"^create your own chatbot\b",
+        r"^\d+\s+min read\b",
+        r"^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\b",
+        r"^thank you for being a part of the community\b",
+    ]
+]
+
+TERMINAL_BOILERPLATE_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in [
+        r"^no responses yet$",
+        r"^responses?\s*(\(\d+\))?$",
+        r"^read next:?$",
+        r"^more from\b",
+        r"^recommended from\b",
+        r"^see more recommendations\b",
+        r"^before you go:?$",
+        r"^further reads?:?$",
+    ]
+]
+
+
+def is_boilerplate_line(line: str) -> bool:
+    normalized = re.sub(r"\s+", " ", line.strip())
+    if not normalized:
+        return False
+    if any(pattern.search(normalized) for pattern in BOILERPLATE_PATTERNS):
+        return True
+    if " | by " in normalized and " | " in normalized and len(normalized) > 90:
+        return True
+    return False
+
+
+def is_terminal_boilerplate_line(line: str) -> bool:
+    normalized = re.sub(r"\s+", " ", line.strip())
+    return any(pattern.search(normalized) for pattern in TERMINAL_BOILERPLATE_PATTERNS)
+
+
+def has_terminal_boilerplate(text: str) -> bool:
+    return any(is_terminal_boilerplate_line(line) for line in text.splitlines())
+
+
+def is_low_value_chunk(text: str) -> bool:
+    normalized = re.sub(r"\s+", " ", text.strip())
+    if len(normalized) >= 80:
+        return False
+    has_sentence_punctuation = bool(re.search(r"[.!?]", normalized))
+    has_code_marker = bool(re.search(r"[=(){}\[\]#<>]", normalized))
+    return not has_sentence_punctuation and not has_code_marker
+
 def normalize_page_text(text:str)-> str:
     text= text.replace("\r\n","\n").replace("\r","\n")
     text= text.replace("\x00", " ")
+    text = text.replace("\xa0", " ")
 
     lines= [line.strip() for line in text.split("\n")]
 
     cleaned_lines: list[str] = []
     blank_streak = 0
     for line in lines:
+        if is_terminal_boilerplate_line(line):
+            break
+        if is_boilerplate_line(line):
+            continue
         if not line:
             blank_streak += 1
             if blank_streak <=1:
@@ -34,6 +118,7 @@ def normalize_page_text(text:str)-> str:
         cleaned_lines.append(line)
     
     text= "\n".join(cleaned_lines)
+    text = re.sub(r"(\w)-\s+(\w)", r"\1\2", text)
     text= re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
   
@@ -175,6 +260,8 @@ def chunk_pages(
         for page in pages:
             cleaned = normalize_page_text(page.text)
             if not cleaned:
+                if has_terminal_boilerplate(page.text):
+                    break
                 continue
             text_chunks = recursive_split_text(
                 text=cleaned,
@@ -184,6 +271,8 @@ def chunk_pages(
             for chunk_text in text_chunks:
                 chunk_text= chunk_text.strip()
                 if not chunk_text:
+                    continue
+                if is_low_value_chunk(chunk_text):
                     continue
 
                 chunks.append(
@@ -198,6 +287,9 @@ def chunk_pages(
                     )
                 )
                 chunk_index += 1
+
+            if has_terminal_boilerplate(page.text):
+                break
 
         return chunks
 

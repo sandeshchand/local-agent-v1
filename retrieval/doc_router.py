@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 import os
 import re
 from typing import Any, List, Mapping
@@ -25,13 +26,17 @@ class DocumentRouter:
             return[]
         
         corpus = []
+        doc_text_cache: dict[str, str] = {}
         
         for doc in docs:
             basename = os.path.basename(doc["source_path"])
+            chunk_text = self._document_chunk_text(str(doc["doc_id"]))
+            doc_text_cache[str(doc["doc_id"])] = chunk_text
             routing_text =(
-                f"{doc['title']}"
-                f"{basename}"
-                f"{doc.get('section_titles','')}"
+                f"{doc['title']} "
+                f"{basename} "
+                f"{doc.get('section_titles','')} "
+                f"{chunk_text}"
                 
             ).strip()
             corpus.append(self._tokenize(routing_text))
@@ -49,7 +54,9 @@ class DocumentRouter:
         for doc,score in zip(docs,scores):
             title_lower = (doc['title'] or '').lower()
             path_lower = (doc['source_path'] or '').lower()
-            sections_lower = (doc.get('section_title','') or '').lower()
+            sections_lower = (doc.get('section_titles','') or '').lower()
+            chunk_text_lower = doc_text_cache.get(str(doc["doc_id"]), "").lower()
+            token_counts = Counter(self._tokenize(chunk_text_lower))
 
             boost = 0.0
             for token in query_tokens:
@@ -59,8 +66,12 @@ class DocumentRouter:
                     boost += 1.0
                 if token in path_lower:
                     boost += 0.5
+                if token_counts.get(token, 0) > 0:
+                    boost += 2.0 + min(3.0, token_counts[token] * 0.25)
             if q_lower and q_lower in title_lower:
                 boost += 2.0
+            if q_lower and q_lower in chunk_text_lower:
+                boost += 4.0
 
             enriched = dict(doc)
             enriched["routing_score"] = float(score) + boost
@@ -72,6 +83,25 @@ class DocumentRouter:
     
     def _tokenize(self, text: str) -> List[str]:
         return re.findall(r"\b\w+\b", text.lower())
+
+    def _document_chunk_text(self, doc_id: str, max_chars: int = 12000) -> str:
+        parts: list[str] = []
+        total = 0
+        for chunk in self.sqlite_store.list_chunks_for_retrieval(doc_id=doc_id):
+            text = " ".join(
+                [
+                    chunk.get("section_title") or "",
+                    chunk.get("text") or "",
+                ]
+            )
+            if not text.strip():
+                continue
+            remaining = max_chars - total
+            if remaining <= 0:
+                break
+            parts.append(text[:remaining])
+            total += len(parts[-1])
+        return " ".join(parts)
         
           
             

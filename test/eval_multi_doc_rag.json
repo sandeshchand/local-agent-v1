@@ -1,0 +1,289 @@
+[
+  {
+    "id": "sora_what_is",
+    "doc": "sora",
+    "question": "What is Sora?",
+    "expected_doc_title": "SORA",
+    "expected_answer": "Sora is an OpenAI text-to-video generative AI model released in February 2024. It can generate realistic or imaginative scenes from text prompts and can create videos up to about one minute long.",
+    "must_have": [
+      ["text-to-video", "text to video"],
+      "OpenAI",
+      ["February 2024", "Feb 2024"],
+      ["realistic or imaginative", "realistic", "imaginative"],
+      ["one-minute", "one minute", "1 minute"]
+    ],
+    "should_have": [
+      ["physical world", "world simulator"]
+    ],
+    "must_not_have": ["WatchTower", "LazyDocker", "Tsetlin"]
+  },
+  {
+    "id": "sora_world_simulator",
+    "doc": "sora",
+    "question": "Why does the paper describe Sora as a potential world simulator?",
+    "expected_doc_title": "SORA",
+    "expected_answer": "The paper describes Sora as a potential world simulator because it can model aspects of physical and digital worlds, including 3D consistency, dynamic camera motion, long-range coherence, object persistence, simple interactions, and digital environments such as Minecraft.",
+    "must_have": [
+      "3D consistency",
+      ["dynamic camera motion", "dynamic camera"],
+      ["long-range coherence", "long range coherence"],
+      ["object persistence", "object permanence"],
+      ["simple interactions", "interactions with the world"],
+      "Minecraft"
+    ],
+    "should_have": [
+      ["physical world", "physical worlds"],
+      ["digital environments", "digital worlds"]
+    ],
+    "must_not_have": ["WatchTower", "LazyDocker", "Tsetlin"]
+  },
+  {
+    "id": "sora_visual_input",
+    "doc": "sora",
+    "question": "How does Sora turn visual data into model input?",
+    "expected_doc_title": "SORA",
+    "expected_answer": "Sora compresses raw visual input into a lower-dimensional latent representation, then extracts spacetime patches from the compressed video. These patches act like tokens and are fed into a diffusion transformer.",
+    "must_have": [
+      ["lower-dimensional latent", "latent representation", "latent space"],
+      ["spacetime patches", "space-time patches", "spatio-temporal patches"],
+      ["compressed", "compresses"],
+      ["diffusion transformer", "DiT"]
+    ],
+    "should_have": [
+      ["tokens", "tokenized"],
+      ["visual appearance", "motion dynamics"]
+    ],
+    "must_not_have": ["WatchTower", "LazyDocker", "Tsetlin"]
+  },
+  {
+    "id": "sora_prompt_following",
+    "doc": "sora",
+    "question": "How does Sora improve language understanding and prompt following?",
+    "expected_doc_title": "SORA",
+    "expected_answer": "Sora improves prompt following using captioning and prompt expansion methods, including descriptive captions, fine-tuning on video-text data, and GPT-4V-based prompt extension.",
+    "must_have": [
+      ["captioner", "captioning"],
+      ["descriptive caption", "descriptive captions"],
+      ["fine-tuning", "fine tuning", "fine-tune"],
+      "GPT-4V",
+      ["prompt extension", "prompt expansion"]
+    ],
+    "should_have": [
+      ["DALL-E", "DALL"],
+      ["instruction following", "prompt following"]
+    ],
+    "must_not_have": ["WatchTower", "LazyDocker", "Tsetlin"]
+  },
+  {
+    "id": "sora_limitations",
+    "doc": "sora",
+    "question": "What limitations of Sora does the review highlight?",
+    "expected_doc_title": "SORA",
+    "expected_answer": "The review highlights limitations with physical principles such as cause and effect, spatial and temporal consistency, irrelevant animals or people appearing, human-computer interaction issues, usage limitations, and the one-minute video constraint.",
+    "must_have": [
+      ["cause-and-effect", "cause and effect"],
+      "spatial",
+      "temporal",
+      ["irrelevant animals or people", "animals or people"],
+      ["human-computer interaction", "HCI"],
+      ["one-minute", "one minute", "usage limitation", "usage limitations"]
+    ],
+    "should_have": [
+      ["public release", "public access"],
+      "safety"
+    ],
+    "must_not_have": ["WatchTower", "LazyDocker", "Tsetlin"]
+  },
+  {
+    "id": "docker_three_tools",
+    "doc": "docker",
+    "question": "Which three tools does the Docker article recommend for better container management?",
+    "expected_doc_title": "Stop Managing Docker",
+    "expected_answer": "The article recommends LazyDocker, Dive, and WatchTower as tools to save time, reduce stress, and improve Docker productivity.",
+    "must_have": ["LazyDocker", "Dive", "WatchTower"],
+    "should_have": [
+      ["save time", "time"],
+      ["reduce stress", "stress"],
+      ["productivity", "boost productivity"]
+    ],
+    "must_not_have": ["Sora", "Tsetlin", "Random Kitchen Sinks"]
+  },
+  {
+    "id": "docker_lazydocker_features",
+    "doc": "docker",
+    "question": "What are the key features of LazyDocker?",
+    "expected_doc_title": "Stop Managing Docker",
+    "expected_answer": "LazyDocker is a terminal UI for Docker and Docker Compose. It lets users view container status, logs, metrics, restart/remove/rebuild containers, monitor resource usage, attach to shells, prune unused resources, and use mouse support.",
+    "must_have": [
+      ["terminal UI", "interactive interface"],
+      ["Docker Compose", "Docker and Docker Compose"],
+      ["status", "container status"],
+      "logs",
+      ["restart", "rebuild"],
+      ["resource usage", "metrics"]
+    ],
+    "should_have": [
+      ["attach", "shells"],
+      ["prune", "unused containers"],
+      ["mouse support", "clicking and scrolling"]
+    ],
+    "must_not_have": ["Sora", "Tsetlin"]
+  },
+  {
+    "id": "docker_dive_features",
+    "doc": "docker",
+    "question": "What does Dive help you analyze in Docker images?",
+    "expected_doc_title": "Stop Managing Docker",
+    "expected_answer": "Dive helps analyze Docker images layer by layer, showing layer contents and size information, efficiency score, duplicated files, wasted space, command history, and CI/CD integration.",
+    "must_have": [
+      ["layer-by-layer", "layer by layer"],
+      ["size information", "image size", "shrink"],
+      ["efficiency score", "efficiency"],
+      ["duplicated files", "duplicate files"],
+      ["wasted space", "waste"],
+      ["command history", "history"]
+    ],
+    "should_have": [
+      ["CI/CD", "CI CD"],
+      ["Dockerfile", "instruction"]
+    ],
+    "must_not_have": ["Sora", "Tsetlin"]
+  },
+  {
+    "id": "docker_watchtower_features",
+    "doc": "docker",
+    "question": "What are the key features of WatchTower?",
+    "expected_doc_title": "Stop Managing Docker",
+    "expected_answer": "WatchTower monitors running Docker containers and automatically updates them when their base image changes. Its features include monitoring image version changes, detecting updates, and updating containers with fresh images.",
+    "must_have": [
+      ["monitors", "monitoring"],
+      ["base image changes", "image version changes"],
+      ["detecting updates", "detects updates", "new container image versions"],
+      ["updating containers", "updates containers", "fresh images"],
+      ["automatically updates", "automatic updates"]
+    ],
+    "should_have": [
+      ["security", "reliability"],
+      ["reduced overhead", "stability"]
+    ],
+    "must_not_have": ["Sora", "Tsetlin", "Random Kitchen Sinks"]
+  },
+  {
+    "id": "docker_best_practices",
+    "doc": "docker",
+    "question": "What best practices does the Docker article suggest when using LazyDocker, Dive, and WatchTower together?",
+    "expected_doc_title": "Stop Managing Docker",
+    "expected_answer": "The article suggests using LazyDocker during development, running Dive analysis before pushing images to production, setting efficiency score thresholds in CI/CD, using multi-stage builds from Dive feedback, configuring WatchTower for specific containers, notifications, and low-traffic update schedules.",
+    "must_have": [
+      ["LazyDocker for Development", "LazyDocker during development"],
+      ["Dive analysis before pushing", "before pushing images"],
+      ["efficiency score thresholds", "score thresholds"],
+      ["multi-stage builds", "multi stage builds"],
+      ["specific containers", "monitoring only specific containers"],
+      ["notification systems", "notifications"],
+      ["low-traffic", "low traffic"]
+    ],
+    "should_have": [
+      ["custom keybindings", "keybindings"]
+    ],
+    "must_not_have": ["Sora", "Tsetlin"]
+  },
+  {
+    "id": "ml_symbolic_regression",
+    "doc": "machine-learning",
+    "question": "What is Symbolic Regression according to the machine learning article?",
+    "expected_doc_title": "Machine Learning Algorithms",
+    "expected_answer": "Symbolic Regression discovers the mathematical expression or underlying equation that best fits the data instead of assuming a predefined equation. It uses genetic programming with mutation and crossover.",
+    "must_have": [
+      ["mathematical expression", "underlying equation", "actual equation"],
+      ["predefined equation", "predefined"],
+      ["genetic programming", "evolves models"],
+      "mutation",
+      "crossover"
+    ],
+    "should_have": [
+      ["physical laws", "physics experiments"],
+      ["stock market", "medical research"]
+    ],
+    "must_not_have": ["Sora", "Docker", "WatchTower"]
+  },
+  {
+    "id": "ml_isolation_forest",
+    "doc": "machine-learning",
+    "question": "How does Isolation Forest detect anomalies and when is it useful?",
+    "expected_doc_title": "Machine Learning Algorithms",
+    "expected_answer": "Isolation Forest is a tree-based anomaly detection algorithm that isolates outliers by how quickly they stand out in randomly partitioned space. It works on high-dimensional unlabeled data and is useful for fraud detection, network intrusion or malware detection, quality control, rare disease detection, and unusual stock market activity.",
+    "must_have": [
+      ["anomaly detection", "outliers"],
+      ["isolates outliers", "isolating outliers"],
+      ["randomly partitioned", "random partitioned"],
+      ["high-dimensional", "high dimensional"],
+      ["unlabeled", "unsupervised"],
+      ["fraudulent", "fraud"]
+    ],
+    "should_have": [
+      ["network intrusions", "malware"],
+      ["quality control", "defective products"],
+      ["rare diseases", "stock market"]
+    ],
+    "must_not_have": ["Sora", "Docker", "WatchTower"]
+  },
+  {
+    "id": "ml_tsetlin_machine",
+    "doc": "machine-learning",
+    "question": "What are the key strengths of Tsetlin Machines?",
+    "expected_doc_title": "Machine Learning Algorithms",
+    "expected_answer": "Tsetlin Machines use propositional logic and a reward-and-penalty mechanism to learn patterns. Their strengths include low memory footprint, high learning speed, competitive performance, simple implementation on low-power hardware, and interpretable human-readable rules.",
+    "must_have": [
+      ["propositional logic", "logic"],
+      ["reward-and-penalty", "reward and penalty"],
+      ["low memory", "memory footprint"],
+      ["high learning speed", "learning speed"],
+      ["low-power hardware", "low power hardware"],
+      ["human-readable rules", "interpretable"]
+    ],
+    "should_have": [
+      ["competitive predictive performance", "benchmark datasets"]
+    ],
+    "must_not_have": ["Sora", "Docker", "WatchTower"]
+  },
+  {
+    "id": "ml_random_kitchen_sinks",
+    "doc": "machine-learning",
+    "question": "How do Random Kitchen Sinks make kernel methods scalable?",
+    "expected_doc_title": "Machine Learning Algorithms",
+    "expected_answer": "Random Kitchen Sinks approximate kernel functions efficiently by projecting data into a higher-dimensional feature space using randomized Fourier features. This helps approximate non-linear decision boundaries while reducing computation and memory cost for SVMs, kernel regression, and RBF kernels.",
+    "must_have": [
+      ["kernel functions", "kernel methods"],
+      ["randomized Fourier features", "Fourier features"],
+      ["higher-dimensional feature space", "feature space"],
+      ["non-linear decision boundaries", "nonlinear decision boundaries"],
+      ["less computation", "computational cost", "scalable"]
+    ],
+    "should_have": [
+      ["SVMs", "Support Vector Machines"],
+      ["kernel regression", "RBF"]
+    ],
+    "must_not_have": ["Sora", "Docker", "WatchTower"]
+  },
+  {
+    "id": "ml_crfs",
+    "doc": "machine-learning",
+    "question": "What are Conditional Random Fields used for?",
+    "expected_doc_title": "Machine Learning Algorithms",
+    "expected_answer": "Conditional Random Fields are probabilistic models for structured prediction. They account for context instead of making independent predictions, making them useful for sequential data such as named entity recognition.",
+    "must_have": [
+      ["probabilistic models", "probabilistic"],
+      ["structured prediction", "structured"],
+      ["context", "take context into account"],
+      ["sequential data", "sequence"],
+      ["independent predictions", "not independent"],
+      ["Named Entity Recognition", "NER"]
+    ],
+    "should_have": [
+      ["CRF", "Conditional Random Field"],
+      ["labels", "predictions"]
+    ],
+    "must_not_have": ["Sora", "Docker", "WatchTower"]
+  }
+]
