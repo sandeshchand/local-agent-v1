@@ -144,6 +144,9 @@ Answer:
         limitation_answer = self._limitation_extractive_answer(query, results)
         if limitation_answer:
             answer = limitation_answer
+        definition_answer = self._definition_extractive_answer(query, results)
+        if definition_answer:
+            answer = definition_answer
         example_answer = self._example_extractive_answer(query, results)
         if example_answer and (
             "example" in query.lower()
@@ -193,6 +196,8 @@ Answer:
                 return self._clean_final_answer(capability_answer, max_citation=len(results))
             if why_answer:
                 return self._clean_final_answer(why_answer, max_citation=len(results))
+            if definition_answer:
+                return self._clean_final_answer(definition_answer, max_citation=len(results))
             if example_answer:
                 return self._clean_final_answer(example_answer, max_citation=len(results))
             if source_window_answer:
@@ -513,34 +518,10 @@ Evidence facts:
     def _feature_window_answer(self, query: str, results: list[dict]) -> str:
         focus_entity = self._focus_entity_display(query).lower()
         query_terms = self._query_terms(query)
+        entity_terms = self._entity_terms(focus_entity)
         candidates: list[tuple[int, int, str]] = []
-        for index, item in enumerate(results, start=1):
-            text = self._clean_text(item.get("text") or "")
-            lower = text.lower()
-            if focus_entity and focus_entity not in lower:
-                continue
-            positions = [
-                pos
-                for marker in ["features include", "key features", "what is", "analy"]
-                for pos in [lower.find(marker)]
-                if pos >= 0
-            ]
-            positions.extend(lower.find(term) for term in query_terms if lower.find(term) >= 0)
-            positions = [pos for pos in positions if pos >= 0]
-            if not positions:
-                continue
-            focus_position = lower.find(focus_entity) if focus_entity else -1
-            feature_after_focus = lower.find("features include", focus_position) if focus_position >= 0 else -1
-            if focus_position >= 0:
-                anchor = focus_position if feature_after_focus < 0 else min(focus_position, feature_after_focus)
-            else:
-                anchor = min(positions)
-            excerpt = self._clean_window_excerpt(
-                self._window_around(text, anchor, before=80, after=1150),
-                max_words=150,
-            )
-            if not excerpt:
-                continue
+
+        def score_excerpt(excerpt: str) -> int:
             excerpt_lower = excerpt.lower()
             score = self._sentence_relevance_score(excerpt, query_terms)
             score += sum(
@@ -548,27 +529,217 @@ Evidence facts:
                 for marker in [
                     "feature",
                     "include",
-                    "layer",
-                    "size",
-                    "score",
-                    "history",
-                    "monitor",
-                    "update",
-                    "version",
-                    "image",
-                    "container",
+                    "capability",
+                    "support",
+                    "supports",
+                    "provides",
+                    "offers",
+                    "allows",
+                    "enables",
+                    "helps",
+                    "automatic",
+                    "interactive",
                 ]
                 if marker in excerpt_lower
             )
-            if focus_entity and focus_entity in excerpt_lower:
+            if entity_terms and self._matches_entity_terms(excerpt_lower, entity_terms):
                 score += 8
-            candidates.append((score, -index, excerpt))
+            if "key features include" in excerpt_lower or "features include" in excerpt_lower:
+                score += 6
+            score += min(8, max(0, len(excerpt.split()) - 45) // 8)
+            if self._contains_command_text(excerpt_lower) and not self._asks_for_commands(query):
+                score -= 12
+            return score
+
+        ordered_texts = self._ordered_result_texts(results)
+        if len(ordered_texts) >= 2:
+            combined_text = self._clean_text(" ".join(text for _, text in ordered_texts))
+            combined_lower = combined_text.lower()
+            if not entity_terms or self._matches_entity_terms(combined_lower, entity_terms):
+                spans = self._feature_answer_spans(combined_lower, entity_terms, query_terms)
+                for start, end in spans[:6]:
+                    excerpt = self._clean_feature_excerpt(combined_text[start:end], query=query, max_words=155)
+                    if not excerpt:
+                        continue
+                    citation = ordered_texts[0][0]
+                    candidates.append((score_excerpt(excerpt) + 2, -citation, excerpt))
+
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "")
+            lower = text.lower()
+            if entity_terms and not self._matches_entity_terms(lower, entity_terms):
+                continue
+            spans = self._feature_answer_spans(lower, entity_terms, query_terms)
+            if not spans:
+                continue
+            for start, end in spans[:4]:
+                excerpt = self._clean_feature_excerpt(text[start:end], query=query, max_words=140)
+                if not excerpt:
+                    continue
+                score = score_excerpt(excerpt)
+                candidates.append((score, -index, excerpt))
         if not candidates:
             return ""
         candidates.sort(reverse=True)
         citation = -candidates[0][1]
         prefix = "It helps analyze:" if "analy" in query.lower() else "Key features include:"
-        return self._clean_final_answer(f"{prefix} {candidates[0][2]}. [{citation}]")
+        excerpt = candidates[0][2]
+        if re.search(r"\b(?:key\s+features|features)\s+include\b", excerpt, flags=re.IGNORECASE):
+            return self._clean_final_answer(f"{excerpt}. [{citation}]")
+        return self._clean_final_answer(f"{prefix} {excerpt}. [{citation}]")
+
+    def _feature_answer_spans(
+        self,
+        lower_text: str,
+        entity_terms: list[str],
+        query_terms: set[str],
+    ) -> list[tuple[int, int]]:
+        starts: list[int] = []
+        entity_positions = self._entity_anchor_positions(lower_text, entity_terms) if entity_terms else []
+        if entity_positions:
+            for position in entity_positions[:10]:
+                heading_before = lower_text.rfind("what is", 0, position + 1)
+                heading_after = lower_text.find("what is", position)
+                if heading_before >= 0 and position - heading_before <= 90:
+                    starts.append(heading_before)
+                elif heading_after >= 0 and heading_after - position <= 140:
+                    starts.append(heading_after)
+                else:
+                    starts.append(position)
+
+                for marker in ["features include", "key features"]:
+                    feature_position = lower_text.find(marker, position)
+                    if 0 <= feature_position - position <= 1200:
+                        heading_before_feature = lower_text.rfind("what is", 0, feature_position)
+                        if heading_before_feature >= 0 and feature_position - heading_before_feature <= 500:
+                            starts.append(heading_before_feature)
+                        else:
+                            starts.append(feature_position)
+        else:
+            starts.extend(
+                position
+                for marker in ["features include", "key features", "what is", "analy"]
+                for position in [lower_text.find(marker)]
+                if position >= 0
+            )
+            starts.extend(lower_text.find(term) for term in query_terms if lower_text.find(term) >= 0)
+
+        spans: list[tuple[int, int]] = []
+        for start in sorted(set(position for position in starts if position >= 0)):
+            end = self._first_marker_after(
+                lower_text,
+                [
+                    "getting started",
+                    "how to use",
+                    "how do i",
+                    "pro tip",
+                    "you can try",
+                    "when using",
+                    "best practices",
+                    "why these tools matter",
+                    "setup instructions",
+                    "complete code",
+                    "installation",
+                    "installing",
+                    "resources",
+                    "references",
+                    "try it out",
+                    "start integrating",
+                    "thanks for reading",
+                    "get an email",
+                    "signing up",
+                    "final thoughts",
+                    "let's connect",
+                    "lets connect",
+                    "connect!",
+                    "embrace ",
+                ],
+                start + 160,
+            )
+            if end < 0:
+                next_topic = lower_text.find("what is ", start + 160)
+                end = next_topic if next_topic >= 0 else min(len(lower_text), start + 1300)
+            if end > start:
+                spans.append((start, end))
+        return spans
+
+    def _clean_feature_excerpt(self, excerpt: str, query: str, max_words: int = 140) -> str:
+        excerpt = re.sub(r"\s+", " ", excerpt).strip(" .:-")
+        if not self._asks_for_commands(query):
+            command_start = self._first_marker_after(
+                excerpt.lower(),
+                [
+                    "docker run",
+                    "brew install",
+                    "pip install",
+                    "npm install",
+                    "conda install",
+                    "poetry add",
+                    "uv run",
+                    "python -m",
+                    "alias ",
+                    "git clone",
+                ],
+                0,
+            )
+            if command_start >= 0:
+                excerpt = excerpt[:command_start]
+            social_start = self._first_marker_after(
+                excerpt.lower(),
+                [
+                    "start integrating",
+                    "thanks for reading",
+                    "get an email",
+                    "signing up",
+                    "follow me on",
+                    "subscribe to",
+                    "your thoughts and feedback",
+                    "connect!",
+                ],
+                0,
+            )
+            if social_start >= 0:
+                excerpt = excerpt[:social_start]
+        heading_match = re.search(r"(?i)\bwhat\s+(?:is|are)\b", excerpt)
+        feature_match = re.search(r"(?i)\b(?:key\s+features|features)\s+include\b", excerpt)
+        if heading_match and heading_match.start() > 0 and (
+            not feature_match or heading_match.start() < feature_match.start()
+        ):
+            excerpt = excerpt[heading_match.start() :]
+        excerpt = re.sub(r"^[^A-Za-z0-9]*(?:[-\\\w./:=<>]+\s+){2,}(?=What is|[A-Z][A-Za-z0-9_-]+:)", "", excerpt).strip()
+        excerpt = re.sub(r"(?i)^what\s+is\s+[^?]{1,100}\?\s*", "", excerpt).strip(" .:-")
+        excerpt = re.sub(
+            r"(?i)\b(?:some\s+(?:of\s+)?the\s+)?key\s+features(?:\s+of\s+[^:]{1,80})?\s+include:\s*",
+            "Key features include: ",
+            excerpt,
+        )
+        excerpt = re.sub(r"(?i)(key\s+features\s+include:\s*){2,}", "Key features include: ", excerpt)
+        excerpt = re.sub(r"\b(?:Follow|Published in)[^.!?]{0,120}", "", excerpt).strip(" .:-")
+        words = excerpt.split()
+        if len(words) > max_words:
+            excerpt = " ".join(words[:max_words]).rstrip(" ,;:")
+        return excerpt.strip()
+
+    def _asks_for_commands(self, query: str) -> bool:
+        q = query.lower()
+        return any(term in q for term in ["command", "setup", "install", "run", "how to use", "execute"])
+
+    def _contains_command_text(self, text_lower: str) -> bool:
+        return any(
+            marker in text_lower
+            for marker in [
+                "docker run",
+                "brew install",
+                "pip install",
+                "npm install",
+                "conda install",
+                "poetry add",
+                "uv run",
+                "python -m",
+                "alias ",
+                "git clone",
+            ]
+        )
 
     def _formula_window_answer(self, query: str, results: list[dict]) -> str:
         ordered = self._ordered_result_texts(results)
@@ -1415,7 +1586,138 @@ Evidence facts:
 
     def _is_explanation_question(self, query: str) -> bool:
         q = query.lower()
-        return q.startswith("why") or "mean by" in q or (q.startswith("what does") and "mean" in q)
+        return q.startswith("why") or (
+            "article" in q and ("mean by" in q or (q.startswith("what does") and "mean" in q))
+        )
+
+    def _definition_extractive_answer(self, query: str, results: list[dict]) -> str:
+        entity = self._definition_query_entity(query)
+        if not entity or not results:
+            return ""
+
+        entity_terms = self._entity_terms(entity)
+        if not entity_terms:
+            return ""
+
+        candidates: list[tuple[int, int, str]] = []
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "")
+            if not text:
+                continue
+            lower = text.lower()
+            anchors = self._entity_anchor_positions(lower, entity_terms)
+            for anchor in anchors[:4]:
+                window = self._window_around(text, anchor, before=120, after=760)
+                sentences = self._split_sentences(window)
+                selected: list[str] = []
+                for sentence in sentences:
+                    sentence_lower = sentence.lower()
+                    sentence = re.split(r"\bGetting Started\b|\bHow to use\b", sentence, maxsplit=1)[0].strip()
+                    if not sentence:
+                        continue
+                    sentence_lower = sentence.lower()
+                    if self._is_low_value_fact(sentence) or self._looks_like_code_or_metadata_fact(sentence):
+                        continue
+                    entity_match = self._matches_entity_terms(sentence_lower, entity_terms)
+                    relation_match = entity_match and any(
+                        marker in sentence_lower
+                        for marker in [" is ", " are ", "refers to", "means", "called", "known as"]
+                    )
+                    entity_starts_sentence = entity_match and self._matches_entity_terms(
+                        sentence_lower.split(":", 1)[0],
+                        entity_terms,
+                    )
+                    class_match = entity_starts_sentence and any(
+                        marker in sentence_lower
+                        for marker in ["tool", "interface", "model", "library", "system", "helps", "allows"]
+                    )
+                    detail_match = bool(selected) and any(
+                        marker in sentence_lower
+                        for marker in ["instead of", "interface", "features include", "view", "monitor", "helps", "allows"]
+                    )
+                    if relation_match or class_match or detail_match:
+                        selected.append(sentence)
+                    if len(selected) >= 3:
+                        break
+                if not selected:
+                    continue
+                excerpt = self._clean_window_excerpt(" ".join(selected), max_words=95)
+                if not excerpt:
+                    continue
+                excerpt_lower = excerpt.lower()
+                score = self._sentence_relevance_score(excerpt, self._query_terms(query))
+                score += 8 if self._matches_entity_terms(excerpt_lower, entity_terms) else 0
+                score += sum(4 for marker in [" is ", " are ", "refers to", "means"] if marker in excerpt_lower)
+                score += sum(2 for marker in ["tool", "interface", "helps", "allows"] if marker in excerpt_lower)
+                candidates.append((score, -index, excerpt))
+
+        if not candidates:
+            return ""
+        candidates.sort(reverse=True)
+        citation = -candidates[0][1]
+        return self._clean_final_answer(f"{candidates[0][2]} [{citation}]")
+
+    def _definition_query_entity(self, query: str) -> str:
+        q = query.strip().strip("?!. ")
+        patterns = [
+            r"(?i)^what\s+do\s+you\s+mean\s+by\s+(.+)$",
+            r"(?i)^what\s+is\s+(.+)$",
+            r"(?i)^what\s+are\s+(.+)$",
+            r"(?i)^define\s+(.+)$",
+            r"(?i)^definition\s+of\s+(.+)$",
+            r"(?i)^what\s+does\s+(.+?)\s+mean$",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, q)
+            if not match:
+                continue
+            entity = match.group(1).strip(" '\"“”‘’")
+            if entity.lower() in {"the article", "article", "it", "this", "that"}:
+                continue
+            if pattern.startswith("(?i)^what\\s+is") or pattern.startswith("(?i)^what\\s+are"):
+                if len(self._entity_terms(entity)) < 2:
+                    continue
+            return re.sub(r"\s+", " ", entity)
+        return ""
+
+    def _entity_terms(self, entity: str) -> list[str]:
+        stop_words = {"a", "an", "the", "and", "or", "of", "for", "about", "by", "in", "on", "to"}
+        return [
+            token.lower()
+            for token in re.findall(r"\b[a-zA-Z0-9][a-zA-Z0-9_-]*\b", entity)
+            if token.lower() not in stop_words
+        ]
+
+    def _entity_anchor_positions(self, lower_text: str, entity_terms: list[str]) -> list[int]:
+        positions: list[int] = []
+        compact_entity = "".join(entity_terms)
+        if compact_entity:
+            compact_chars: list[str] = []
+            raw_positions: list[int] = []
+            for raw_position, char in enumerate(lower_text):
+                if char.isalnum():
+                    compact_chars.append(char)
+                    raw_positions.append(raw_position)
+            compact_text = "".join(compact_chars)
+            for match in re.finditer(re.escape(compact_entity), compact_text):
+                if match.start() < len(raw_positions):
+                    positions.append(raw_positions[match.start()])
+        if len(entity_terms) >= 2:
+            flexible = r"\s*[-_]?\s*".join(re.escape(term) for term in entity_terms)
+            positions.extend(match.start() for match in re.finditer(flexible, lower_text))
+        if len(entity_terms) == 1:
+            for term in entity_terms:
+                positions.extend(match.start() for match in re.finditer(rf"\b{re.escape(term)}\b", lower_text))
+        return sorted(set(position for position in positions if position >= 0))
+
+    def _matches_entity_terms(self, lower_text: str, entity_terms: list[str]) -> bool:
+        if not entity_terms:
+            return False
+        compact_text = re.sub(r"[^a-z0-9]+", "", lower_text)
+        compact_entity = "".join(entity_terms)
+        if compact_entity and compact_entity in compact_text:
+            return True
+        return all(re.search(rf"\b{re.escape(term)}\b", lower_text) for term in entity_terms)
 
     def _why_extractive_answer(self, query: str, results: list[dict]) -> str:
         if not self._is_explanation_question(query):
@@ -2306,7 +2608,13 @@ Focused answer:
         if not answer or self._is_insufficient_answer(answer):
             return answer
         focus_entity = self._focus_entity_display(query)
-        if not focus_entity or focus_entity.lower() in answer.lower():
+        focus_terms = self._entity_terms(focus_entity)
+        answer_lower = answer.lower()
+        if (
+            not focus_entity
+            or focus_entity.lower() in answer_lower
+            or (focus_terms and self._matches_entity_terms(answer_lower, focus_terms))
+        ):
             return answer
 
         q = query.lower()
@@ -2316,10 +2624,6 @@ Focused answer:
         return f"{focus_entity}: {answer}"
 
     def _focus_entity_display(self, query: str) -> str:
-        focus_phrases = self._focus_phrases(query, preserve_case=True)
-        if focus_phrases:
-            return sorted(focus_phrases, key=len, reverse=True)[0]
-
         generic_terms = {
             "what",
             "which",
@@ -2338,6 +2642,22 @@ Focused answer:
             "according",
             "review",
         }
+        for pattern in [
+            r"(?i)^\s*what\s+does\s+(.+?)\s+(?:help|support|provide|allow|enable|detect|analy[sz]e|monitor|update|show)\b",
+            r"(?i)^\s*how\s+does\s+(.+?)\s+(?:help|work|support|provide|allow|enable|detect|analy[sz]e|monitor|update|show)\b",
+        ]:
+            match = re.search(pattern, query)
+            if not match:
+                continue
+            candidate = re.sub(r"\s+", " ", match.group(1)).strip(" '\"“”‘’")
+            candidate_terms = self._entity_terms(candidate)
+            if candidate_terms and not all(term in generic_terms for term in candidate_terms):
+                return candidate
+
+        focus_phrases = self._focus_phrases(query, preserve_case=True)
+        if focus_phrases:
+            return sorted(focus_phrases, key=len, reverse=True)[0]
+
         candidates: list[str] = []
         for token in re.findall(r"\b[A-Za-z][A-Za-z0-9_-]{3,}\b", query):
             lower = token.lower()
