@@ -6,6 +6,7 @@ from typing import Literal
 
 
 EvidenceLabel = Literal[
+    "MAIN_ANSWER",
     "DEFINITIVE",
     "SUPPORTING_DETAIL",
     "BACKGROUND",
@@ -59,7 +60,27 @@ Return only valid JSON:
 {{"label": "...", "reason": "..."}}
 """.strip()
 
-        raw = self.chat_client.generate(prompt).strip()
+        try:
+            raw = self.chat_client.generate(prompt).strip()
+        except Exception as exc:
+            overlap = self._query_overlap_count(query, item)
+            if overlap >= 2:
+                return JudgedEvidence(
+                    item=item,
+                    label="MAIN_ANSWER",
+                    reason=f"LLM evidence judge unavailable; selected by heuristic overlap ({overlap}).",
+                )
+            if overlap == 1:
+                return JudgedEvidence(
+                    item=item,
+                    label="BACKGROUND",
+                    reason=f"LLM evidence judge unavailable; weak heuristic overlap ({overlap}).",
+                )
+            return JudgedEvidence(
+                item=item,
+                label="IRRELEVANT",
+                reason=f"LLM evidence judge unavailable: {exc}",
+            )
 
         label = "IRRELEVANT"
         reason = raw

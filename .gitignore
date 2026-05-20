@@ -63,6 +63,7 @@ data/processed/
 data/evals/
 data/logs/
 eval/*_report.json
+eval/rag_failure_diagnosis*.json
 eval/.tmp_selected_eval.json
 query_results.txt
 write_test.txt

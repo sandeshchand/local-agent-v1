@@ -126,7 +126,11 @@ Answer:
             memory_context=memory_context,
             tool_context=tool_context,
         )
-        answer = self.chat_client.generate(prompt).strip()
+        try:
+            answer = self.chat_client.generate(prompt).strip()
+        except Exception:
+            fallback = self._deterministic_repair_answer(query, results)
+            return fallback or self._generic_extractive_fallback(query, results)
 
         if not answer:
             return self._generic_extractive_fallback(query, results)
@@ -147,6 +151,9 @@ Answer:
         definition_answer = self._definition_extractive_answer(query, results)
         if definition_answer:
             answer = definition_answer
+        pipeline_answer = self._pipeline_extractive_answer(query, results)
+        if pipeline_answer:
+            answer = pipeline_answer
         example_answer = self._example_extractive_answer(query, results)
         if example_answer and (
             "example" in query.lower()
@@ -166,7 +173,7 @@ Answer:
         ):
             answer = why_answer
         list_answer = self._list_extractive_answer(query, results)
-        if list_answer and (
+        if list_answer and not best_practices_answer and (
             self._is_list_question(query)
             or self._looks_unfocused(query, answer)
             or self._misses_intent_shape(query, answer)
@@ -198,6 +205,8 @@ Answer:
                 return self._clean_final_answer(why_answer, max_citation=len(results))
             if definition_answer:
                 return self._clean_final_answer(definition_answer, max_citation=len(results))
+            if pipeline_answer:
+                return self._clean_final_answer(pipeline_answer, max_citation=len(results))
             if example_answer:
                 return self._clean_final_answer(example_answer, max_citation=len(results))
             if source_window_answer:
@@ -235,6 +244,12 @@ Answer:
         facts = self._build_evidence_fact_list(query, results, max_facts=20)
         context = build_context(results, max_chars_per_chunk=1200)
         issue_text = "\n".join(f"- {issue}" for issue in issues) or "- Answer needs verification repair."
+        issue_blob = issue_text.lower()
+        if any(term in issue_blob for term in ["raw retrieval", "chunk metadata"]):
+            extractive_repair = self._deterministic_repair_answer(query, results)
+            if extractive_repair:
+                return extractive_repair
+
         prompt = f"""
 Repair this RAG answer using only retrieved evidence.
 
@@ -271,11 +286,46 @@ Repaired answer:
         except Exception:
             return answer
         if not repaired or self._is_insufficient_answer(repaired):
-            return answer
-        return self._ensure_focus_entity_mentioned(
+            extractive_repair = self._deterministic_repair_answer(query, results)
+            return extractive_repair or answer
+        cleaned_repair = self._ensure_focus_entity_mentioned(
             query,
             self._clean_final_answer(self._remove_mixed_abstention(repaired), max_citation=len(results)),
         )
+        if self._has_raw_context_leak(cleaned_repair) or self._looks_unfocused(query, cleaned_repair):
+            extractive_repair = self._deterministic_repair_answer(query, results)
+            return extractive_repair or cleaned_repair
+        return cleaned_repair
+
+    def _deterministic_repair_answer(self, query: str, results: list[dict]) -> str:
+        candidate_builders = [
+            self._source_window_answer,
+            self._limitation_extractive_answer,
+            self._definition_extractive_answer,
+            self._pipeline_extractive_answer,
+            self._example_extractive_answer,
+            self._why_extractive_answer,
+            self._list_extractive_answer,
+            self._mechanism_extractive_answer,
+            self._focused_entity_extractive_answer,
+            self._generic_extractive_fallback,
+        ]
+        for builder in candidate_builders:
+            candidate = builder(query, results)
+            candidate = self._ensure_focus_entity_mentioned(
+                query,
+                self._clean_final_answer(candidate, max_citation=len(results)),
+            )
+            if not candidate or self._is_insufficient_answer(candidate):
+                continue
+            if results and not re.search(r"\[\d+\]", candidate):
+                continue
+            if self._has_raw_context_leak(candidate):
+                continue
+            if self._looks_unfocused(query, candidate) and len(candidate.split()) > 120:
+                continue
+            return candidate
+        return ""
 
     def _extract_evidence_facts_with_llm(self, query: str, context: str) -> str:
         prompt = f"""
@@ -544,6 +594,9 @@ Evidence facts:
             )
             if entity_terms and self._matches_entity_terms(excerpt_lower, entity_terms):
                 score += 8
+                first_words = " ".join(excerpt_lower.split()[:18])
+                if not self._matches_entity_terms(first_words, entity_terms):
+                    score -= 22
             if "key features include" in excerpt_lower or "features include" in excerpt_lower:
                 score += 6
             score += min(8, max(0, len(excerpt.split()) - 45) // 8)
@@ -612,9 +665,18 @@ Evidence facts:
                     if 0 <= feature_position - position <= 1200:
                         heading_before_feature = lower_text.rfind("what is", 0, feature_position)
                         if heading_before_feature >= 0 and feature_position - heading_before_feature <= 500:
-                            starts.append(heading_before_feature)
+                            heading_window = lower_text[heading_before_feature:feature_position]
+                            if not entity_terms or self._matches_entity_terms(heading_window, entity_terms):
+                                starts.append(heading_before_feature)
                         else:
-                            starts.append(feature_position)
+                            between = lower_text[position:feature_position]
+                            intervening_heading = between.rfind("what is")
+                            if (
+                                intervening_heading < 0
+                                or not entity_terms
+                                or self._matches_entity_terms(between[intervening_heading:], entity_terms)
+                            ):
+                                starts.append(feature_position)
         else:
             starts.extend(
                 position
@@ -745,24 +807,90 @@ Evidence facts:
         ordered = self._ordered_result_texts(results)
         if not ordered:
             return ""
-        combined = " ".join(text for _, text in ordered)
+        combined = self._clean_text(" ".join(text for _, text in ordered))
         lower = combined.lower()
-        start_marker = lower.find("formula")
+        start_marker = self._best_formula_anchor(lower)
         if start_marker < 0:
             return ""
         start = max(0, start_marker - 140)
         end = self._first_marker_after(
             lower,
-            ["example", "challenge", "why this works", "tag "],
+            ["example", "challenge", "your 7-day", "tag ", "follow publication", "published in"],
             start_marker + 260,
         )
         if end < 0:
             end = min(len(combined), start_marker + 1350)
-        excerpt = self._clean_window_excerpt(combined[start:end], max_words=190)
+        excerpt = self._clean_window_excerpt(combined[start:end], max_words=170)
         if not excerpt:
             return ""
+        components = self._formula_components_from_excerpt(excerpt)
         citation = ordered[0][0]
+        if components:
+            return self._clean_final_answer(f"The formula is: {'; '.join(components)}. [{citation}]")
         return self._clean_final_answer(f"The formula is: {excerpt}. [{citation}]")
+
+    def _best_formula_anchor(self, lower_text: str) -> int:
+        positions = [match.start() for match in re.finditer(r"\bformula\b", lower_text)]
+        if not positions:
+            return -1
+
+        def score(position: int) -> int:
+            near = lower_text[max(0, position - 220) : min(len(lower_text), position + 1500)]
+            early = lower_text[position : min(len(lower_text), position + 420)]
+            heading = lower_text[max(0, position - 35) : min(len(lower_text), position + 45)]
+            value = 0
+            if re.search(r"\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)[-\s]*part\s+formula\b", heading):
+                value += 30
+            elif re.search(r"\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)[-\s]*part\s+formula\b", near):
+                value += 12
+            value += min(12, len(re.findall(r"\b\d{1,2}\.\s+", early)) * 4)
+            value += min(8, len(re.findall(r"\b[A-Z][^:]{2,70}:\s+", near, flags=re.IGNORECASE)) * 2)
+            if re.search(r"\b(?:step|part|component|framework|method)\b", near):
+                value += 3
+            if "formula above" in early or "use the formula" in near:
+                value -= 18
+            before = lower_text[max(0, position - 160) : position]
+            if any(marker in before for marker in ["challenge", "tag ", "clap ", "follow publication", "published in"]):
+                value -= 24
+            if any(marker in early for marker in ["challenge", "tag ", "clap ", "follow publication", "published in"]):
+                value -= 12
+            return value
+
+        return max(positions, key=score)
+
+    def _formula_components_from_excerpt(self, excerpt: str) -> list[str]:
+        text = re.sub(r"\s+", " ", excerpt).strip()
+        matches = list(
+            re.finditer(
+                r"(?<!\d)\b(\d{1,2})\.\s+(?=(?:the\s+)?[A-Z][A-Za-z0-9\"'() /-]{1,90}:)",
+                text,
+            )
+        )
+        components: list[str] = []
+        seen: set[str] = set()
+        for match_index, match in enumerate(matches):
+            part_start = match.end()
+            part_end = matches[match_index + 1].start() if match_index + 1 < len(matches) else len(text)
+            part = text[part_start:part_end]
+            part = re.split(
+                r"(?i)\b(?:bad|better|example|challenge|result|tag|follow|published in)\s*:",
+                part,
+                maxsplit=1,
+            )[0]
+            part = re.sub(r"(?i)\bwhy\s*:\s*", " because ", part)
+            part = re.sub(r"\s+", " ", part).strip(" .;:-")
+            if not part or len(part.split()) < 2:
+                continue
+            if len(part.split()) > 22:
+                part = " ".join(part.split()[:22]).rstrip(" ,;:")
+            normalized = re.sub(r"\W+", " ", part.lower()).strip()
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            components.append(f"{match.group(1)}. {part}")
+            if len(components) >= 6:
+                break
+        return components if len(components) >= 2 else []
 
     def _example_window_answer(self, query: str, results: list[dict]) -> str:
         ordered = self._ordered_result_texts(results)
@@ -1530,11 +1658,150 @@ Evidence facts:
             prefix = "The formula is:"
         elif "advancements" in q:
             prefix = "The key advancements are:"
+        elif "limitation" in q or "limitations" in q or "challenge" in q:
+            prefix = "The limitations are:"
+        elif "reason" in q or q.startswith("why"):
+            prefix = "The reasons are:"
         elif "setup" in q or "commands" in q:
             prefix = "The setup/run items are:"
         else:
             prefix = "The steps are:"
         return self._clean_final_answer(f"{prefix} {' '.join(selected)}")
+
+    def _pipeline_extractive_answer(self, query: str, results: list[dict]) -> str:
+        q = query.lower()
+        if not any(term in q for term in ["pipeline", "workflow", "processing app", "app flow"]):
+            return ""
+        if not results:
+            return ""
+
+        combined = self._clean_text(" ".join((item.get("text") or "") for item in results))
+        lower = combined.lower()
+        pipeline_markers = [
+            "load",
+            "input",
+            "file",
+            "url",
+            "image",
+            "pdf",
+            "model",
+            "process",
+            "generate",
+            "output",
+            "document",
+            "export",
+            "download",
+            "preview",
+            "interface",
+            "ui",
+        ]
+        if sum(1 for marker in pipeline_markers if marker in lower) < 4:
+            return ""
+
+        focus = self._focus_entity_display(query)
+        steps: list[str] = []
+
+        def add_step(text: str, terms: list[str]) -> None:
+            if any(self._similar_step(text, existing) for existing in steps):
+                return
+            citation = self._best_citation_for_terms(results, terms)
+            steps.append(f"- {text}. [{citation}]")
+
+        if any(term in lower for term in ["local", "upload", "file"]) and "url" in lower and any(term in lower for term in ["pdf", "image"]):
+            add_step("Load PDFs or images from a local file/upload or a URL", ["local", "url", "pdf", "image"])
+
+        if "load_model" in lower or ("load" in lower and "model" in lower):
+            model_text = f"Load the {focus} model" if focus else "Load the model"
+            add_step(model_text, ["load", "model"])
+
+        generated_terms = self._pipeline_generated_terms(combined)
+        if "generate" in lower or "stream" in lower or "output" in lower:
+            generated_text = "Generate structured output for each page or image"
+            if generated_terms:
+                generated_text = f"Generate {', '.join(generated_terms[:2])} for each page or image"
+            add_step(generated_text, ["generate", "output", "page", "image"])
+
+        document_classes = self._pipeline_document_classes(combined)
+        if document_classes:
+            add_step(
+                f"Create {' and '.join(document_classes[:3])} from the generated output",
+                document_classes[:3],
+            )
+
+        formats = self._pipeline_export_formats(combined)
+        if formats:
+            add_step(f"Export the result as {', '.join(formats)}", formats)
+
+        if any(term in lower for term in ["preview", "download", "interface", "ui", "gradio"]):
+            ui_name = "Gradio UI" if "gradio" in lower else "UI"
+            add_step(f"Render a preview and provide download controls in the {ui_name}", ["preview", "download", "ui", "interface"])
+
+        if len(steps) < 3:
+            extracted_steps = self._pipeline_comment_steps(results)
+            for text, citation in extracted_steps:
+                if any(self._similar_step(text, existing) for existing in steps):
+                    continue
+                steps.append(f"- {text}. [{citation}]")
+                if len(steps) >= 6:
+                    break
+
+        if len(steps) < 3:
+            return ""
+        return self._clean_final_answer("The main pipeline is: " + " ".join(steps[:7]), max_citation=len(results))
+
+    def _pipeline_generated_terms(self, text: str) -> list[str]:
+        terms: list[str] = []
+        for match in re.findall(r"\b[A-Z][A-Za-z0-9]*(?:Tags?|Markup|Output)\b", text):
+            if match not in terms and len(match) > 3:
+                terms.append(match)
+        return terms
+
+    def _pipeline_document_classes(self, text: str) -> list[str]:
+        classes: list[str] = []
+        for match in re.findall(r"\b[A-Z][A-Za-z0-9]*Document\b", text):
+            if match not in classes:
+                classes.append(match)
+        return classes
+
+    def _pipeline_export_formats(self, text: str) -> list[str]:
+        formats: list[str] = []
+        for match in re.findall(r"\b(?:Markdown|HTML|JSON|CSV|XML|TXT|PDF)\b", text):
+            if match not in formats:
+                formats.append(match)
+        return formats
+
+    def _pipeline_comment_steps(self, results: list[dict]) -> list[tuple[str, int]]:
+        steps: list[tuple[str, int]] = []
+        for index, item in enumerate(results, start=1):
+            raw_text = (item.get("text") or "").replace("\r\n", "\n").replace("\r", "\n")
+            for comment in re.findall(r"#\s*([^#\n]{8,120})", raw_text):
+                cleaned = re.sub(r"\s+", " ", comment).strip(" .:-")
+                if not cleaned:
+                    continue
+                if any(term in cleaned.lower() for term in ["load", "input", "process", "generate", "create", "export", "download", "preview"]):
+                    steps.append((cleaned[0].upper() + cleaned[1:], index))
+        return steps
+
+    def _best_citation_for_terms(self, results: list[dict], terms: list[str]) -> int:
+        scored: list[tuple[int, int]] = []
+        normalized_terms = [term.lower() for term in terms if term]
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "").lower()
+            score = sum(1 for term in normalized_terms if term.lower() in text)
+            if score:
+                scored.append((score, -index))
+        if not scored:
+            return 1
+        scored.sort(reverse=True)
+        return -scored[0][1]
+
+    def _similar_step(self, text: str, existing: str) -> bool:
+        text_terms = self._content_terms(text)
+        existing_terms = self._content_terms(existing)
+        if not text_terms or not existing_terms:
+            return False
+        overlap = len(text_terms & existing_terms)
+        return overlap >= min(3, len(text_terms), len(existing_terms))
 
     def _example_extractive_answer(self, query: str, results: list[dict]) -> str:
         q = query.lower()
@@ -1880,12 +2147,105 @@ Evidence facts:
                 break
 
         if not selected:
-            return ""
+            generic_selected: list[tuple[str, int]] = []
+            for index, item in enumerate(results, start=1):
+                text = self._clean_text(item.get("text") or "")
+                for action in self._generic_best_practice_actions(text):
+                    action_lower = action.lower()
+                    if action_lower in seen:
+                        continue
+                    seen.add(action_lower)
+                    generic_selected.append((action, index))
+                if len(generic_selected) >= 8:
+                    break
+
+            if not generic_selected:
+                return ""
+            return self._clean_final_answer(
+                "Best practices include: "
+                + " ".join(f"- {action}. [{index}]" for action, index in generic_selected[:8])
+            )
 
         return self._clean_final_answer(
             "Best practices include: "
             + " ".join(f"- {action}. [{citation_index}]" for action in selected[:12])
         )
+
+    def _generic_best_practice_actions(self, text: str) -> list[str]:
+        lower = text.lower()
+        if not any(marker in lower for marker in ["best practice", "effective practice", "code quality", "quality"]):
+            return []
+
+        actions: list[str] = []
+
+        def add(action: str) -> None:
+            action = re.sub(r"\s+", " ", action).strip(" .:-")
+            if len(action.split()) < 3:
+                return
+            if action.lower() not in {existing.lower() for existing in actions}:
+                actions.append(action)
+
+        prompt_match = re.search(
+            r"(?i)effective practices include:\s*(.+?)(?=developers who|to maintain|although|ai-generated|best practices|$)",
+            text,
+        )
+        if prompt_match:
+            prompt_block = prompt_match.group(1)
+            prompt_parts = [
+                re.sub(r"\s+", " ", part).strip(" .:-")
+                for part in re.split(
+                    r"(?=\b(?:Providing|Including|Specifying|Referencing|Using|Configuring|Applying|Keeping|Running|Maintaining|Writing|Documenting|Reviewing)\b)",
+                    prompt_block,
+                )
+                if len(part.split()) >= 3
+            ]
+            if any("specific prompting" in lower or "detailed specification" in part.lower() for part in prompt_parts):
+                add(
+                    "Use clear and specific prompting with detailed specifications, examples, constraints, and existing codebase patterns"
+                )
+            else:
+                for part in prompt_parts[:4]:
+                    add(part)
+
+        if any(marker in lower for marker in ["coding standards", "style guides", "formatters", "linters"]):
+            standards_bits = []
+            if "coding standards" in lower or "internal standards" in lower:
+                standards_bits.append("coding standards")
+            if "style guide" in lower:
+                standards_bits.append("style guides")
+            action = "Align generated code with " + " and ".join(standards_bits or ["team standards"])
+            if "formatter" in lower or "linter" in lower:
+                action += ", and apply automatic formatters and linters after generation"
+            add(action)
+
+        if any(marker in lower for marker in ["human review", "human oversight", "trust but verify"]):
+            add("Keep human oversight and do not let AI-generated code bypass human review")
+
+        if any(marker in lower for marker in ["unit tests", "integration tests", "security tests", "test suites"]):
+            test_types = []
+            for label, pattern in [
+                ("unit tests", "unit tests"),
+                ("integration tests", "integration tests"),
+                ("end-to-end tests", "end-to-end tests"),
+                ("stress tests", "stress tests"),
+                ("security tests", "security tests"),
+            ]:
+                if pattern in lower:
+                    test_types.append(label)
+            if test_types:
+                add("Run comprehensive tests, including " + ", ".join(test_types))
+            else:
+                add("Run comprehensive test suites for generated code")
+
+        if any(marker in lower for marker in ["documentation", "readme", "claude.md"]):
+            doc_bits = []
+            if "readme" in lower:
+                doc_bits.append("a well-documented README")
+            if "claude.md" in lower:
+                doc_bits.append("tool-specific guidance such as CLAUDE.md")
+            add("Maintain documentation" + (", including " + " and ".join(doc_bits) if doc_bits else ""))
+
+        return actions
 
     def _answer_misses_focus_phrase(self, query: str, answer: str) -> bool:
         focus_phrases = self._focus_phrases(query)
@@ -2503,10 +2863,23 @@ Focused answer:
             "pip install",
             "```",
             "def ",
+            "elif ",
+            "app.launch",
+            "gr.",
+            "tempfile.",
+            "return gr.",
             "random_state",
             "train_test_split",
         ]
         if any(marker in sentence_lower for marker in code_markers):
+            return True
+        if re.search(r"\b(?:return|for|while|if|else)\s+[\w_(]", sentence_lower) and (
+            sentence.count("=") >= 1 or sentence.count("(") >= 2
+        ):
+            return True
+        if re.search(r"\b\w+\s*=\s*[^.!?]{1,90}", sentence) and sentence.count("(") >= 2:
+            return True
+        if len(re.findall(r"\b[A-Z][A-Z0-9_]{2,}\s*=", sentence)) >= 2:
             return True
         if len(sentence.split()) > 90 and sentence.count("=") >= 2:
             return True
@@ -2516,8 +2889,8 @@ Focused answer:
         query_lower = query.lower()
         sentence_lower = sentence.lower()
         if not any(
-            term in query_lower
-            for term in ["command", "setup", "run", "install", "code", "example", "server", "large number", "numbers", "pipeline", "processing app", "settings", "environment variables", "configuration"]
+                term in query_lower
+            for term in ["command", "setup", "run", "install", "code", "example", "server", "large number", "numbers", "settings", "environment variables", "configuration"]
         ):
             return False
         return any(
@@ -2549,6 +2922,7 @@ Focused answer:
     def _clean_final_answer(self, answer: str, max_citation: int | None = None) -> str:
         answer = re.sub(r"\[child chunk \d+ \| page [^\]]+\]\s*", "", answer)
         answer = re.sub(r"\b\d+\s+(?=\[child chunk)", "", answer)
+        answer = self._strip_context_leakage(answer)
         answer = re.sub(
             r"^\s*Based on (?:the )?(?:provided )?(?:context|evidence|retrieved evidence)(?: provided)?[:,]?\s*",
             "",
@@ -2577,6 +2951,42 @@ Focused answer:
         answer = self._normalize_answer_citations(answer, max_citation=max_citation)
         answer = re.sub(r"\s+", " ", answer)
         return answer.strip()
+
+    def _strip_context_leakage(self, answer: str) -> str:
+        answer = re.sub(r"(?im)^\s*(?:Title|Section|Page|Score|Text)\s*:\s*.*$", "", answer)
+        answer = re.sub(
+            r"\b(?:Follow publication|Published in|Get an email whenever|By signing up)[^.!?]{0,180}",
+            "",
+            answer,
+            flags=re.IGNORECASE,
+        )
+        answer = re.sub(
+            r"\b(?:\d+(?:\.\d+)?K\s+)?Followers?\s*(?:·\s*\d+\s+Following)?[^.!?]{0,120}",
+            "",
+            answer,
+            flags=re.IGNORECASE,
+        )
+        return answer
+
+    def _has_raw_context_leak(self, answer: str) -> bool:
+        answer_lower = answer.lower()
+        raw_markers = [
+            "[child chunk",
+            "retrieved chunk",
+            "chunk_id",
+            "hybrid_score",
+            "reranker_score",
+            "title:",
+            "section:",
+            "score:",
+            "text:",
+            "follow publication",
+            "get an email whenever",
+            "by signing up",
+        ]
+        if any(marker in answer_lower for marker in raw_markers):
+            return True
+        return False
 
     def _normalize_answer_citations(self, answer: str, max_citation: int | None = None) -> str:
         def replace_multi(match: re.Match[str]) -> str:

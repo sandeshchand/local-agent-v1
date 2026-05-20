@@ -70,8 +70,17 @@ class Verifier:
             "Page:",
             "Score:",
             "Retrieved chunk:",
+            "chunk_id",
+            "hybrid_score",
+            "reranker_score",
+            "Follow publication",
+            "Get an email whenever",
+            "By signing up",
         ]
-        return any(marker.lower() in answer.lower() for marker in markers)
+        answer_lower = answer.lower()
+        if any(marker.lower() in answer_lower for marker in markers):
+            return True
+        return False
 
     def _looks_unfocused(self, query: str, answer: str) -> bool:
         query_lower = query.lower()
@@ -277,6 +286,14 @@ class Verifier:
         if not query_terms:
             return False
 
+        answer_terms = self._content_terms(answer)
+        all_evidence_terms = self._content_terms(
+            " ".join(self._clean_text(item.get("text") or "") for item in retrieved_items[:8])
+        )
+        grounded_answer_terms = answer_terms & all_evidence_terms
+        if len(grounded_answer_terms) >= min(4, max(2, len(answer_terms) // 3)):
+            return False
+
         evidence_sentences = self._top_evidence_sentences(query_terms, retrieved_items)
         if not evidence_sentences:
             return False
@@ -286,7 +303,6 @@ class Verifier:
         if len(evidence_terms) < 5:
             return False
 
-        answer_terms = self._content_terms(answer)
         overlap = len(evidence_terms & answer_terms)
         return overlap < min(3, max(1, len(evidence_terms) // 8))
 
@@ -295,6 +311,17 @@ class Verifier:
         for item in retrieved_items[:8]:
             text = self._clean_text(item.get("text") or "")
             for sentence in self._split_sentences(text):
+                sentence_lower = sentence.lower()
+                if any(
+                    marker in sentence_lower
+                    for marker in [
+                        "follow publication",
+                        "published in",
+                        "get an email",
+                        "by signing up",
+                    ]
+                ):
+                    continue
                 score = sum(1 for term in query_terms if term in sentence.lower())
                 if score > 0:
                     scored.append((score, sentence))
@@ -347,15 +374,25 @@ class Verifier:
         return {
             "what",
             "which",
+            "are",
             "does",
+            "do",
+            "did",
+            "how",
+            "why",
             "this",
             "that",
+            "the",
+            "and",
+            "for",
             "from",
             "into",
             "with",
             "about",
+            "according",
             "paper",
             "document",
+            "article",
             "review",
             "describe",
             "discuss",
@@ -365,6 +402,9 @@ class Verifier:
             "uses",
             "used",
             "using",
+            "make",
+            "makes",
+            "say",
             "user",
             "answer",
             "context",
