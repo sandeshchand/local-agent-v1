@@ -72,14 +72,14 @@ class QueryRewriter:
         if any(word in query_lower for word in ["input", "prompt", "instruction", "query"]):
             terms.extend(["input", "prompt", "instruction", "user", "natural language", "text"])
 
-        if any(word in query_lower for word in ["application", "applications", "areas", "use case", "uses"]):
+        if any(word in query_lower for word in ["applications", "areas", "use case", "uses"]):
             terms.extend(["applications", "use cases", "areas", "domains", "industries", "sectors", "examples"])
 
         if any(word in query_lower for word in ["architecture", "framework", "component", "components", "core model"]):
             terms.extend(["architecture", "framework", "components", "module", "model", "mechanism"])
 
         if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
-            terms.extend(["representation", "encoding", "tokens", "patches", "latent", "compressed", "input", "encoder", "transformer"])
+            terms.extend(["representation", "encoding", "tokens", "patches", "latent", "compressed", "input", "encoder", "model"])
 
         if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):
             terms.extend(["native", "duration", "resolution", "aspect ratio", "format", "composition", "framing", "crop", "resize"])
@@ -87,7 +87,10 @@ class QueryRewriter:
         if any(word in query_lower for word in ["follow", "following", "detailed", "language", "understanding"]):
             terms.extend(["instruction", "following", "caption", "description", "fine-tune", "training", "prompt"])
 
-        if any(word in query_lower for word in ["limitation", "limitations", "risk", "challenge", "weakness", "constraint"]):
+        is_practice_challenge = bool(re.search(r"\b\d+\s*[- ]?\s*day\s+[^?]*challenge\b|\bpractice\w*\s+[^?]*challenge\b", query_lower))
+        if any(word in query_lower for word in ["limitation", "limitations", "risk", "weakness", "constraint"]) or (
+            "challenge" in query_lower and not is_practice_challenge
+        ):
             terms.extend(["limitations", "challenges", "constraints", "failure", "risk", "issue", "accuracy", "usage"])
 
         if any(word in query_lower for word in ["different", "earlier", "previous", "compare", "compared"]):
@@ -96,4 +99,27 @@ class QueryRewriter:
         if any(word in query_lower for word in ["capability", "capabilities", "simulate", "simulation", "simulator", "ability"]):
             terms.extend(["capabilities", "ability", "simulate", "simulation", "environment", "world", "consistency", "coherence"])
 
+        terms.extend(self._query_keyphrases(query))
+
         return list(dict.fromkeys(terms))
+
+    def _query_keyphrases(self, query: str) -> list[str]:
+        tokens = [
+            token
+            for token in re.findall(r"\b[a-zA-Z0-9][a-zA-Z0-9._-]{1,}\b", query)
+            if token.lower() not in self.stopwords
+        ]
+        phrases: list[str] = []
+        for match in re.finditer(
+            r"\b[A-Z][A-Za-z0-9._-]*\b(?:\s+\b[A-Z][A-Za-z0-9._-]*\b){0,3}",
+            query,
+        ):
+            phrase = match.group(0).strip()
+            if len(phrase) >= 3 and phrase.lower() not in self.stopwords:
+                phrases.append(phrase)
+        for size in range(4, 1, -1):
+            for index in range(0, len(tokens) - size + 1):
+                phrase = " ".join(tokens[index : index + size]).strip()
+                if len(phrase) >= 7:
+                    phrases.append(phrase)
+        return phrases[:16]

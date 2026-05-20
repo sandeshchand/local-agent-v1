@@ -20,6 +20,8 @@ def compact(text: str) -> str:
 def contains(text: str, phrase: str) -> bool:
     normalized_text = normalize(text)
     normalized_phrase = normalize(phrase)
+    if re.fullmatch(r"[a-z0-9][a-z0-9-]{1,12}", normalized_phrase):
+        return bool(re.search(rf"\b{re.escape(normalized_phrase)}\b", normalized_text))
     return normalized_phrase in normalized_text or compact(phrase) in compact(text)
 
 

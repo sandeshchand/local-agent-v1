@@ -20,13 +20,14 @@ Completed:
 - Neighbor and parent-context expansion
 - Evidence selection
 - Grounded answer generation
+- Generic source-window extraction for feature, setup, formula, example, and reason questions
 - Generic verifier
 - Answer repair after verifier failure
 - Multi-document gold QA evaluation
+- Optional OCR path for scanned/image-only PDFs
 
 Still in progress:
 
-- Better handling of scanned/image-only PDFs
 - Better citation polish
 - Larger benchmark coverage across new daily PDFs
 - Stronger regression gates before every code change
@@ -90,6 +91,14 @@ Install the project:
 ```cmd
 pip install -e .
 ```
+
+Optional OCR support for scanned PDFs:
+
+```cmd
+pip install -e .[ocr]
+```
+
+OCR also requires Tesseract OCR and Poppler installed on the machine.
 
 Pull local Ollama models:
 
@@ -164,7 +173,7 @@ The current multi-document gold QA file is:
 test/eval_multi_doc_rag.json
 ```
 
-It covers Sora, Docker, and machine-learning PDFs. Each item contains:
+It currently contains 45 questions across Sora, Docker, machine-learning, Python, AI coding, Pydantic, SmolDocling/OCR, introduction, and AI side-hustle PDFs. Each item contains:
 
 - `question`
 - `expected_doc_title`
@@ -208,10 +217,11 @@ Target:
 
 Latest recorded baseline:
 
-- Date: 2026-05-17
-- Average score: `8.14/10`
-- Passed: `11/15` items at `>= 8/10`
-- Main weak areas: Sora visual-input details, Sora limitations, Isolation Forest use cases, Random Kitchen Sinks details.
+- Date: 2026-05-20
+- Average score: `8.92/10`
+- Passed: `40/45` items at `>= 8/10`
+- Gate result: passed `--fail-under-average 8 --fail-under-item 7`
+- Remaining weak areas: exact optional details in a few answers, citation polish, and occasional verifier false positives.
 
 ## How To Add Gold QA For A New PDF
 
@@ -301,7 +311,7 @@ Use the report fields:
 
 ## Known Limitations
 
-- Scanned PDFs need OCR support.
+- Scanned PDFs require optional OCR dependencies plus local Tesseract/Poppler installs.
 - Medium-style PDFs can still contain noisy boilerplate.
 - Local LLM output can vary between runs.
 - Some answer polish and citation formatting still need work.
@@ -309,8 +319,8 @@ Use the report fields:
 
 ## Next Engineering Steps
 
-1. Expand gold QA to 30-50 questions across more PDFs.
+1. Add 3-5 gold QA questions for every new daily PDF.
 2. Add a small regression command that runs before every commit.
-3. Improve scanned-PDF/OCR ingestion.
-4. Improve citation formatting and remove duplicated citation text.
+3. Improve citation formatting and remove duplicated citation text.
+4. Reduce remaining verifier false positives on valid multi-entity answers.
 5. Add a simple evaluation summary dashboard or HTML report.

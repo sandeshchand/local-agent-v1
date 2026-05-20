@@ -114,12 +114,19 @@ class Verifier:
             return False
         answer_lower = answer.lower()
         focus_phrases = self._focus_phrases(query)
+        query_lower = query.lower()
         if focus_phrases and any(phrase in answer_lower for phrase in focus_phrases) and len(answer.split()) < 160:
             return False
         if not any(entity in answer_lower for entity in focus_entities):
             return True
+        if len(answer.split()) < 180 and any(entity in answer_lower for entity in focus_entities):
+            return False
+        if any(
+            term in query_lower
+            for term in ["limitation", "challenge", "feature", "capability", "component", "architecture", "how"]
+        ) and any(entity in answer_lower for entity in focus_entities):
+            return False
 
-        query_lower = query.lower()
         allowed = focus_entities | {
             token.lower()
             for token in re.findall(r"\b[A-Z][A-Za-z0-9_-]{2,}\b", query)
@@ -162,6 +169,27 @@ class Verifier:
             "use",
             "run",
             "set",
+            "limitations",
+            "limitation",
+            "challenges",
+            "challenge",
+            "features",
+            "feature",
+            "capabilities",
+            "capability",
+            "applications",
+            "application",
+            "architecture",
+            "framework",
+            "components",
+            "component",
+            "physical",
+            "digital",
+            "visual",
+            "language",
+            "interaction",
+            "human-computer",
+            "openai",
         }
         answer_for_entities = self._strip_inline_labels(answer)
         drift_entities: list[str] = []

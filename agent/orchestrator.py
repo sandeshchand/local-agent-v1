@@ -81,7 +81,7 @@ class Orchestrator:
                 routed_docs:list[dict]  = []
                 if self.doc_router is not None:
                     routed_docs = self.doc_router.route(retrieval_query, top_n=3)
-                    candidate_doc_ids = [doc["doc_id"] for doc in routed_docs]
+                    candidate_doc_ids = self._candidate_doc_ids(routed_docs)
 
                 results = self.retrieval_service.search(
                     query=retrieval_query,
@@ -199,7 +199,7 @@ class Orchestrator:
                     "verification_after_repair": repaired_verification.model_dump(),
                 }
             )
-            if repaired_verification.status == "verified" or repaired_answer != state.final_answer:
+            if repaired_verification.status == "verified":
                 state.final_answer = repaired_answer
                 verification = repaired_verification
 
@@ -256,6 +256,18 @@ class Orchestrator:
                 break
 
         return merged
+
+    def _candidate_doc_ids(self, routed_docs: list[dict]) -> list[str]:
+        if not routed_docs:
+            return []
+        if len(routed_docs) == 1:
+            return [routed_docs[0]["doc_id"]]
+
+        top_score = float(routed_docs[0].get("routing_score", 0.0))
+        second_score = float(routed_docs[1].get("routing_score", 0.0))
+        if top_score >= second_score * 1.05 or (top_score - second_score) >= 3.0:
+            return [routed_docs[0]["doc_id"]]
+        return [doc["doc_id"] for doc in routed_docs]
 
 
   

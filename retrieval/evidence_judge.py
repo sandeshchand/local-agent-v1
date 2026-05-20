@@ -230,12 +230,15 @@ Return only valid JSON:
         if any(word in query_lower for word in ["architecture", "framework", "component", "core model"]):
             terms.extend(["architecture", "framework", "component", "module", "mechanism"])
         if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
-            terms.extend(["representation", "encoding", "token", "patch", "latent", "compressed", "input"])
+            terms.extend(["representation", "encoding", "token", "patch", "spacetime", "latent", "compressed", "input", "visual representation", "encoder", "transformer", "diffusion", "diffusion transformer"])
         if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):
             terms.extend(["native", "duration", "resolution", "aspect ratio", "format", "composition", "framing", "crop", "resize"])
         if any(word in query_lower for word in ["follow", "following", "detailed", "language", "understanding"]):
             terms.extend(["instruction", "following", "caption", "description", "training", "fine-tune", "prompt"])
-        if any(word in query_lower for word in ["limitation", "limitations", "risk", "challenge", "weakness", "constraint"]):
+        is_practice_challenge = bool(re.search(r"\b\d+\s*[- ]?\s*day\s+[^?]*challenge\b|\bpractice\w*\s+[^?]*challenge\b", query_lower))
+        if any(word in query_lower for word in ["limitation", "limitations", "risk", "weakness", "constraint"]) or (
+            "challenge" in query_lower and not is_practice_challenge
+        ):
             terms.extend(["limitation", "challenge", "constraint", "failure", "risk", "issue", "accuracy", "usage"])
         if any(word in query_lower for word in ["different", "earlier", "previous", "compare", "compared"]):
             terms.extend(["different", "previous", "earlier", "compared", "unlike", "improvement"])

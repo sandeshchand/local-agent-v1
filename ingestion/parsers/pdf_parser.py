@@ -7,6 +7,8 @@ from pathlib import Path
 from pypdf import PdfReader
 import re
 
+MIN_SEARCHABLE_TEXT_CHARS = 25
+
 @dataclass(slots=True)
 class ParsedPage:
     page_number: int
@@ -131,6 +133,40 @@ def extract_page_sections_title(text:str, fallback:str | None = None) ->str| Non
             
         
 
+def has_searchable_text(text: str) -> bool:
+    return len(re.sub(r"\s+", "", text or "")) >= MIN_SEARCHABLE_TEXT_CHARS
+
+
+def ocr_page_text(pdf_path: Path, page_number: int) -> str:
+    try:
+        from pdf2image import convert_from_path
+        import pytesseract
+    except Exception:
+        return ""
+
+    try:
+        images = convert_from_path(
+            str(pdf_path),
+            first_page=page_number,
+            last_page=page_number,
+            dpi=200,
+        )
+        if not images:
+            return ""
+        return pytesseract.image_to_string(images[0]) or ""
+    except Exception:
+        return ""
+
+
+def scanned_pdf_error(path: Path) -> RuntimeError:
+    return RuntimeError(
+        "No searchable text was extracted from this PDF. It may be scanned or image-only. "
+        "Install optional OCR support with `pip install .[ocr]`, then install Tesseract OCR "
+        "and Poppler on the machine, and ingest the PDF again: "
+        f"{path}"
+    )
+
+
 
 
 
@@ -154,6 +190,8 @@ def parse_pdf(pdf_path: str | Path)-> ParsedDocument:
 
     for index, page in enumerate(reader.pages, start=1):
         text = page.extract_text() or ""
+        if not has_searchable_text(text):
+            text = ocr_page_text(path, index)
         page_section_title = extract_page_sections_title(
             text=text,
             fallback=current_section_title
@@ -167,6 +205,9 @@ def parse_pdf(pdf_path: str | Path)-> ParsedDocument:
                 section_title=page_section_title,
             )
         )
+
+    if pages and not any(has_searchable_text(page.text) for page in pages):
+        raise scanned_pdf_error(path)
 
     return ParsedDocument(
         doc_id=doc_id,

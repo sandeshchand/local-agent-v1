@@ -37,7 +37,12 @@ def contains_any(text: str, requirement: Requirement) -> bool:
     for phrase in alternatives(requirement):
         if not phrase:
             continue
-        if normalize(phrase) in normalized_text or compact(phrase) in compact_text:
+        normalized_phrase = normalize(phrase)
+        if re.fullmatch(r"[a-z0-9][a-z0-9-]{1,12}", normalized_phrase):
+            if re.search(rf"\b{re.escape(normalized_phrase)}\b", normalized_text):
+                return True
+            continue
+        if normalized_phrase in normalized_text or compact(phrase) in compact_text:
             return True
     return False
 

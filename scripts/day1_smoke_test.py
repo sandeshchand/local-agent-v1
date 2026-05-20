@@ -32,7 +32,7 @@ def main() -> None:
     print("Chat test passed.")
 
     print_header("EMBEDDING TEST")
-    sample_text = "Sora is a text-to-video model."
+    sample_text = "This document describes a local retrieval system."
     vector = deps.embedding_client.embed(sample_text)
     print(f"Embedding length: {len(vector)}")
     if not vector:

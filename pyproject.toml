@@ -21,5 +21,11 @@ dependencies =[
     "sentence-transformers>=3.0.1",
 ]
 
+[project.optional-dependencies]
+ocr = [
+    "pdf2image>=1.17.0",
+    "pytesseract>=0.3.13",
+]
+
 [tool.setuptools]
 packages =["app","agent","storage","ingestion","ingestion.parsers", "retrieval","observability"]
