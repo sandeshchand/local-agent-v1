@@ -91,7 +91,22 @@ class QueryRewriter:
         if any(word in query_lower for word in ["limitation", "limitations", "risk", "weakness", "constraint"]) or (
             "challenge" in query_lower and not is_practice_challenge
         ):
-            terms.extend(["limitations", "challenges", "constraints", "failure", "risk", "issue", "accuracy", "usage"])
+            terms.extend([
+                "limitations",
+                "challenges",
+                "constraints",
+                "failure",
+                "risk",
+                "issue",
+                "accuracy",
+                "usage",
+                "physical",
+                "spatial",
+                "temporal",
+                "interaction",
+                "access",
+                "safety",
+            ])
 
         if any(word in query_lower for word in ["different", "earlier", "previous", "compare", "compared"]):
             terms.extend(["different", "previous", "earlier", "compared", "unlike", "improvement"])

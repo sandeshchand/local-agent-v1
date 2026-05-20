@@ -246,7 +246,7 @@ class Orchestrator:
         merged: list[dict] = []
         seen: set[str] = set()
 
-        for item in [*selected_results, *retrieved_results]:
+        for item in [*retrieved_results[:3], *selected_results, *retrieved_results]:
             item_id = str(item.get("chunk_id") or item.get("id") or id(item))
             if item_id in seen:
                 continue

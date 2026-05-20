@@ -96,7 +96,11 @@ class Verifier:
             return True
         if "application" not in query_lower and re.search(r"\bapplications?:", answer_lower):
             return True
-        if (query_lower.startswith("what is") or "what type of" in query_lower) and len(answer.split()) > 120:
+        list_style_intent = any(
+            term in query_lower
+            for term in ["main message", "formula", "steps", "features", "best practices", "challenge"]
+        )
+        if (query_lower.startswith("what is") or "what type of" in query_lower) and not list_style_intent and len(answer.split()) > 120:
             return True
         return False
 
@@ -122,18 +126,28 @@ class Verifier:
         if not focus_entities:
             return False
         answer_lower = answer.lower()
+        answer_compact = self._compact_entity_text(answer)
         focus_phrases = self._focus_phrases(query)
         query_lower = query.lower()
-        if focus_phrases and any(phrase in answer_lower for phrase in focus_phrases) and len(answer.split()) < 160:
+
+        def answer_has_entity(entity: str) -> bool:
+            compact_entity = self._compact_entity_text(entity)
+            return entity in answer_lower or (compact_entity and compact_entity in answer_compact)
+
+        def answer_has_phrase(phrase: str) -> bool:
+            compact_phrase = self._compact_entity_text(phrase)
+            return phrase in answer_lower or (compact_phrase and compact_phrase in answer_compact)
+
+        if focus_phrases and any(answer_has_phrase(phrase) for phrase in focus_phrases) and len(answer.split()) < 160:
             return False
-        if not any(entity in answer_lower for entity in focus_entities):
+        if not any(answer_has_entity(entity) for entity in focus_entities):
             return True
-        if len(answer.split()) < 180 and any(entity in answer_lower for entity in focus_entities):
+        if len(answer.split()) < 180 and any(answer_has_entity(entity) for entity in focus_entities):
             return False
         if any(
             term in query_lower
             for term in ["limitation", "challenge", "feature", "capability", "component", "architecture", "how"]
-        ) and any(entity in answer_lower for entity in focus_entities):
+        ) and any(answer_has_entity(entity) for entity in focus_entities):
             return False
 
         allowed = focus_entities | {
@@ -200,18 +214,24 @@ class Verifier:
             "human-computer",
             "openai",
         }
+        allowed_compact = {self._compact_entity_text(entity) for entity in allowed}
+        query_compact = self._compact_entity_text(query)
         answer_for_entities = self._strip_inline_labels(answer)
         drift_entities: list[str] = []
         for entity in re.findall(r"\b[A-Z][A-Za-z0-9_-]{3,}\b", answer_for_entities):
             entity_lower = entity.lower()
-            if entity_lower in allowed or entity_lower in generic_entities:
+            compact_entity = self._compact_entity_text(entity_lower)
+            if entity_lower in allowed or compact_entity in allowed_compact or entity_lower in generic_entities:
                 continue
-            if entity_lower in query_lower:
+            if entity_lower in query_lower or compact_entity in query_compact:
                 continue
             occurrences = len(re.findall(rf"\b{re.escape(entity_lower)}\b", answer_lower))
             if occurrences >= 2 or self._appears_as_answer_subject(entity, answer_for_entities):
                 drift_entities.append(entity_lower)
         return bool(drift_entities)
+
+    def _compact_entity_text(self, text: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "", text.lower())
 
     def _focus_phrases(self, query: str) -> set[str]:
         generic_terms = {

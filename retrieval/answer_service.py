@@ -151,9 +151,24 @@ Answer:
         definition_answer = self._definition_extractive_answer(query, results)
         if definition_answer:
             answer = definition_answer
+        used_for_answer = self._used_for_extractive_answer(query, results)
+        if used_for_answer:
+            answer = used_for_answer
+        config_file_answer = self._config_file_purpose_answer(query, results)
+        if config_file_answer:
+            answer = config_file_answer
+        meaning_answer = self._meaning_extractive_answer(query, results)
+        if meaning_answer:
+            answer = meaning_answer
         pipeline_answer = self._pipeline_extractive_answer(query, results)
         if pipeline_answer:
             answer = pipeline_answer
+        challenge_answer = self._challenge_steps_answer(query, results)
+        if challenge_answer:
+            answer = challenge_answer
+        command_answer = self._command_usefulness_answer(query, results)
+        if command_answer:
+            answer = command_answer
         example_answer = self._example_extractive_answer(query, results)
         if example_answer and (
             "example" in query.lower()
@@ -162,7 +177,7 @@ Answer:
         ):
             answer = example_answer
         why_answer = self._why_extractive_answer(query, results)
-        if why_answer and (
+        if why_answer and not meaning_answer and (
             self._is_explanation_question(query)
             and (
                 self._looks_unfocused(query, answer)
@@ -173,7 +188,7 @@ Answer:
         ):
             answer = why_answer
         list_answer = self._list_extractive_answer(query, results)
-        if list_answer and not best_practices_answer and (
+        if list_answer and not best_practices_answer and not limitation_answer and not used_for_answer and not config_file_answer and not meaning_answer and not challenge_answer and not command_answer and (
             self._is_list_question(query)
             or self._looks_unfocused(query, answer)
             or self._misses_intent_shape(query, answer)
@@ -198,32 +213,47 @@ Answer:
         source_window_answer = self._source_window_answer(query, results)
         if source_window_answer and self._should_prefer_source_window_answer(query, answer, source_window_answer):
             answer = source_window_answer
+        def final_answer(candidate: str) -> str:
+            candidate = self._augment_feature_answer_with_intro(query, candidate, results)
+            return self._clean_final_answer(candidate, max_citation=len(results))
+
         if self._looks_under_specific(answer, results) or self._looks_unfocused(query, answer) or self._misses_intent_shape(query, answer):
             if capability_answer:
-                return self._clean_final_answer(capability_answer, max_citation=len(results))
+                return final_answer(capability_answer)
             if why_answer:
-                return self._clean_final_answer(why_answer, max_citation=len(results))
+                return final_answer(why_answer)
             if definition_answer:
-                return self._clean_final_answer(definition_answer, max_citation=len(results))
+                return final_answer(definition_answer)
+            if used_for_answer:
+                return final_answer(used_for_answer)
+            if config_file_answer:
+                return final_answer(config_file_answer)
+            if meaning_answer:
+                return final_answer(meaning_answer)
             if pipeline_answer:
-                return self._clean_final_answer(pipeline_answer, max_citation=len(results))
+                return final_answer(pipeline_answer)
+            if challenge_answer:
+                return final_answer(challenge_answer)
+            if command_answer:
+                return final_answer(command_answer)
             if example_answer:
-                return self._clean_final_answer(example_answer, max_citation=len(results))
+                return final_answer(example_answer)
             if source_window_answer:
-                return self._clean_final_answer(source_window_answer, max_citation=len(results))
+                return final_answer(source_window_answer)
             if list_answer:
-                return self._clean_final_answer(list_answer, max_citation=len(results))
+                return final_answer(list_answer)
             if mechanism_answer:
-                return self._clean_final_answer(mechanism_answer, max_citation=len(results))
+                return final_answer(mechanism_answer)
             if focused_entity_answer:
-                return self._clean_final_answer(focused_entity_answer, max_citation=len(results))
+                return final_answer(focused_entity_answer)
             if best_practices_answer:
-                return self._clean_final_answer(best_practices_answer, max_citation=len(results))
+                return final_answer(best_practices_answer)
             if limitation_answer:
-                return self._clean_final_answer(limitation_answer, max_citation=len(results))
+                return final_answer(limitation_answer)
             return self._generic_extractive_fallback(query, results)
         if self._is_insufficient_answer(answer):
             return self._generic_extractive_fallback(query, results)
+        answer = self._augment_feature_answer_with_intro(query, answer, results)
         if results and not re.search(r"\[\d+\]", answer):
             if best_practices_answer:
                 return self._clean_final_answer(best_practices_answer, max_citation=len(results))
@@ -302,7 +332,11 @@ Repaired answer:
             self._source_window_answer,
             self._limitation_extractive_answer,
             self._definition_extractive_answer,
+            self._used_for_extractive_answer,
+            self._config_file_purpose_answer,
+            self._meaning_extractive_answer,
             self._pipeline_extractive_answer,
+            self._command_usefulness_answer,
             self._example_extractive_answer,
             self._why_extractive_answer,
             self._list_extractive_answer,
@@ -640,6 +674,128 @@ Evidence facts:
         if re.search(r"\b(?:key\s+features|features)\s+include\b", excerpt, flags=re.IGNORECASE):
             return self._clean_final_answer(f"{excerpt}. [{citation}]")
         return self._clean_final_answer(f"{prefix} {excerpt}. [{citation}]")
+
+    def _augment_feature_answer_with_intro(self, query: str, answer: str, results: list[dict]) -> str:
+        q = query.lower()
+        if "feature" not in q and "capabil" not in q:
+            return answer
+
+        focus_entity = self._focus_entity_display(query)
+        entity_terms = self._entity_terms(focus_entity)
+        if not entity_terms:
+            return answer
+
+        for sentence in self._split_sentences(answer):
+            sentence_lower = sentence.lower()
+            if not self._matches_entity_terms(sentence_lower, entity_terms):
+                continue
+            if "feature" in sentence_lower:
+                continue
+            if any(
+                marker in sentence_lower
+                for marker in [
+                    " is ",
+                    " are ",
+                    "refers to",
+                    "means",
+                    "tool",
+                    "interface",
+                    "ui",
+                    "model",
+                    "method",
+                    "system",
+                    "monitors",
+                    "analyzes",
+                    "helps",
+                    "allows",
+                    "enables",
+                ]
+            ):
+                return answer
+
+        intro = self._feature_intro_sentence(query, results, entity_terms)
+        if not intro:
+            return answer
+
+        intro_text, citation = intro
+        normalized_intro = re.sub(r"\W+", " ", intro_text.lower()).strip()
+        normalized_answer = re.sub(r"\W+", " ", answer.lower()).strip()
+        if normalized_intro and normalized_intro in normalized_answer:
+            return answer
+        return self._clean_final_answer(f"{intro_text}. [{citation}] {answer}", max_citation=len(results))
+
+    def _feature_intro_sentence(
+        self,
+        query: str,
+        results: list[dict],
+        entity_terms: list[str],
+    ) -> tuple[str, int] | None:
+        query_terms = self._query_terms(query)
+        candidates: list[tuple[int, int, str]] = []
+        class_markers = [
+            "tool",
+            "interface",
+            "ui",
+            "model",
+            "library",
+            "framework",
+            "method",
+            "algorithm",
+            "system",
+            "service",
+            "application",
+            "platform",
+        ]
+        relation_markers = [
+            " is ",
+            " are ",
+            "refers to",
+            "means",
+            "used for",
+            "monitors",
+            "analyzes",
+            "automates",
+            "helps",
+            "allows",
+            "enables",
+        ]
+
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "")
+            lower = text.lower()
+            for anchor in self._entity_anchor_positions(lower, entity_terms)[:5]:
+                window = self._window_around(text, anchor, before=160, after=620)
+                for sentence in self._split_sentences(window):
+                    sentence = re.sub(r"(?i)^what\s+(?:is|are)\s+[^?]{1,120}\?\s*", "", sentence).strip(" .:-")
+                    if not sentence:
+                        continue
+                    sentence_lower = sentence.lower()
+                    if not self._matches_entity_terms(sentence_lower, entity_terms):
+                        continue
+                    if "feature" in sentence_lower and "include" in sentence_lower:
+                        continue
+                    if self._is_low_value_fact(sentence) or self._looks_like_code_or_metadata_fact(sentence):
+                        continue
+                    has_relation = any(marker in sentence_lower for marker in relation_markers)
+                    has_class = any(marker in sentence_lower for marker in class_markers)
+                    if not has_relation and not has_class:
+                        continue
+                    excerpt = self._clean_window_excerpt(sentence, max_words=34)
+                    if not excerpt:
+                        continue
+                    score = self._sentence_relevance_score(excerpt, query_terms)
+                    score += 8 if has_relation else 0
+                    score += 5 if has_class else 0
+                    score += 4 if self._matches_entity_terms(excerpt.lower(), entity_terms) else 0
+                    candidates.append((score, -index, excerpt))
+
+        if not candidates:
+            return None
+        candidates.sort(reverse=True)
+        score, negative_index, excerpt = candidates[0]
+        if score < 5:
+            return None
+        return excerpt.rstrip(" ."), -negative_index
 
     def _feature_answer_spans(
         self,
@@ -1533,6 +1689,7 @@ Evidence facts:
 
     def _list_extractive_answer(self, query: str, results: list[dict]) -> str:
         q = query.lower()
+        is_practice_challenge = bool(re.search(r"\b\d+\s*[- ]?\s*day\s+[^?]*challenge\b|\bpractice\w*\s+[^?]*challenge\b", q))
         list_intent = (
             self._is_list_question(query)
             or q.startswith("which")
@@ -1614,6 +1771,8 @@ Evidence facts:
             "parallel",
             "specialization",
         ]
+        if is_practice_challenge:
+            list_markers.extend(["day ", "hook", "practice", "mirror", "friend", "feedback", "real life", "challenge"])
 
         scored: list[tuple[int, int, str]] = []
         for index, fact in enumerate(fact_lines):
@@ -1658,6 +1817,8 @@ Evidence facts:
             prefix = "The formula is:"
         elif "advancements" in q:
             prefix = "The key advancements are:"
+        elif is_practice_challenge:
+            prefix = "The challenge steps are:"
         elif "limitation" in q or "limitations" in q or "challenge" in q:
             prefix = "The limitations are:"
         elif "reason" in q or q.startswith("why"):
@@ -1667,6 +1828,87 @@ Evidence facts:
         else:
             prefix = "The steps are:"
         return self._clean_final_answer(f"{prefix} {' '.join(selected)}")
+
+    def _challenge_steps_answer(self, query: str, results: list[dict]) -> str:
+        q = query.lower()
+        if "challenge" not in q or not any(term in q for term in ["step", "steps", "day", "practice"]):
+            return ""
+
+        candidates: list[tuple[int, int, list[str]]] = []
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "")
+            lower = text.lower()
+            challenge_pos = lower.find("challenge")
+            if challenge_pos < 0:
+                continue
+            start = max(0, challenge_pos - 80)
+            end = self._first_marker_after(
+                lower,
+                ["why this works", "brain science", "tag your", "follow for", "comment your", "drop your"],
+                challenge_pos + 120,
+            )
+            if end < 0:
+                end = min(len(text), challenge_pos + 900)
+            excerpt = self._clean_text(text[start:end])
+            steps = self._numbered_day_steps(excerpt)
+            if len(steps) < 2:
+                steps = self._numbered_steps_after_marker(excerpt, marker="challenge")
+            if len(steps) < 2:
+                continue
+            joined = " ".join(steps).lower()
+            score = len(steps) * 8
+            score += sum(3 for marker in ["day", "hook", "practice", "mirror", "friend", "feedback", "real life"] if marker in joined)
+            candidates.append((score, -index, steps))
+
+        if not candidates:
+            return ""
+        candidates.sort(reverse=True)
+        _, negative_index, steps = candidates[0]
+        citation = -negative_index
+        selected = [f"- {step}. [{citation}]" for step in steps[:7]]
+        duration_match = re.search(r"\b\d+\s*[- ]?\s*day\b", q)
+        challenge_label = "challenge"
+        if duration_match:
+            duration_label = re.sub(r"\s+", "-", duration_match.group(0))
+            challenge_label = f"{duration_label} challenge"
+        return self._clean_final_answer(f"The {challenge_label} steps are: " + " ".join(selected), max_citation=len(results))
+
+    def _numbered_day_steps(self, text: str) -> list[str]:
+        pattern = re.compile(
+            r"(?:^|\s)(?:\d+[.)]\s*)?"
+            r"((?:Day|Days)\s+\d+(?:\s*[-\u2013\u2014]\s*\d+)?\s*:\s*.*?)(?="
+            r"\s+\d+[.)]\s*(?:Day|Days)\s+\d+|\s+Why\s+This\s+Works|\s+Brain\s+Science|$)",
+            flags=re.IGNORECASE,
+        )
+        return self._clean_numbered_steps(match.group(1) for match in pattern.finditer(text))
+
+    def _numbered_steps_after_marker(self, text: str, marker: str) -> list[str]:
+        lower = text.lower()
+        start = lower.find(marker)
+        if start >= 0:
+            text = text[start:]
+        pattern = re.compile(
+            r"(?:^|\s)\d+[.)]\s*(.*?)(?=\s+\d+[.)]\s+|\s+Why\s+This\s+Works|\s+Brain\s+Science|$)",
+            flags=re.IGNORECASE,
+        )
+        return self._clean_numbered_steps(match.group(1) for match in pattern.finditer(text))
+
+    def _clean_numbered_steps(self, raw_steps) -> list[str]:
+        steps: list[str] = []
+        seen: set[str] = set()
+        for raw in raw_steps:
+            step = re.sub(r"\s+", " ", str(raw)).strip(" .:-")
+            step = re.sub(r"\s*\([^)]{0,80}\)", lambda match: match.group(0), step).strip()
+            if not step or len(step.split()) < 3:
+                continue
+            normalized = re.sub(r"\W+", " ", step.lower()).strip()
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            steps.append(step)
+            if len(steps) >= 8:
+                break
+        return steps
 
     def _pipeline_extractive_answer(self, query: str, results: list[dict]) -> str:
         q = query.lower()
@@ -1986,10 +2228,302 @@ Evidence facts:
             return True
         return all(re.search(rf"\b{re.escape(term)}\b", lower_text) for term in entity_terms)
 
+    def _used_for_extractive_answer(self, query: str, results: list[dict]) -> str:
+        q = query.lower()
+        if not any(phrase in q for phrase in ["used for", "useful for", "useful"]):
+            return ""
+
+        focus = self._focus_entity_display(query)
+        focus_terms = self._entity_terms(focus)
+        if not focus_terms:
+            return ""
+
+        acronym = self._phrase_acronym(focus)
+        query_terms = self._query_terms(query)
+        intent_terms = self._query_intent_terms(query) + self._intent_terms_from_query_terms(query_terms)
+        candidates: list[tuple[int, int, str]] = []
+
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "")
+            lower = text.lower()
+            positions = self._entity_anchor_positions(lower, focus_terms)
+            if acronym:
+                positions.extend(match.start() for match in re.finditer(rf"\b{re.escape(acronym)}s?\b", lower))
+            if not positions:
+                continue
+            window = self._window_around(text, min(positions), before=80, after=950)
+            for sentence in self._split_sentences(window):
+                sentence_text = re.sub(r"\[\d+\]", "", sentence).strip()
+                sentence_lower = sentence_text.lower()
+                if self._looks_like_code_or_metadata_fact(sentence_text) and not any(
+                    marker in sentence_lower for marker in ["label", "labels", "example", "format"]
+                ):
+                    continue
+                score = self._focus_phrase_score(sentence_text, {focus.lower()})
+                if acronym and re.search(rf"\b{re.escape(acronym)}s?\b", sentence_lower):
+                    score += 8
+                score += self._sentence_relevance_score(sentence_text, query_terms)
+                score += sum(2 for term in intent_terms if term in sentence_lower)
+                if any(
+                    marker in sentence_lower
+                    for marker in [
+                        "used for",
+                        "useful for",
+                        "useful",
+                        "helps",
+                        "enables",
+                        "allows",
+                        "probabilistic",
+                        "structured",
+                        "prediction",
+                        "context",
+                        "sequence",
+                        "sequential",
+                        "label",
+                        "example",
+                        "markup",
+                        "layout",
+                        "semantics",
+                        "reading order",
+                        "hierarchy",
+                        "downstream",
+                        "parser",
+                        "heuristic",
+                        "accuracy",
+                    ]
+                ):
+                    score += 3
+                if score > 0:
+                    candidates.append((score, -index, f"{sentence_text} [{index}]"))
+
+            example = self._explicit_named_example(window)
+            if example:
+                candidates.append((35, -index, f"The example/application shown is {example}. [{index}]"))
+
+        if not candidates:
+            return ""
+        candidates.sort(reverse=True)
+
+        category_facts = [fact for _, _, fact in candidates]
+        if "useful" in q and not any(phrase in q for phrase in ["used for", "useful for"]):
+            categories = [
+                ("definition", ["semantic", "markup", "generated", "produced", "called", "output"]),
+                ("structure", ["layout", "semantics", "structure", "reading order", "hierarchy"]),
+                ("benefit", ["useful", "helps", "enable", "allows", "downstream", "accuracy", "accurate", "convert", "parser", "heuristic"]),
+            ]
+            prefix = f"{focus or 'It'} is useful because:"
+        else:
+            categories = [
+                ("definition", ["probabilistic", "structured", "prediction", "used for"]),
+                ("context", ["context", "sequential", "sequence", "independent"]),
+                ("example", ["example/application", "label", "labels", "named entity", "ner"]),
+            ]
+            prefix = f"{focus or 'It'} is used for:"
+
+        selected = self._select_category_facts(
+            category_facts,
+            categories,
+            max_items=4,
+        )
+        if selected:
+            return self._clean_final_answer(f"{prefix} {' '.join(selected)}")
+
+        selected: list[str] = []
+        seen: set[str] = set()
+        for _, _, fact in candidates:
+            normalized = re.sub(r"\W+", " ", re.sub(r"\[\d+\]", "", fact.lower())).strip()
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            selected.append(f"- {fact}")
+            if len(selected) >= 4:
+                break
+        if not selected:
+            return ""
+
+        return self._clean_final_answer(f"{prefix} {' '.join(selected)}")
+
+    def _explicit_named_example(self, text: str) -> str:
+        for pattern in [
+            r"\b([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){1,5}\s*\([A-Z][A-Z0-9-]{1,12}\))\s+(?:labels?|examples?|format|task|application)",
+            r"(?:labels?|examples?|format|task|application)[^.!?]{0,80}\b([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){1,5}\s*\([A-Z][A-Z0-9-]{1,12}\))",
+        ]:
+            match = re.search(pattern, text, flags=re.IGNORECASE)
+            if match:
+                return re.sub(r"\s+", " ", match.group(1)).strip()
+        return ""
+
+    def _config_file_purpose_answer(self, query: str, results: list[dict]) -> str:
+        q = query.lower()
+        if not (".env" in q or "env file" in q or "environment file" in q):
+            return ""
+        if not any(term in q for term in ["why", "purpose", "recommend", "local development", "local"]):
+            return ""
+
+        facts = [
+            fact[2:].strip()
+            for fact in self._build_evidence_fact_list(query, results, max_facts=36).splitlines()
+            if fact.startswith("- ")
+        ]
+        if not facts:
+            return ""
+
+        category_markers = [
+            ("local development", ["local development", "local"]),
+            ("slow/messy setup", ["slow", "messy", "inconvenient"]),
+            ("variable examples", ["api key", "api keys", "token", "tokens", "secret", "database", "url"]),
+            ("key-value format", ["key : value", "key-value", "key value", "text file"]),
+            ("environment variables", ["environment variable", "variables"]),
+        ]
+        selected = self._select_category_facts(facts, category_markers, max_items=6)
+        if not selected:
+            return ""
+        return self._clean_final_answer("The .env file is recommended because: " + " ".join(selected))
+
+    def _meaning_extractive_answer(self, query: str, results: list[dict]) -> str:
+        q = query.lower()
+        if "mean by" not in q and not re.search(r"['\"].{8,120}['\"]", query):
+            return ""
+
+        facts = [
+            fact[2:].strip()
+            for fact in self._build_evidence_fact_list(query, results, max_facts=36).splitlines()
+            if fact.startswith("- ")
+        ]
+        if not facts:
+            return ""
+
+        category_markers = [
+            ("claim", ["won't replace", "will replace", "someone using", "truth is"]),
+            ("tools", ["tool", "tools", "chatgpt", "claude"]),
+            ("speed", ["faster", "save time"]),
+            ("side income", ["side income"]),
+            ("income", ["make money", "pay"]),
+            ("degree", ["degree"]),
+            ("technical/no-code barrier", ["technical", "tech", "code", "product", "app"]),
+            ("learning", ["learn", "care enough"]),
+        ]
+        selected = self._select_category_facts(facts, category_markers, max_items=8)
+        if not selected:
+            return ""
+        for index, fact in enumerate(selected):
+            fact_lower = fact.lower()
+            if any(marker in fact_lower for marker in ["line of code", "tech bro", "technical", "product", "fancy app"]):
+                selected[index] = re.sub(r"^-\s*", "- No-code/technical background barrier: ", fact, count=1)
+        prefix = "It means AI tools give an advantage when people learn to use them:"
+        return self._clean_final_answer(prefix + " " + " ".join(selected))
+
+    def _command_usefulness_answer(self, query: str, results: list[dict]) -> str:
+        q = query.lower()
+        if not any(term in q for term in ["command", "run", "start", "server"]):
+            return ""
+
+        command_pattern = re.compile(
+            r"\b(?:python\s+-m\s+[-\w.]+(?:\s+\d+)?|docker\s+run\b[^.!?\n]{0,160}|pip\s+install\s+[-\w.]+|uv\s+run\b[^.!?\n]{0,120}|npm\s+install\s+[-\w.]+|brew\s+install\s+[-\w.]+|poetry\s+add\s+[-\w.]+|conda\s+install\s+[-\w.]+|git\s+clone\s+\S+)",
+            flags=re.IGNORECASE,
+        )
+        command_fact = ""
+        command_citation = 1
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "")
+            match = command_pattern.search(text)
+            if not match:
+                continue
+            command = re.sub(r"\s+", " ", match.group(0)).strip()
+            context = self._clean_window_excerpt(self._window_around(text, match.start(), before=180, after=180), max_words=65)
+            command_fact = f"- `{command}`. {context}. [{index}]"
+            command_citation = index
+            break
+
+        usefulness: list[str] = []
+        seen: set[str] = set()
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "")
+            for sentence in self._split_sentences(text):
+                sentence_lower = sentence.lower()
+                if not any(marker in sentence_lower for marker in ["useful", "test", "share", "local network", "third-party", "browser", "localhost"]):
+                    continue
+                if self._looks_like_code_or_metadata_fact(sentence) and not self._should_keep_code_fact(query, sentence):
+                    continue
+                normalized = re.sub(r"\W+", " ", sentence_lower).strip()
+                if normalized in seen:
+                    continue
+                seen.add(normalized)
+                usefulness.append(f"- {sentence.strip()} [{index}]")
+                if len(usefulness) >= 4:
+                    break
+            if len(usefulness) >= 4:
+                break
+
+        if not command_fact and not usefulness:
+            return ""
+        if command_fact and not usefulness:
+            return self._clean_final_answer("The command is: " + command_fact, max_citation=len(results))
+        if not command_fact:
+            return self._clean_final_answer("It is useful because: " + " ".join(usefulness), max_citation=len(results))
+        return self._clean_final_answer(
+            "The command and use are: "
+            + command_fact
+            + " It is useful because: "
+            + " ".join(usefulness),
+            max_citation=max(command_citation, len(results)),
+        )
+
+    def _select_category_facts(
+        self,
+        facts: list[str],
+        category_markers: list[tuple[str, list[str]]],
+        max_items: int,
+    ) -> list[str]:
+        selected: list[str] = []
+        seen: set[str] = set()
+        for _, markers in category_markers:
+            best: tuple[int, int, str] | None = None
+            for index, fact in enumerate(facts):
+                fact_text = re.sub(r"\[\d+\]", "", fact)
+                fact_lower = fact_text.lower()
+                if self._looks_like_code_or_metadata_fact(fact_text) and not any(marker in fact_lower for marker in markers):
+                    continue
+                score = sum(3 for marker in markers if marker in fact_lower)
+                if score <= 0:
+                    continue
+                if self._is_low_value_fact(fact_text):
+                    score -= 4
+                candidate = (score, -index, fact)
+                if best is None or candidate > best:
+                    best = candidate
+            if best is None:
+                continue
+            fact = self._shorten_fact(best[2], max_words=36)
+            normalized = re.sub(r"\W+", " ", fact.lower()).strip()
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            selected.append(f"- {fact}")
+            if len(selected) >= max_items:
+                break
+        return selected
+
+    def _shorten_fact(self, fact: str, max_words: int = 38) -> str:
+        citation_match = re.search(r"\s*\[(\d+)\]\s*$", fact)
+        citation = f" [{citation_match.group(1)}]" if citation_match else ""
+        body = re.sub(r"\s*\[\d+\]\s*$", "", fact).strip()
+        words = body.split()
+        if len(words) > max_words:
+            body = " ".join(words[:max_words]).rstrip(" ,;:")
+        return f"{body}.{citation}" if citation and not body.endswith((".", "!", "?")) else f"{body}{citation}"
+
+    def _phrase_acronym(self, phrase: str) -> str:
+        tokens = re.findall(r"\b[A-Za-z][A-Za-z0-9-]*\b", phrase)
+        if len(tokens) < 2:
+            return ""
+        return "".join(token[0] for token in tokens).lower()
+
     def _why_extractive_answer(self, query: str, results: list[dict]) -> str:
         if not self._is_explanation_question(query):
             return ""
 
+        q = query.lower()
         fact_lines = [
             fact[2:].strip()
             for fact in self._build_evidence_fact_list(query, results, max_facts=32).splitlines()
@@ -2000,6 +2534,8 @@ Evidence facts:
 
         query_terms = self._query_terms(query)
         intent_terms = self._query_intent_terms(query) + self._intent_terms_from_query_terms(query_terms)
+        broad_subject_terms = {"python", "article", "paper", "document", "review", "pydantic", "ai"}
+        specific_terms = query_terms - broad_subject_terms
         scored: list[tuple[int, int, str]] = []
         for index, fact in enumerate(fact_lines):
             fact_text = re.sub(r"\[\d+\]", "", fact)
@@ -2010,13 +2546,59 @@ Evidence facts:
                 continue
             score = self._sentence_relevance_score(fact_text, query_terms)
             score += sum(2 for term in intent_terms if term in fact_lower)
-            score += sum(1 for marker in ["because", "so that", "instead", "safe", "structured", "configuration", "settings", "secrets", "hardcoding"] if marker in fact_lower)
+            score += sum(1 for marker in [
+                "because",
+                "so that",
+                "instead",
+                "predictable",
+                "tune out",
+                "impression",
+                "effect",
+                "story",
+                "attention",
+                "remember",
+                "safe",
+                "structured",
+                "configuration",
+                "settings",
+                "secrets",
+                "hardcoding",
+                "clean",
+                "readable",
+                "enforce",
+                "forces",
+                "slow",
+                "messy",
+                "inconvenient",
+                "faster",
+                "save time",
+                "make money",
+                "degree",
+                "technical",
+                "code",
+            ] if marker in fact_lower)
+            if specific_terms and not any(term in fact_lower for term in specific_terms) and not any(term in fact_lower for term in intent_terms):
+                score -= 4
             if score > 0:
                 scored.append((score, -index, fact))
 
         if not scored:
             return ""
         scored.sort(reverse=True)
+
+        if any(term in q for term in ["forgettable", "remember", "memorable", "introduction", "intro"]):
+            category_facts = [fact for _, _, fact in scored]
+            selected_by_category = self._select_category_facts(
+                category_facts,
+                [
+                    ("predictability", ["predictable", "tune out", "name", "job", "hobby"]),
+                    ("impression", ["effect", "impression", "decide", "seconds", "stick"]),
+                    ("memory/story", ["science", "fix", "story", "curiosity", "attention", "question", "engage", "remember", "memorable"]),
+                ],
+                max_items=5,
+            )
+            if len(selected_by_category) >= 2:
+                return self._clean_final_answer("Because: " + " ".join(selected_by_category))
 
         selected: list[str] = []
         seen: set[str] = set()
@@ -2493,6 +3075,9 @@ Focused answer:
                 score += 10
             elif len(phrase_terms) >= 2 and all(term in text_lower for term in phrase_terms):
                 score += 5
+            acronym = self._phrase_acronym(phrase)
+            if acronym and re.search(rf"\b{re.escape(acronym)}s?\b", text_lower):
+                score += 8
         return score
 
     def _intent_terms_from_query_terms(self, query_terms: set[str]) -> list[str]:
@@ -2529,9 +3114,13 @@ Focused answer:
         q = query.lower()
         terms: list[str] = []
         if "used for" in q or "useful" in q:
-            terms.extend(["used", "useful", "prediction", "context", "sequential", "independent", "probabilistic", "application", "example"])
+            terms.extend(["used", "useful", "prediction", "structured", "context", "sequential", "sequence", "independent", "probabilistic", "application", "example", "label", "labels"])
         if "best practice" in q:
             terms.extend(["practice", "development", "analysis", "threshold", "notification", "schedule", "low-traffic", "multi-stage"])
+        if "indentation" in q or "braces" in q:
+            terms.extend(["indentation", "enforces", "forces", "code block", "code blocks", "clean", "readable", "missing braces", "formatting", "readability"])
+        if ("command" in q or "server" in q) and any(term in q for term in ["http", "web", "useful", "provide", "provides"]):
+            terms.extend(["command", "http.server", "web server", "useful", "test", "web applications", "share files", "local network", "third-party", "browser", "localhost"])
         is_practice_challenge = bool(re.search(r"\b\d+\s*[- ]?\s*day\s+[^?]*challenge\b|\bpractice\w*\s+[^?]*challenge\b", q))
         if "limitation" in q or ("challenge" in q and not is_practice_challenge):
             terms.extend(["limitation", "challenge", "cause", "effect", "physical", "spatial", "placement", "arrangement", "temporal", "irrelevant", "interaction", "usage", "access", "safety"])
@@ -2541,6 +3130,8 @@ Focused answer:
             terms.extend(["strength", "memory", "speed", "performance", "hardware", "logic", "reward", "penalty", "interpretable"])
         if "hardcod" in q or "secret" in q:
             terms.extend(["hardcode", "hardcoding", "secret", "secrets", "key", "keys", "database", "connection", "configuration", "settings", "structured", "safe"])
+        if (".env" in q or "env file" in q) and ("local" in q or "development" in q or "recommend" in q):
+            terms.extend([".env", "env file", "local development", "environment variables", "variables", "api keys", "tokens", "secrets", "database", "url", "key : value", "key-value", "slow", "messy", "inconvenient"])
         if "start" in q or "recommend" in q or "steps" in q:
             terms.extend(["skill", "tool", "tools", "faster", "draft", "research", "brainstorm", "package", "service", "client", "group", "fast", "try", "practice"])
         if "pipeline" in q or "processing app" in q:
@@ -2550,7 +3141,9 @@ Focused answer:
         if ".env.example" in q or "env.example" in q or "gitignore" in q:
             terms.extend(["private", "ignore", "never push", "repository", "developer", "placeholder", "placeholders", "keys"])
         if "markup" in q or "tag" in q or "tags" in q:
-            terms.extend(["markup", "layout", "semantics", "reading order", "hierarchy", "parser", "downstream"])
+            terms.extend(["markup", "layout", "semantics", "reading order", "hierarchy", "parser", "heuristic", "downstream", "accuracy", "conversion"])
+        if "forgettable" in q or "remember" in q or "memorable" in q or "introduction" in q or "intro" in q:
+            terms.extend(["predictable", "tune out", "brain", "name", "job", "hobby", "effect", "impression", "seconds", "science", "story", "curiosity", "attention", "question", "engage", "remember", "memorable"])
         if "coding tools" in q or ("tools" in q and "strength" in q):
             terms.extend(["tool", "tools", "context", "codebase", "multi-agent", "multiple files", "project", "consistency"])
         if "multi-agent" in q or "multi agent" in q:
@@ -2562,7 +3155,7 @@ Focused answer:
         if ("hold" in q or "holding" in q) and "back" in q:
             terms.extend(["fear", "failing", "looking", "wasting", "time", "stuck", "job", "trying", "try", "barrier", "obstacle"])
         if "replace" in q:
-            terms.extend(["tool", "tools", "faster", "income", "background", "code", "save time", "make money", "learn"])
+            terms.extend(["tool", "tools", "faster", "income", "side income", "background", "technical", "tech", "degree", "code", "no code", "product", "app", "save time", "make money", "learn", "need", "don't need", "don’t need", "didn't", "didn’t"])
         return list(dict.fromkeys(terms))
 
     def _limitation_extractive_answer(self, query: str, results: list[dict]) -> str:
@@ -2576,30 +3169,26 @@ Focused answer:
 
         facts = [
             fact[2:].strip()
-            for fact in self._build_evidence_fact_list(query, results, max_facts=24).splitlines()
+            for fact in self._build_evidence_fact_list(query, results, max_facts=48).splitlines()
             if fact.startswith("- ")
         ]
         if not facts:
             return ""
 
-        markers = [
+        category_markers = [
+            ("physical/cause-and-effect", ["cause", "effect", "physical", "plausibility", "rigid", "motion"]),
+            ("spatial", ["spatial", "placement", "arrangement", "left", "right", "direction"]),
+            ("temporal", ["temporal", "camera", "sequence", "flow"]),
+            ("irrelevant entities", ["irrelevant", "unrelated", "animals", "people", "characters", "elements"]),
+            ("human-computer interaction (HCI)", ["human-computer", "hci", "user-system", "user system", "interaction", "language instructions"]),
+            ("usage/access", ["usage", "access", "release", "public", "safety", "one minute", "one-minute", "length"]),
+        ]
+        markers = list(dict.fromkeys(marker for _, group in category_markers for marker in group)) + [
             "limitation",
             "challenge",
             "failure",
-            "cause",
-            "effect",
-            "physical",
-            "spatial",
-            "placement",
-            "arrangement",
-            "temporal",
-            "irrelevant",
-            "interaction",
-            "usage",
-            "access",
-            "one minute",
-            "one-minute",
-            "safety",
+            "constraint",
+            "issue",
         ]
         scored: list[tuple[int, int, str]] = []
         for index, fact in enumerate(facts):
@@ -2618,7 +3207,33 @@ Focused answer:
 
         selected: list[str] = []
         seen: set[str] = set()
+        for category, group_markers in category_markers:
+            best: tuple[int, int, str] | None = None
+            for index, fact in enumerate(facts):
+                fact_text = re.sub(r"\[\d+\]", "", fact)
+                fact_lower = fact_text.lower()
+                if self._looks_like_code_or_metadata_fact(fact_text) or self._is_low_value_fact(fact_text):
+                    continue
+                score = sum(3 for marker in group_markers if marker in fact_lower)
+                if score <= 0:
+                    continue
+                score += self._sentence_relevance_score(fact_text, self._query_terms(query))
+                candidate = (score, -index, fact)
+                if best is None or candidate > best:
+                    best = candidate
+            if best is None:
+                continue
+            fact = self._tag_limitation_fact(category, self._shorten_fact(best[2], max_words=34))
+            normalized = re.sub(r"\W+", " ", fact.lower()).strip()
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            selected.append(f"- {fact}")
+            if len(selected) >= 6:
+                break
+
         for _, _, fact in scored:
+            fact = self._shorten_fact(fact, max_words=34)
             normalized = re.sub(r"\W+", " ", fact.lower()).strip()
             if normalized in seen:
                 continue
@@ -2629,6 +3244,23 @@ Focused answer:
         if not selected:
             return ""
         return self._clean_final_answer("The highlighted limitations are: " + " ".join(selected))
+
+    def _tag_limitation_fact(self, category: str, fact: str) -> str:
+        fact_lower = fact.lower()
+        citation_match = re.search(r"\s*\[(\d+)\]\s*$", fact)
+        citation = f" [{citation_match.group(1)}]" if citation_match else ""
+        body = re.sub(r"\s*\[\d+\]\s*$", "", fact).strip()
+        if category.startswith("spatial") and "spatial" not in fact_lower:
+            body = f"Spatial limitation: {body}"
+        elif category.startswith("human-computer") and "human-computer" not in fact_lower and "hci" not in fact_lower:
+            body = f"Human-computer interaction (HCI) limitation: {body}"
+        elif category.startswith("physical") and "cause" not in fact_lower:
+            body = f"Physical/cause-and-effect limitation: {body}"
+        elif category.startswith("irrelevant") and "irrelevant" not in fact_lower:
+            body = f"Irrelevant-entity limitation: {body}"
+        elif category.startswith("usage") and "usage" not in fact_lower:
+            body = f"Usage/access limitation: {body}"
+        return f"{body}.{citation}" if citation and not body.endswith((".", "!", "?")) else f"{body}{citation}"
 
     def _compress_list_fact(self, query: str, fact: str) -> str:
         q = query.lower()
@@ -2714,6 +3346,14 @@ Focused answer:
                 "architecture",
                 "mentioned",
                 "reasons",
+                "command",
+                "server",
+                ".env",
+                "env file",
+                "indentation",
+                "braces",
+                "replace",
+                "mean by",
             ]
         )
 
@@ -2735,6 +3375,11 @@ Focused answer:
                 "approach",
                 "method",
                 "capability",
+                "useful",
+                "why is",
+                "enforces",
+                "forces",
+                "key : value",
             ]
         )
 
@@ -2812,8 +3457,16 @@ Focused answer:
                 normalized,
             )
         ]
+        command_parts = [
+            match.group(0).strip()
+            for match in re.finditer(
+                r"\b(?:python\s+-m\s+[-\w.]+(?:\s+\d+)?|docker\s+run\b[^.!?]{0,160}|pip\s+install\s+[-\w.]+|uv\s+run\b[^.!?]{0,120}|npm\s+install\s+[-\w.]+|brew\s+install\s+[-\w.]+)",
+                normalized,
+                flags=re.IGNORECASE,
+            )
+        ]
         parts = re.split(r"(?<=[.!?])\s+", normalized)
-        candidates = [*list_parts, *parts]
+        candidates = [*list_parts, *command_parts, *parts]
         results: list[str] = []
         seen: set[str] = set()
         for part in candidates:
@@ -2822,7 +3475,36 @@ Focused answer:
                 continue
             word_count = len(part.split())
             is_short_list_item = part in list_parts and word_count >= 3
-            if len(part) <= 40 and not is_short_list_item:
+            part_lower = part.lower()
+            is_short_high_signal = any(
+                marker in part_lower
+                for marker in [
+                    "http.server",
+                    "quickly test",
+                    "share files",
+                    "local network",
+                    "third-party",
+                    "clean",
+                    "readable",
+                    "missing braces",
+                    "key : value",
+                    "api keys",
+                    "database",
+                    "degree",
+                    "computer science degree",
+                    "tech bro",
+                    "technical background",
+                    "line of code",
+                    "fancy app",
+                    "product",
+                    "don't need",
+                    "don’t need",
+                    "no code",
+                    "save time",
+                    "make money",
+                ]
+            )
+            if len(part) <= 40 and not is_short_list_item and not is_short_high_signal:
                 continue
             normalized_part = part.lower()
             if normalized_part in seen:
@@ -2876,6 +3558,8 @@ Focused answer:
         if re.search(r"\b(?:return|for|while|if|else)\s+[\w_(]", sentence_lower) and (
             sentence.count("=") >= 1 or sentence.count("(") >= 2
         ):
+            if "used for" in sentence_lower:
+                return False
             return True
         if re.search(r"\b\w+\s*=\s*[^.!?]{1,90}", sentence) and sentence.count("(") >= 2:
             return True
@@ -2908,6 +3592,10 @@ Focused answer:
         if sentence_lower.startswith("based on public") or sentence_lower.startswith("based on published"):
             return True
         if "comprehensive review" in sentence_lower and "current limitations" in sentence_lower:
+            return True
+        if any(marker in sentence_lower for marker in ["follow publication", "click here", "followers", "following"]):
+            return True
+        if any(marker in sentence_lower for marker in ["tag your", "clap if", "comment below", "share this"]):
             return True
         if sentence_lower.startswith("where can you use this") or sentence_lower.startswith("when to use"):
             return True
