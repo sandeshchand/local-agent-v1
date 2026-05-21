@@ -92,6 +92,30 @@ class SQLiteStore:
         )
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS memory_items (
+                memory_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL DEFAULT 'global',
+                scope TEXT NOT NULL DEFAULT 'global',
+                kind TEXT NOT NULL,
+                content TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT 'manual',
+                importance REAL NOT NULL DEFAULT 1.0,
+                access_count INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_accessed_at TIMESTAMP,
+                UNIQUE(scope, session_id, kind, content)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_memory_items_scope_session
+            ON memory_items(scope, session_id, kind)
+            """
+        )
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS traces (
                 trace_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id TEXT NOT NULL DEFAULT 'default',
@@ -152,6 +176,114 @@ class SQLiteStore:
             }
             for row in reversed(rows)
         ]
+
+    def insert_memory_item(
+        self,
+        *,
+        content: str,
+        kind: str,
+        session_id: str = "global",
+        scope: str = "global",
+        source: str = "manual",
+        importance: float = 1.0,
+    ) -> int:
+        conn = self.connect()
+        normalized_content = " ".join(content.split())
+        normalized_session = session_id or "global"
+        normalized_scope = scope or "global"
+        conn.execute(
+            """
+            INSERT INTO memory_items (session_id, scope, kind, content, source, importance)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(scope, session_id, kind, content) DO UPDATE SET
+                source = excluded.source,
+                importance = MAX(memory_items.importance, excluded.importance),
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (
+                normalized_session,
+                normalized_scope,
+                kind,
+                normalized_content,
+                source,
+                importance,
+            ),
+        )
+        row = conn.execute(
+            """
+            SELECT memory_id
+            FROM memory_items
+            WHERE scope = ? AND session_id = ? AND kind = ? AND content = ?
+            """,
+            (normalized_scope, normalized_session, kind, normalized_content),
+        ).fetchone()
+        conn.commit()
+        return int(row["memory_id"])
+
+    def list_memory_items(
+        self,
+        *,
+        session_id: str = "default",
+        include_global: bool = True,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        conn = self.connect()
+        if include_global:
+            rows = conn.execute(
+                """
+                SELECT memory_id, session_id, scope, kind, content, source, importance,
+                       access_count, created_at, updated_at, last_accessed_at
+                FROM memory_items
+                WHERE scope = 'global'
+                   OR (scope = 'session' AND session_id = ?)
+                ORDER BY importance DESC, updated_at DESC
+                LIMIT ?
+                """,
+                (session_id, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT memory_id, session_id, scope, kind, content, source, importance,
+                       access_count, created_at, updated_at, last_accessed_at
+                FROM memory_items
+                WHERE scope = 'session' AND session_id = ?
+                ORDER BY importance DESC, updated_at DESC
+                LIMIT ?
+                """,
+                (session_id, limit),
+            ).fetchall()
+        return [self._memory_row_to_dict(row) for row in rows]
+
+    def touch_memory_items(self, memory_ids: list[int]) -> None:
+        if not memory_ids:
+            return
+        conn = self.connect()
+        conn.executemany(
+            """
+            UPDATE memory_items
+            SET access_count = access_count + 1,
+                last_accessed_at = CURRENT_TIMESTAMP
+            WHERE memory_id = ?
+            """,
+            [(memory_id,) for memory_id in memory_ids],
+        )
+        conn.commit()
+
+    def _memory_row_to_dict(self, row: sqlite3.Row) -> dict[str, Any]:
+        return {
+            "memory_id": row["memory_id"],
+            "session_id": row["session_id"],
+            "scope": row["scope"],
+            "kind": row["kind"],
+            "content": row["content"],
+            "source": row["source"],
+            "importance": row["importance"],
+            "access_count": row["access_count"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "last_accessed_at": row["last_accessed_at"],
+        }
 
     def health_check(self) -> bool:
         conn = self.connect()

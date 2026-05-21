@@ -2,7 +2,7 @@
 
 A local-first Agentic Retrieval-Augmented Generation system for asking grounded questions over multiple PDF documents.
 
-The project now supports multi-PDF ingestion, document routing, hybrid retrieval, answer generation, verification, answer repair, trace logging, and repeatable RAG quality evaluation.
+The project now supports multi-PDF ingestion, document routing, hybrid retrieval, answer generation, verification, answer repair, short-term and long-term memory, trace logging, and repeatable RAG quality evaluation.
 
 ## Current Status
 
@@ -10,6 +10,7 @@ Completed:
 
 - Local Ollama chat and embedding integration
 - SQLite metadata, conversation memory, and trace storage
+- Long-term project memory with relevance-ranked retrieval
 - Qdrant vector storage
 - PDF parsing, cleanup, chunking, and ingestion
 - Multi-document indexing
@@ -25,9 +26,12 @@ Completed:
 - Answer repair after verifier failure
 - Multi-document gold QA evaluation
 - Optional OCR path for scanned/image-only PDFs
+- CLI memory inspection and manual memory creation
 
 Still in progress:
 
+- Memory-specific multi-turn evaluation
+- Optional semantic/vector memory retrieval
 - Better citation polish
 - Larger benchmark coverage across new daily PDFs
 - Stronger regression gates before every code change
@@ -37,6 +41,10 @@ Still in progress:
 
 ```text
 User query
+-> MemoryManager
+   -> save user turn
+   -> capture explicit long-term memory
+   -> load relevant project/session memory
 -> Planner
 -> ToolRouter
 -> DocumentRouter
@@ -153,6 +161,39 @@ Ask from command line:
 venv\Scripts\python.exe app\main.py ask --query "What are the key features of WatchTower?"
 ```
 
+## Memory
+
+The memory layer has two parts:
+
+- Short-term memory: recent conversation turns for the active session.
+- Long-term memory: durable project rules, user preferences, task status, evaluation results, and known issues.
+
+Memory is used as project/user guidance. It is not treated as PDF evidence. RAG answers must still use retrieved document context and citations.
+
+Manually add a memory:
+
+```cmd
+venv\Scripts\python.exe app\main.py remember --content "Do not use document-specific hardcoded keywords." --kind project_decision --importance 3
+```
+
+List stored memory:
+
+```cmd
+venv\Scripts\python.exe app\main.py list-memory
+```
+
+Run the memory smoke test:
+
+```cmd
+venv\Scripts\python.exe scripts\smoke_memory.py
+```
+
+Detailed implementation notes:
+
+```text
+docs/MEMORY.md
+```
+
 Run the web app:
 
 ```cmd
@@ -218,10 +259,10 @@ Target:
 Latest recorded baseline:
 
 - Date: 2026-05-20
-- Average score: `8.92/10`
-- Passed: `40/45` items at `>= 8/10`
+- Average score: `9.45/10`
+- Passed: `45/45` items at `>= 8/10`
 - Gate result: passed `--fail-under-average 8 --fail-under-item 7`
-- Remaining weak areas: exact optional details in a few answers, citation polish, and occasional verifier false positives.
+- Remaining weak areas: exact optional details in a few answers, citation polish, and memory-specific multi-turn evaluation.
 
 ## How To Add Gold QA For A New PDF
 
@@ -246,6 +287,7 @@ agent/orchestrator.py
 It currently performs:
 
 - session memory save/load
+- long-term memory capture and relevance-ranked memory loading
 - planning
 - direct-answer routing for casual messages
 - retrieval routing for document questions
@@ -270,6 +312,7 @@ Expected behavior:
 - PDF questions should use `retrieve_only`.
 - Retrieved answers should include citations.
 - `verification.status` should normally be `verified`.
+- Trace steps should include a `memory` step with captured and loaded memory counts.
 
 ## Reset Local Index
 
@@ -319,8 +362,8 @@ Use the report fields:
 
 ## Next Engineering Steps
 
-1. Add 3-5 gold QA questions for every new daily PDF.
-2. Add a small regression command that runs before every commit.
-3. Improve citation formatting and remove duplicated citation text.
-4. Reduce remaining verifier false positives on valid multi-entity answers.
+1. Add memory-specific multi-turn eval tests.
+2. Add 3-5 gold QA questions for every new daily PDF.
+3. Add a small regression command that runs before every commit.
+4. Improve citation formatting and remove duplicated citation text.
 5. Add a simple evaluation summary dashboard or HTML report.

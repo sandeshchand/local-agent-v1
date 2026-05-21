@@ -45,13 +45,21 @@ class Orchestrator:
 
     def handle_query(self, query: str, session_id: str= "default") -> dict:
         self.memory_manager.save_user_turn(session_id, query)
-        memory = self.memory_manager.load_sesssion_memory(session_id)
+        captured_memory = self.memory_manager.capture_long_term_memory(session_id, query)
+        memory = self.memory_manager.load_memory_for_query(session_id, query)
 
         state = AgentState(
             user_query=query,
             session_id=session_id,
             memory=memory,
         )
+        state.steps.append({
+            "step": 0,
+            "type": "memory",
+            "captured_count": len(captured_memory),
+            "loaded_count": len(memory),
+            "loaded_kinds": [item.kind for item in memory],
+        })
 
         state.plan = self.planner.plan(query)
         state.steps.append({
@@ -65,7 +73,10 @@ class Orchestrator:
             action = self.tool_router.next_action(state)
 
             if action.action_type == "direct_answer":
-                answer = self.answer_service.answer_direct(query)
+                answer = self.answer_service.answer_direct(
+                    query,
+                    memory_context=self.memory_manager.format_memory_context(memory),
+                )
                 state.final_answer = answer
                 state.done = True
                 state.steps.append({

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from agent.schemas import MemoryKind
 from app.dependencies import AppDependencies
 from ingestion.file_loader import discover_pdf_files
 from ingestion.pipeline import IngestionPipeline
@@ -27,6 +28,33 @@ def build_parser() -> argparse.ArgumentParser:
         help="Question to ask"
     )
     subparser.add_parser("list-docs")
+
+    remember_parser = subparser.add_parser("remember")
+    remember_parser.add_argument("--content", required=True, help="Memory text to store")
+    remember_parser.add_argument(
+        "--kind",
+        default="project_decision",
+        choices=[
+            "user_preference",
+            "project_decision",
+            "task_status",
+            "evaluation_result",
+            "known_issue",
+        ],
+        help="Memory category",
+    )
+    remember_parser.add_argument(
+        "--scope",
+        default="global",
+        choices=["global", "session"],
+        help="Use global for project memory or session for one chat session",
+    )
+    remember_parser.add_argument("--session-id", default="default", help="Session id for session-scoped memory")
+    remember_parser.add_argument("--importance", type=float, default=1.0, help="Memory importance from 1.0 to 3.0")
+
+    list_memory_parser = subparser.add_parser("list-memory")
+    list_memory_parser.add_argument("--session-id", default="default")
+    list_memory_parser.add_argument("--limit", type=int, default=30)
 
     return parser
 
@@ -126,3 +154,41 @@ def run_list_docs(deps:AppDependencies)->None:
         print(f"path: {doc['source_path']}")
         print(f"pages: {doc['page_count']}")
         print(f"indexed_at: {doc['indexed_at']}\n")
+
+
+def run_remember(
+    deps: AppDependencies,
+    *,
+    content: str,
+    kind: MemoryKind,
+    scope: str,
+    session_id: str,
+    importance: float,
+) -> None:
+    memory_id = deps.memory_manager.remember(
+        content,
+        kind=kind,
+        session_id=session_id,
+        scope=scope,
+        source="manual",
+        importance=importance,
+    )
+    if memory_id is None:
+        print("Memory was not stored because it was empty or looked sensitive.")
+        return
+    print(f"Stored memory #{memory_id} ({kind}, scope={scope}).")
+
+
+def run_list_memory(deps: AppDependencies, *, session_id: str, limit: int) -> None:
+    rows = deps.sqlite_store.list_memory_items(
+        session_id=session_id,
+        include_global=True,
+        limit=limit,
+    )
+    if not rows:
+        print("No memory items found.")
+        return
+    for row in rows:
+        print(f"[{row['memory_id']}] {row['kind']} | scope={row['scope']} | importance={row['importance']}")
+        print(f"{row['content']}")
+        print(f"source={row['source']} updated_at={row['updated_at']}\n")

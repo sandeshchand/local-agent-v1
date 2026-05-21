@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from app.bootstrap import bootstrap_app
-from app.cli import build_parser, run_ask, run_ingest,run_list_docs
+from app.cli import build_parser, run_ask, run_ingest, run_list_docs, run_list_memory, run_remember
 
 
 def main() ->None:
@@ -16,6 +16,17 @@ def main() ->None:
         run_ask(deps, args.query)
     elif args.command == "list-docs":
         run_list_docs(deps)
+    elif args.command == "remember":
+        run_remember(
+            deps,
+            content=args.content,
+            kind=args.kind,
+            scope=args.scope,
+            session_id=args.session_id,
+            importance=args.importance,
+        )
+    elif args.command == "list-memory":
+        run_list_memory(deps, session_id=args.session_id, limit=args.limit)
     else:
         raise ValueError(f"Unknown command: {args.command}")
 

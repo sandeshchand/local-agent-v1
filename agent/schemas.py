@@ -58,10 +58,26 @@ class AgentAction(BaseModel):
     retrieve_query: str | None = None
     notes: str= ""
 
+MemoryKind = Literal[
+    "short_term",
+    "long_term",
+    "summary",
+    "user_preference",
+    "project_decision",
+    "task_status",
+    "evaluation_result",
+    "known_issue",
+]
+
+
 class MemoryRecord(BaseModel):
     role: Literal["user", "assistant", "system"]
     content: str
-    kind: Literal["short_term", "long_term", "summary"] = "short_term"
+    kind: MemoryKind = "short_term"
+    source: str = "conversation"
+    importance: float = 1.0
+    score: float = 0.0
+    created_at: str | None = None
     
 class AgentState(BaseModel):
     session_id: str

@@ -43,6 +43,12 @@ Rules:
 12. Do not begin with filler such as "Based on the context" or "Based on the evidence".
 13. Keep the answer compact: usually 1 short paragraph or 3-6 bullets.
 
+Memory guidance:
+{memory_context}
+
+Memory rule:
+Use memory only for user preferences and project/process constraints. Do not use memory as document evidence.
+
 Answer shape:
 {answer_shape}
 
@@ -67,7 +73,7 @@ Context:
 Answer:
 """.strip()
 
-    def build_direct_prompt(self, query: str) -> str:
+    def build_direct_prompt(self, query: str, memory_context: str = "") -> str:
         return f"""
 You are a friendly and helpful AI assistant.
 
@@ -78,6 +84,9 @@ Rules:
 - If the question requires specific document content that you do not have, say that clearly.
 - Do not claim you searched documents unless retrieval actually happened.
 - Do not invent facts.
+
+Memory guidance:
+{memory_context}
 
 User question:
 {query}
@@ -389,7 +398,7 @@ Evidence facts:
             return ""
         return facts
 
-    def answer_direct(self, query: str) -> str:
+    def answer_direct(self, query: str, memory_context: str = "") -> str:
         q = query.strip().lower()
 
         greeting_map = {
@@ -406,7 +415,7 @@ Evidence facts:
         if q in greeting_map:
             return greeting_map[q]
 
-        prompt = self.build_direct_prompt(query)
+        prompt = self.build_direct_prompt(query, memory_context=memory_context)
 
         try:
             answer = self.chat_client.generate(prompt).strip()
