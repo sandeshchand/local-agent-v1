@@ -194,6 +194,22 @@ Detailed implementation notes:
 docs/MEMORY.md
 ```
 
+## Answer Service
+
+The grounded answer layer is implemented in:
+
+```text
+retrieval/answer_service.py
+```
+
+It combines LLM answer generation with generic deterministic extractors for feature, limitation, definition, pipeline, command, example, why, and list-style questions. It also handles citation cleanup and verifier repair fallbacks.
+
+Detailed implementation notes:
+
+```text
+docs/ANSWER_SERVICE.md
+```
+
 Run the web app:
 
 ```cmd

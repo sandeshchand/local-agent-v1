@@ -7,6 +7,14 @@ from retrieval.context_builder import build_context
 
 
 class AnswerService:
+    """
+    Builds final answers from retrieved evidence.
+
+    See docs/ANSWER_SERVICE.md for the full design notes. The short version:
+    LLM output is the first draft, then generic extractive paths repair missing
+    facts, focus drift, and citation issues without using document-specific hacks.
+    """
+
     def __init__(self, chat_client: OllamaChatClient) -> None:
         self.chat_client = chat_client
 
@@ -146,6 +154,10 @@ Answer:
 
         answer = self._remove_mixed_abstention(answer)
         answer = self._focused_rewrite(query, answer, results)
+
+        # Candidate priority matters: specific extractors run before broad list
+        # extraction so a feature, limitation, pipeline, or command answer is not
+        # overwritten by a generic summary.
         best_practices_answer = self._best_practices_extractive_answer(query, results)
         if best_practices_answer:
             answer = best_practices_answer
