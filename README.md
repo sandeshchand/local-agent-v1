@@ -14,7 +14,7 @@ Completed:
 - Qdrant vector storage
 - PDF parsing, cleanup, chunking, and ingestion
 - Multi-document indexing
-- Planner and orchestration layer
+- Planner and stronger orchestration layer with verification-aware retrieval retry
 - Document router for multi-PDF questions
 - Hybrid retrieval: dense search plus BM25
 - Cross-encoder reranking
@@ -58,6 +58,7 @@ User query
 -> AnswerService
 -> Verifier
 -> optional Answer Repair
+-> optional full-corpus retrieval retry
 -> Trace saved to SQLite
 -> Final answer with citations
 ```
@@ -312,7 +313,20 @@ It currently performs:
 - answer generation
 - verification
 - answer repair when verification fails
+- one generic full-corpus retrieval retry when the first answer has no citations or still fails verification
 - trace saving to SQLite
+
+Detailed implementation notes:
+
+```text
+docs/ORCHESTRATION.md
+```
+
+Current implementation roadmap:
+
+```text
+docs/NEXT_STEPS.md
+```
 
 Smoke checks:
 
@@ -382,4 +396,5 @@ Use the report fields:
 2. Add 3-5 gold QA questions for every new daily PDF.
 3. Add a small regression command that runs before every commit.
 4. Improve citation formatting and remove duplicated citation text.
-5. Add a simple evaluation summary dashboard or HTML report.
+5. Add guardrails before tool execution and external integrations.
+6. Add a simple evaluation summary dashboard or HTML report.
