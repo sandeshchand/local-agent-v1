@@ -25,6 +25,7 @@ Completed:
 - Generic verifier
 - Answer repair after verifier failure
 - Tool-call guardrails with allow, deny, and needs-approval decisions
+- Read-only current weather web tool
 - Multi-document gold QA evaluation
 - Optional OCR path for scanned/image-only PDFs
 - CLI memory inspection and manual memory creation
@@ -49,6 +50,7 @@ User query
 -> Planner
 -> ToolRouter
    -> guardrails when a tool call is selected
+   -> current weather web tool for weather/current-temperature questions
 -> DocumentRouter
 -> RetrievalService
    -> dense vector search
@@ -234,6 +236,28 @@ Detailed implementation notes:
 
 ```text
 docs/GUARDRAILS.md
+```
+
+## Web Tools
+
+The first web-based tool is:
+
+```text
+get_current_weather
+```
+
+It answers current weather questions for a named location using a read-only weather API. It is tool context, not PDF citation evidence.
+
+Example:
+
+```cmd
+venv\Scripts\python.exe app\main.py ask --query "What is the current weather in Berlin?"
+```
+
+Detailed implementation notes:
+
+```text
+docs/WEB_TOOLS.md
 ```
 
 Run the web app:

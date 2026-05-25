@@ -11,6 +11,7 @@ from app.config import load_config
 from app.dependencies import  AppDependencies
 from app.ollama_client import OllamaChatClient, OllamaEmbeddingClient
 from app.tool_registry import ToolRegistry
+from app.weather_tool import CurrentWeatherTool
 from retrieval.answer_service import AnswerService
 from retrieval.search import RetrievalService
 from retrieval.doc_router import DocumentRouter
@@ -63,6 +64,14 @@ def bootstrap_app(env_file: str | Path = ".env") -> AppDependencies:
             requires_approval = False,
         ),
         lambda: sqlite_store.list_documents(),
+    )
+    tool_registry.register(
+        ToolSpec(
+            name="get_current_weather",
+            description="Get current weather for a named location using a read-only web weather API.",
+            requires_approval=False,
+        ),
+        CurrentWeatherTool(),
     )
 
     memory_manager = MemoryManager(sqlite_store=sqlite_store)

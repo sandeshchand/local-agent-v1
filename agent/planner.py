@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from agent.schemas import PlanDecision
 from app.ollama_client import OllamaChatClient
 
@@ -51,8 +53,46 @@ class Planner:
                 reasoning="Detected casual conversation or greeting.",
             )
 
+        if self._is_current_weather_query(q):
+            location = self._weather_location(query)
+            return PlanDecision(
+                mode="tool_only",
+                reasoning="Detected current weather request.",
+                tool_name="get_current_weather",
+                tool_args={"location": location},
+            )
+
         return PlanDecision(
             mode="retrieve_only",
             reasoning="Defaulting to retrieval for non-casual queries.",
             retrieve_query=query,
         )
+
+    def _is_current_weather_query(self, query_lower: str) -> bool:
+        if "weather" in query_lower:
+            return True
+        if "temperature" in query_lower and (
+            any(term in query_lower for term in ["current", "now", "today", "outside", "forecast"])
+            or any(marker in query_lower for marker in [" in ", " for ", " at ", " near "])
+        ):
+            return True
+        return False
+
+    def _weather_location(self, query: str) -> str:
+        cleaned = query.strip().strip("?.! ")
+        for pattern in [
+            r"\b(?:in|for|at|near)\s+(.+)$",
+            r"\bweather\s+(.+)$",
+            r"\btemperature\s+(.+)$",
+        ]:
+            match = re.search(pattern, cleaned, flags=re.IGNORECASE)
+            if match:
+                location = match.group(1).strip(" ?.!")
+                location = re.sub(
+                    r"\b(?:right now|now|today|currently|outside|please)\b",
+                    "",
+                    location,
+                    flags=re.IGNORECASE,
+                )
+                return re.sub(r"\s+", " ", location).strip()
+        return ""

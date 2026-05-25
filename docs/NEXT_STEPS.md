@@ -58,6 +58,11 @@ Memory and tools can guide the agent, but PDF answers must still be grounded in 
 
 Goal: support external tools through a clean connector layer.
 
+Status:
+
+- A narrow read-only current weather web tool is implemented.
+- A generic MCP adapter layer is still future work.
+
 What to implement:
 
 - A generic MCP tool adapter.

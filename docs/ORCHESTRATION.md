@@ -91,7 +91,7 @@ Important step types:
 - `answer_repair`: repair attempt and repair verification.
 - `retrieval_retry_decision`: whether the retry answer replaced the first attempt.
 - `guardrail`: tool-call allow, deny, needs-approval, or request-approved decision.
-- `tool_call`: tool execution result.
+- `tool_call`: tool execution result, including read-only web tools such as current weather.
 - `direct_answer`: casual or non-document answer path.
 
 For retrieval steps, useful fields include:

@@ -42,6 +42,8 @@ For a tool call:
 
 The first registered tool, `list_documents`, remains allowed because it is read-only and registered with `requires_approval=False`.
 
+The `get_current_weather` tool is also allowed by default because it is a narrow read-only current-info tool. Broad web search should use stricter approval.
+
 ## Request-Scoped Approval
 
 Approval is explicit and request-scoped. It is not stored in memory and does not approve future requests.
