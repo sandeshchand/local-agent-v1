@@ -13,7 +13,7 @@ def main() ->None:
     if args.command == "ingest":
         run_ingest(deps, args.path)
     elif args.command == "ask":
-        run_ask(deps, args.query)
+        run_ask(deps, args.query, approved_tools=args.approve_tool)
     elif args.command == "list-docs":
         run_list_docs(deps)
     elif args.command == "remember":

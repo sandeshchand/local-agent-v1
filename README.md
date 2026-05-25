@@ -221,8 +221,14 @@ Current behavior:
 
 - registered tools with `requires_approval=False` are allowed,
 - unknown or missing tool calls are denied,
-- registered tools with `requires_approval=True` return `needs_approval` and are not executed yet,
+- registered tools with `requires_approval=True` return `needs_approval` unless explicitly approved for the current request,
 - every decision is recorded as a `guardrail` trace step.
+
+Approve a tool for one CLI request:
+
+```cmd
+venv\Scripts\python.exe app\main.py ask --query "Run the approved tool" --approve-tool tool_name
+```
 
 Detailed implementation notes:
 

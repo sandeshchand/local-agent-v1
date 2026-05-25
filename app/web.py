@@ -83,7 +83,10 @@ def list_documents():
 def chat(request_data: ChatRequest):
     deps = get_deps()
 
-    results = deps.orchestrator.handle_query(request_data.query)
+    results = deps.orchestrator.handle_query(
+        request_data.query,
+        approved_tools=request_data.approved_tools,
+    )
 
     trace_id = save_trace(
         sqlite_store=deps.sqlite_store,

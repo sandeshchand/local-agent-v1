@@ -35,7 +35,8 @@ Goal: make the agent safer before it executes tools, MCP actions, file operation
 Status:
 
 - Tool-call guardrails v1 is implemented.
-- MCP, file-operation, and approval-flow guardrails are still future work.
+- Request-scoped approval for approval-required tools is implemented.
+- MCP and file-operation guardrails are still future work.
 
 Implemented:
 
@@ -46,7 +47,6 @@ Implemented:
 
 Next guardrail work:
 
-- Add a real approval flow for tools that return `needs_approval`.
 - Extend the same policy shape to MCP tools after MCP execution is wired.
 - Add file-operation categories before write/delete tools are introduced.
 

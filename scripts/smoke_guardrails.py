@@ -56,7 +56,11 @@ def build_orchestrator(registry: ToolRegistry) -> Orchestrator:
     return orchestrator
 
 
-def run_tool_action(orchestrator: Orchestrator, tool_name: str) -> AgentState:
+def run_tool_action(
+    orchestrator: Orchestrator,
+    tool_name: str,
+    approved_tools: list[str] | None = None,
+) -> AgentState:
     state = AgentState(session_id="guardrail-smoke", user_query=f"run {tool_name}")
     action = AgentAction(
         action_type="tool_call",
@@ -71,6 +75,7 @@ def run_tool_action(orchestrator: Orchestrator, tool_name: str) -> AgentState:
         state=state,
         action=action,
         step_no=2,
+        approved_tools=approved_tools,
     )
     return state
 
@@ -104,6 +109,15 @@ def main() -> None:
     )
     assert approval_decision.status == "needs_approval"
 
+    approved_decision = policy.evaluate_tool_call(
+        AgentAction(action_type="tool_call", tool_call={"name": "approval_tool", "args": {}}),
+        registry,
+        approved_tools=["approval_tool"],
+    )
+    assert approved_decision.status == "allow"
+    assert approved_decision.requires_approval
+    assert approved_decision.approved
+
     orchestrator = build_orchestrator(registry)
 
     safe_state = run_tool_action(orchestrator, "safe_tool")
@@ -122,6 +136,14 @@ def main() -> None:
     assert "requires approval" in approval_state.final_answer
     assert calls.get("approval_tool", 0) == 0
     assert not approval_state.tool_results
+
+    approved_state = run_tool_action(orchestrator, "approval_tool", approved_tools=["approval_tool"])
+    assert_guardrail_status(approved_state, "allow")
+    guardrail_step = [step for step in approved_state.steps if step.get("type") == "guardrail"][-1]
+    assert guardrail_step["requires_approval"]
+    assert guardrail_step["approved"]
+    assert calls.get("approval_tool") == 1
+    assert approved_state.tool_results and approved_state.tool_results[0].success
 
     print("Guardrails smoke test passed.")
 

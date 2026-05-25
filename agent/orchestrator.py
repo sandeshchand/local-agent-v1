@@ -53,7 +53,12 @@ class Orchestrator:
         self.query_rewriter = QueryRewriter()
         self.evidence_judge = EvidenceJudge(self.answer_service.chat_client)
 
-    def handle_query(self, query: str, session_id: str = "default") -> dict:
+    def handle_query(
+        self,
+        query: str,
+        session_id: str = "default",
+        approved_tools: list[str] | None = None,
+    ) -> dict:
         self.memory_manager.save_user_turn(session_id, query)
         captured_memory = self.memory_manager.capture_long_term_memory(session_id, query)
         memory = self.memory_manager.load_memory_for_query(session_id, query)
@@ -116,6 +121,7 @@ class Orchestrator:
                     state=state,
                     action=action,
                     step_no=step_no,
+                    approved_tools=approved_tools,
                 )
                 break
 
@@ -265,8 +271,13 @@ class Orchestrator:
         state: AgentState,
         action: AgentAction,
         step_no: int,
+        approved_tools: list[str] | None = None,
     ) -> tuple[list[dict], VerificationResult]:
-        guardrail_decision = self.guardrail_policy.evaluate_tool_call(action, self.tool_registry)
+        guardrail_decision = self.guardrail_policy.evaluate_tool_call(
+            action,
+            self.tool_registry,
+            approved_tools=approved_tools,
+        )
         state.steps.append(
             {
                 "step": step_no,
@@ -276,6 +287,7 @@ class Orchestrator:
                 "action_type": guardrail_decision.action_type,
                 "tool_name": guardrail_decision.tool_name,
                 "requires_approval": guardrail_decision.requires_approval,
+                "approved": guardrail_decision.approved,
                 "policy_name": guardrail_decision.policy_name,
             }
         )

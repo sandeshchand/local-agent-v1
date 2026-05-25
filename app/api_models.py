@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class ChatRequest(BaseModel):
     query: str = Field(..., min_length=1)
+    approved_tools: list[str] = Field(default_factory=list)
 
 
 class CitationItem(BaseModel):

@@ -90,7 +90,7 @@ Important step types:
 - `verify`: verifier result.
 - `answer_repair`: repair attempt and repair verification.
 - `retrieval_retry_decision`: whether the retry answer replaced the first attempt.
-- `guardrail`: tool-call allow, deny, or needs-approval decision.
+- `guardrail`: tool-call allow, deny, needs-approval, or request-approved decision.
 - `tool_call`: tool execution result.
 - `direct_answer`: casual or non-document answer path.
 
@@ -127,7 +127,7 @@ Do not:
 - silently accept an unverified repaired answer,
 - let memory become citation evidence,
 - hide retry behavior from traces,
-- execute approval-required tools before an approval flow exists,
+- persist approval from one request into another request,
 - make unlimited retrieval loops.
 
 ## Evaluation
@@ -150,7 +150,6 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file test\eval_multi_
 Good next orchestration improvements:
 
 1. Add multi-step `retrieve_then_tool` tests.
-2. Add an explicit approval flow for tools that return `needs_approval`.
-3. Reuse the guardrail policy shape for MCP tools.
-4. Add a route-confidence metric from document routing.
-5. Add UI trace inspection so users can see routing, evidence, retry, guardrail, and verifier decisions.
+2. Reuse the guardrail policy shape for MCP tools.
+3. Add a route-confidence metric from document routing.
+4. Add UI trace inspection so users can see routing, evidence, retry, guardrail, and verifier decisions.

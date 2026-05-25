@@ -27,6 +27,12 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Question to ask"
     )
+    ask_parser.add_argument(
+        "--approve-tool",
+        action="append",
+        default=[],
+        help="Approve an approval-required tool for this one request. Can be used multiple times.",
+    )
     subparser.add_parser("list-docs")
 
     remember_parser = subparser.add_parser("remember")
@@ -90,9 +96,16 @@ def run_ingest(deps: AppDependencies, path:str) -> None:
     print(f"\nIngestion complete. success={success_count}, failed={failed_count}")
 
 
-def run_ask(deps: AppDependencies, query:str) ->None:
+def run_ask(
+    deps: AppDependencies,
+    query: str,
+    approved_tools: list[str] | None = None,
+) -> None:
     print(f"Running agent for query: {query}")
-    result = deps.orchestrator.handle_query(query)
+    result = deps.orchestrator.handle_query(
+        query,
+        approved_tools=approved_tools or [],
+    )
     
 
     print(f"\nMode selected: {result['mode']}")

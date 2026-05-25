@@ -10,7 +10,7 @@ It decides:
 
 - `allow`: the tool is registered and does not require approval.
 - `deny`: the tool call is missing or the tool is not registered.
-- `needs_approval`: the tool is registered but its `ToolSpec.requires_approval` flag is true.
+- `needs_approval`: the tool is registered, requires approval, and was not approved for this request.
 
 MCP tools and file-operation guardrails will build on this layer later.
 
@@ -23,7 +23,7 @@ Planner
 -> GuardrailPolicy.evaluate_tool_call
    -> allow: execute tool
    -> deny: block execution
-   -> needs_approval: block until approval support exists
+   -> needs_approval: block unless the caller approves the tool for this request
 -> trace guardrail decision
 -> final answer
 ```
@@ -37,9 +37,38 @@ For a tool call:
 - missing tool call: `deny`
 - unknown tool name: `deny`
 - registered tool with `requires_approval=True`: `needs_approval`
+- registered tool with `requires_approval=True` and request-scoped approval: `allow`
 - registered tool with `requires_approval=False`: `allow`
 
 The first registered tool, `list_documents`, remains allowed because it is read-only and registered with `requires_approval=False`.
+
+## Request-Scoped Approval
+
+Approval is explicit and request-scoped. It is not stored in memory and does not approve future requests.
+
+Python callers can pass approved tool names to the orchestrator:
+
+```python
+deps.orchestrator.handle_query(
+    "Run the approved tool",
+    approved_tools=["tool_name"],
+)
+```
+
+Command-line callers can approve a tool for one `ask` command:
+
+```cmd
+venv\Scripts\python.exe app\main.py ask --query "Run the approved tool" --approve-tool tool_name
+```
+
+API callers can include approved tool names in the chat payload:
+
+```json
+{
+  "query": "Run the approved tool",
+  "approved_tools": ["tool_name"]
+}
+```
 
 ## Trace Step
 
@@ -52,6 +81,7 @@ Useful fields:
 - `action_type`
 - `tool_name`
 - `requires_approval`
+- `approved`
 - `policy_name`
 
 Blocked tools are not executed and do not create a `tool_result`.
@@ -70,7 +100,7 @@ Do not:
 - use guardrails to optimize retrieval answers,
 - treat tool output as PDF citation evidence,
 - add document-specific allow/deny rules,
-- execute approval-required tools before an approval flow exists.
+- persist approval from one request into another request.
 
 ## Verification
 
@@ -90,7 +120,6 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_feat
 
 ## Next Improvements
 
-1. Add an explicit approval flow for `needs_approval`.
-2. Reuse the same policy shape for MCP tools.
-3. Add file-operation categories before write/delete tools are introduced.
-4. Show guardrail decisions in the UI trace view.
+1. Reuse the same policy shape for MCP tools.
+2. Add file-operation categories before write/delete tools are introduced.
+3. Show guardrail decisions in the UI trace view.

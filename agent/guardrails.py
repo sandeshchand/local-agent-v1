@@ -10,8 +10,14 @@ class GuardrailPolicy:
 
     policy_name = "tool_call_guardrails_v1"
 
-    def evaluate_tool_call(self, action: AgentAction, tool_registry: Any) -> GuardrailDecision:
+    def evaluate_tool_call(
+        self,
+        action: AgentAction,
+        tool_registry: Any,
+        approved_tools: list[str] | None = None,
+    ) -> GuardrailDecision:
         tool_name = self._tool_name(action)
+        approved_tool_names = set(approved_tools or [])
         if action.action_type != "tool_call":
             return GuardrailDecision(
                 status="deny",
@@ -41,6 +47,16 @@ class GuardrailPolicy:
             )
 
         if tool_spec.requires_approval:
+            if tool_name in approved_tool_names:
+                return GuardrailDecision(
+                    status="allow",
+                    reason=f"Tool '{tool_name}' requires approval and was approved for this request.",
+                    action_type=action.action_type,
+                    tool_name=tool_name,
+                    requires_approval=True,
+                    approved=True,
+                    policy_name=self.policy_name,
+                )
             return GuardrailDecision(
                 status="needs_approval",
                 reason=f"Tool '{tool_name}' requires approval before execution.",

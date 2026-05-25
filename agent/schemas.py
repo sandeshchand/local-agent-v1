@@ -64,6 +64,7 @@ class GuardrailDecision(BaseModel):
     action_type: ActionType
     tool_name: str | None = None
     requires_approval: bool = False
+    approved: bool = False
     policy_name: str = "tool_call_guardrails_v1"
 
 class AgentAction(BaseModel):
