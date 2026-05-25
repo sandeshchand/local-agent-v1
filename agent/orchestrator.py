@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from agent.guardrails import GuardrailPolicy
 from agent.memory_manager import MemoryManager
 from agent.planner import Planner
-from agent.schemas import AgentAction, AgentState, VerificationResult
+from agent.schemas import AgentAction, AgentState, GuardrailDecision, VerificationResult
 from agent.tool_router import ToolRouter
 from agent.verifier import Verifier
 from app.tool_registry import ToolRegistry
@@ -33,6 +34,7 @@ class Orchestrator:
         doc_router: DocumentRouter | None = None,
         max_steps: int = 3,
         max_retrieval_attempts: int = 2,
+        guardrail_policy: GuardrailPolicy | None = None,
     ) -> None:
         self.planner = planner
         self.retrieval_service = retrieval_service
@@ -44,6 +46,7 @@ class Orchestrator:
         self.tool_router = ToolRouter()
         self.max_steps = max_steps
         self.max_retrieval_attempts = max(1, max_retrieval_attempts)
+        self.guardrail_policy = guardrail_policy or GuardrailPolicy()
         self.doc_router = doc_router
 
         self.evidence_checker = EvidenceChecker()
@@ -263,6 +266,25 @@ class Orchestrator:
         action: AgentAction,
         step_no: int,
     ) -> tuple[list[dict], VerificationResult]:
+        guardrail_decision = self.guardrail_policy.evaluate_tool_call(action, self.tool_registry)
+        state.steps.append(
+            {
+                "step": step_no,
+                "type": "guardrail",
+                "status": guardrail_decision.status,
+                "reason": guardrail_decision.reason,
+                "action_type": guardrail_decision.action_type,
+                "tool_name": guardrail_decision.tool_name,
+                "requires_approval": guardrail_decision.requires_approval,
+                "policy_name": guardrail_decision.policy_name,
+            }
+        )
+
+        if guardrail_decision.status != "allow":
+            state.final_answer = self._guardrail_blocked_answer(guardrail_decision)
+            state.done = True
+            return [], self._verify_and_maybe_repair(query, [], state)
+
         tool_name, tool_args = self._tool_call_name_args(action)
         tool_result = self.tool_registry.execute(tool_name, **tool_args)
         state.tool_results.append(tool_result)
@@ -287,6 +309,11 @@ class Orchestrator:
 
         state.done = True
         return [], self._verify_and_maybe_repair(query, [], state)
+
+    def _guardrail_blocked_answer(self, decision: GuardrailDecision) -> str:
+        if decision.status == "needs_approval":
+            return "This action requires approval before execution."
+        return "This tool action was blocked by guardrails."
 
     def _run_retrieval_attempt(
         self,

@@ -15,6 +15,7 @@ User query
 -> load relevant memory
 -> plan
 -> route action
+-> guardrail check for tool calls
 -> direct answer, retrieval, or tool call
 -> verify answer
 -> repair answer when grounded citations exist but verification fails
@@ -89,6 +90,7 @@ Important step types:
 - `verify`: verifier result.
 - `answer_repair`: repair attempt and repair verification.
 - `retrieval_retry_decision`: whether the retry answer replaced the first attempt.
+- `guardrail`: tool-call allow, deny, or needs-approval decision.
 - `tool_call`: tool execution result.
 - `direct_answer`: casual or non-document answer path.
 
@@ -114,6 +116,7 @@ Do:
 
 - keep routing, retrieval, evidence selection, answer generation, and verification separate,
 - use generic fallback behavior,
+- check guardrails before tool execution,
 - record decisions in trace steps,
 - keep external response keys stable for CLI, API, and eval scripts,
 - run targeted eval after changing orchestration.
@@ -124,6 +127,7 @@ Do not:
 - silently accept an unverified repaired answer,
 - let memory become citation evidence,
 - hide retry behavior from traces,
+- execute approval-required tools before an approval flow exists,
 - make unlimited retrieval loops.
 
 ## Evaluation
@@ -146,7 +150,7 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file test\eval_multi_
 Good next orchestration improvements:
 
 1. Add multi-step `retrieve_then_tool` tests.
-2. Add a guardrail policy before tool calls.
-3. Add a route-confidence metric from document routing.
-4. Add a compact orchestration smoke script.
-5. Add UI trace inspection so users can see routing, evidence, retry, and verifier decisions.
+2. Add an explicit approval flow for tools that return `needs_approval`.
+3. Reuse the guardrail policy shape for MCP tools.
+4. Add a route-confidence metric from document routing.
+5. Add UI trace inspection so users can see routing, evidence, retry, guardrail, and verifier decisions.

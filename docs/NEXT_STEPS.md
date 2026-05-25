@@ -32,12 +32,23 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file test\eval_multi_
 
 Goal: make the agent safer before it executes tools, MCP actions, file operations, or external actions.
 
-What to implement:
+Status:
+
+- Tool-call guardrails v1 is implemented.
+- MCP, file-operation, and approval-flow guardrails are still future work.
+
+Implemented:
 
 - A guardrail module that checks the planned action before execution.
 - A simple policy result: `allow`, `deny`, or `needs_approval`.
 - Trace logging for every guardrail decision.
 - Clear user-facing messages when an action is denied.
+
+Next guardrail work:
+
+- Add a real approval flow for tools that return `needs_approval`.
+- Extend the same policy shape to MCP tools after MCP execution is wired.
+- Add file-operation categories before write/delete tools are introduced.
 
 Important rule:
 

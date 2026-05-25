@@ -25,6 +25,12 @@ VerificationStatus = Literal[
     "contradictory"
 ]
 
+GuardrailStatus = Literal[
+    "allow",
+    "deny",
+    "needs_approval",
+]
+
 
 
 class PlanDecision(BaseModel):
@@ -51,6 +57,14 @@ class ToolResult(BaseModel):
     success: bool
     output: str | None = None
     error: str | None = None
+
+class GuardrailDecision(BaseModel):
+    status: GuardrailStatus
+    reason: str
+    action_type: ActionType
+    tool_name: str | None = None
+    requires_approval: bool = False
+    policy_name: str = "tool_call_guardrails_v1"
 
 class AgentAction(BaseModel):
     action_type: ActionType

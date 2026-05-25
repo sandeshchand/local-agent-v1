@@ -24,6 +24,7 @@ Completed:
 - Generic source-window extraction for feature, setup, formula, example, and reason questions
 - Generic verifier
 - Answer repair after verifier failure
+- Tool-call guardrails with allow, deny, and needs-approval decisions
 - Multi-document gold QA evaluation
 - Optional OCR path for scanned/image-only PDFs
 - CLI memory inspection and manual memory creation
@@ -47,6 +48,7 @@ User query
    -> load relevant project/session memory
 -> Planner
 -> ToolRouter
+   -> guardrails when a tool call is selected
 -> DocumentRouter
 -> RetrievalService
    -> dense vector search
@@ -211,6 +213,23 @@ Detailed implementation notes:
 docs/ANSWER_SERVICE.md
 ```
 
+## Guardrails
+
+Tool-call guardrails protect actions before any registered tool executes.
+
+Current behavior:
+
+- registered tools with `requires_approval=False` are allowed,
+- unknown or missing tool calls are denied,
+- registered tools with `requires_approval=True` return `needs_approval` and are not executed yet,
+- every decision is recorded as a `guardrail` trace step.
+
+Detailed implementation notes:
+
+```text
+docs/GUARDRAILS.md
+```
+
 Run the web app:
 
 ```cmd
@@ -314,6 +333,7 @@ It currently performs:
 - verification
 - answer repair when verification fails
 - one generic full-corpus retrieval retry when the first answer has no citations or still fails verification
+- tool-call guardrail decisions before tool execution
 - trace saving to SQLite
 
 Detailed implementation notes:

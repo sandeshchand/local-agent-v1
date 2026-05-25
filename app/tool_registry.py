@@ -14,6 +14,13 @@ class ToolRegistry:
     def has_tool(self, name: str) -> bool:
         return name in self._tools
 
+    def get_tool_spec(self, name: str) -> ToolSpec | None:
+        tool = self._tools.get(name)
+        if tool is None:
+            return None
+        spec, _ = tool
+        return spec
+
     def list_tools(self) -> list[ToolSpec]:
         return [spec for spec, _ in self._tools.values()]
 
