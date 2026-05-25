@@ -95,17 +95,29 @@ This will help us quickly understand whether a bad answer came from routing, ret
 
 Goal: make quality checks repeatable before every commit.
 
-Create one script or command that runs:
+Status:
+
+- `scripts/run_regression.py` is implemented.
+
+It runs:
 
 - Python compile checks,
 - memory smoke test,
+- guardrails smoke test,
+- weather tool smoke test,
 - focused RAG eval,
 - optional full RAG eval.
 
-Suggested future command:
+Standard command:
 
 ```cmd
 venv\Scripts\python.exe scripts\run_regression.py
+```
+
+Full benchmark:
+
+```cmd
+venv\Scripts\python.exe scripts\run_regression.py --full --output eval\rag_quality_report.json
 ```
 
 ## 6. Expand Gold QA For New PDFs

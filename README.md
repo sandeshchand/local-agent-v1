@@ -330,6 +330,34 @@ Latest recorded baseline:
 - Gate result: passed `--fail-under-average 8 --fail-under-item 7`
 - Remaining weak areas: exact optional details in a few answers, citation polish, and memory-specific multi-turn evaluation.
 
+## Regression Command
+
+Run the standard local regression gate:
+
+```cmd
+venv\Scripts\python.exe scripts\run_regression.py
+```
+
+This runs compile checks, memory smoke, guardrails smoke, weather-tool smoke, and focused RAG eval.
+
+Run compile and smoke checks only:
+
+```cmd
+venv\Scripts\python.exe scripts\run_regression.py --skip-rag
+```
+
+Run the full RAG benchmark:
+
+```cmd
+venv\Scripts\python.exe scripts\run_regression.py --full --output eval\rag_quality_report.json
+```
+
+Detailed notes:
+
+```text
+docs/REGRESSION.md
+```
+
 ## How To Add Gold QA For A New PDF
 
 For each new document, add questions to `test/eval_multi_doc_rag.json`:
