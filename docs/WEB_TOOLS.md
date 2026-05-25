@@ -19,10 +19,13 @@ Purpose:
 Example questions:
 
 - What is the current weather in Berlin?
+- What is the current weather of Stuttgart?
 - What is the temperature in Kathmandu now?
 - How is the weather in New York today?
 
 The tool uses Open-Meteo's geocoding and forecast APIs. It does not require an API key.
+
+The planner accepts common phrasing such as `weather in`, `weather of`, and `temperature in`. The tool also makes one conservative retry with a shortened location token, which helps simple typos such as `stuttgat` resolve to `Stuttgart`.
 
 ## Planner Routing
 

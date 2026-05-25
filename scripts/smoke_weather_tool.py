@@ -24,10 +24,30 @@ class FakeResponse:
 class FakeSession:
     def __init__(self) -> None:
         self.urls: list[str] = []
+        self.names: list[str] = []
 
     def get(self, url: str, params: dict, timeout: float) -> FakeResponse:
         self.urls.append(url)
         if "geocoding-api" in url:
+            name = params.get("name", "")
+            self.names.append(name)
+            if name.lower() == "stuttgat":
+                return FakeResponse({"results": []})
+            if name.lower() == "stuttga":
+                return FakeResponse(
+                    {
+                        "results": [
+                            {
+                                "name": "Stuttgart",
+                                "admin1": "Baden-Wurttemberg",
+                                "country": "Germany",
+                                "latitude": 48.78,
+                                "longitude": 9.18,
+                                "timezone": "Europe/Berlin",
+                            }
+                        ]
+                    }
+                )
             return FakeResponse(
                 {
                     "results": [
@@ -46,8 +66,8 @@ class FakeSession:
             {
                 "timezone": "Europe/Berlin",
                 "current_units": {
-                    "temperature_2m": "°C",
-                    "apparent_temperature": "°C",
+                    "temperature_2m": "degC",
+                    "apparent_temperature": "degC",
                     "relative_humidity_2m": "%",
                     "precipitation": "mm",
                     "wind_speed_10m": "km/h",
@@ -72,9 +92,14 @@ def main() -> None:
 
     assert output["tool"] == "get_current_weather"
     assert output["location"] == "Berlin, Berlin, Germany"
-    assert output["temperature"] == "21.5 °C"
+    assert output["temperature"] == "21.5 degC"
     assert output["condition"] == "Mainly clear"
     assert len(session.urls) == 2
+
+    typo_output = json.loads(tool("stuttgat"))
+    assert typo_output["location"] == "Stuttgart, Baden-Wurttemberg, Germany"
+    assert "stuttgat" in session.names
+    assert "stuttga" in session.names
 
     planner = Planner(chat_client=ChatClientStub())
     plan = planner.plan("What is the current weather in Berlin?")
@@ -87,6 +112,11 @@ def main() -> None:
     assert temperature_plan.mode == "tool_only"
     assert temperature_plan.tool_name == "get_current_weather"
     assert temperature_plan.tool_args["location"] == "Berlin"
+
+    of_plan = planner.plan("What is the current weather of stuttgat?")
+    assert of_plan.mode == "tool_only"
+    assert of_plan.tool_name == "get_current_weather"
+    assert of_plan.tool_args["location"] == "stuttgat"
 
     print("Weather tool smoke test passed.")
 

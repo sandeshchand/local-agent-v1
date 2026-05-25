@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from difflib import SequenceMatcher
 import json
+import re
 from typing import Any
 
 import requests
@@ -17,11 +19,11 @@ class CurrentWeatherTool:
         self.timeout_seconds = timeout_seconds
 
     def __call__(self, location: str = "") -> str:
-        location = location.strip()
+        location = self._clean_location(location)
         if not location:
             return "Please provide a location for the weather request."
 
-        place = self._geocode(location)
+        place = self._geocode_with_retry(location)
         if place is None:
             return f"Could not find a weather location matching '{location}'."
 
@@ -30,6 +32,56 @@ class CurrentWeatherTool:
             return f"Could not fetch current weather for {self._place_label(place)}."
 
         return self._format_weather(place, weather)
+
+    def _clean_location(self, location: str) -> str:
+        strip_chars = " ?.!,"
+        location = re.sub(r"\s+", " ", location).strip(strip_chars)
+        location = re.sub(r"^(?:of|in|for|at|near)\s+", "", location, flags=re.IGNORECASE)
+        location = re.sub(
+            r"\b(?:right now|now|today|currently|outside|weather|temperature|please)\b",
+            "",
+            location,
+            flags=re.IGNORECASE,
+        )
+        location = location.strip()
+        location = re.sub(r"^(?:of|in|for|at|near)\s+", "", location, flags=re.IGNORECASE)
+        return re.sub(r"\s+", " ", location).strip(strip_chars)
+
+    def _geocode_with_retry(self, location: str) -> dict[str, Any] | None:
+        for candidate in self._location_candidates(location):
+            place = self._geocode(candidate)
+            if place is None:
+                continue
+            if self._looks_like_location_match(location, candidate, place):
+                return place
+        return None
+
+    def _location_candidates(self, location: str) -> list[str]:
+        candidates = [location]
+        parts = location.split()
+        if parts and len(parts[-1]) >= 5:
+            shortened_parts = [*parts[:-1], parts[-1][:-1]]
+            candidates.append(" ".join(shortened_parts))
+        return list(dict.fromkeys(candidate for candidate in candidates if candidate))
+
+    def _looks_like_location_match(
+        self,
+        original_location: str,
+        candidate: str,
+        place: dict[str, Any],
+    ) -> bool:
+        place_name = str(place.get("name") or "")
+        if not place_name:
+            return True
+        original = self._compact_location(original_location)
+        candidate_compact = self._compact_location(candidate)
+        place_compact = self._compact_location(place_name)
+        if place_compact.startswith(candidate_compact) or candidate_compact.startswith(place_compact):
+            return True
+        return SequenceMatcher(None, original, place_compact).ratio() >= 0.78
+
+    def _compact_location(self, value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "", value.lower())
 
     def _geocode(self, location: str) -> dict[str, Any] | None:
         response = self.session.get(

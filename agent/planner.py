@@ -81,7 +81,7 @@ class Planner:
     def _weather_location(self, query: str) -> str:
         cleaned = query.strip().strip("?.! ")
         for pattern in [
-            r"\b(?:in|for|at|near)\s+(.+)$",
+            r"\b(?:in|for|at|near|of)\s+(.+)$",
             r"\bweather\s+(.+)$",
             r"\btemperature\s+(.+)$",
         ]:
@@ -90,6 +90,12 @@ class Planner:
                 location = match.group(1).strip(" ?.!")
                 location = re.sub(
                     r"\b(?:right now|now|today|currently|outside|please)\b",
+                    "",
+                    location,
+                    flags=re.IGNORECASE,
+                )
+                location = re.sub(
+                    r"^(?:of|in|for|at|near)\s+",
                     "",
                     location,
                     flags=re.IGNORECASE,
