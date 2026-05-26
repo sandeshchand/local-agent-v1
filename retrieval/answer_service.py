@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 
 from app.ollama_client import OllamaChatClient
@@ -445,6 +446,10 @@ Evidence facts:
         tool_context: str,
         memory_context: str = "",
     ) -> str:
+        structured_answer = self._answer_from_structured_tool_output(tool_context)
+        if structured_answer:
+            return structured_answer
+
         prompt = self.build_tool_prompt(
             query=query,
             tool_context=tool_context,
@@ -455,6 +460,45 @@ Evidence facts:
         if not answer:
             return "The tool output does not directly answer this."
 
+        return answer
+
+    def _answer_from_structured_tool_output(self, tool_context: str) -> str:
+        try:
+            payload = json.loads(tool_context)
+        except (TypeError, json.JSONDecodeError):
+            return ""
+
+        if not isinstance(payload, dict):
+            return ""
+
+        if payload.get("tool") == "get_current_weather":
+            return self._format_weather_tool_answer(payload)
+
+        return ""
+
+    def _format_weather_tool_answer(self, payload: dict) -> str:
+        location = payload.get("location") or "the requested location"
+        temperature = payload.get("temperature")
+        apparent_temperature = payload.get("apparent_temperature")
+        condition = payload.get("condition")
+        time = payload.get("time")
+        timezone = payload.get("timezone")
+
+        if not temperature:
+            return "The weather tool did not return a current temperature."
+
+        answer = f"The current temperature in {location} is {temperature}"
+        if apparent_temperature:
+            answer += f", with an apparent temperature of {apparent_temperature}"
+        if condition:
+            answer += f". Conditions: {condition}."
+        else:
+            answer += "."
+        if time:
+            answer += f" Reported at {time}"
+            if timezone:
+                answer += f" ({timezone})"
+            answer += "."
         return answer
 
     def _single_source_results(self, query: str, results: list[dict]) -> list[dict]:

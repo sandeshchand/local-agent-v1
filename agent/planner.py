@@ -73,7 +73,7 @@ class Planner:
             return True
         if "temperature" in query_lower and (
             any(term in query_lower for term in ["current", "now", "today", "outside", "forecast"])
-            or any(marker in query_lower for marker in [" in ", " for ", " at ", " near "])
+            or any(marker in query_lower for marker in [" in ", " for ", " at ", " near ", " of "])
         ):
             return True
         return False

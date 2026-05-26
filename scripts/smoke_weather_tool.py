@@ -4,10 +4,12 @@ import json
 
 from agent.planner import Planner
 from app.weather_tool import CurrentWeatherTool
+from retrieval.answer_service import AnswerService
 
 
 class ChatClientStub:
-    pass
+    def generate(self, prompt: str) -> str:
+        raise AssertionError("Weather JSON should be answered deterministically.")
 
 
 class FakeResponse:
@@ -113,10 +115,24 @@ def main() -> None:
     assert temperature_plan.tool_name == "get_current_weather"
     assert temperature_plan.tool_args["location"] == "Berlin"
 
+    temperature_of_plan = planner.plan("What is the temperature of Stuttgart?")
+    assert temperature_of_plan.mode == "tool_only"
+    assert temperature_of_plan.tool_name == "get_current_weather"
+    assert temperature_of_plan.tool_args["location"] == "Stuttgart"
+
     of_plan = planner.plan("What is the current weather of stuttgat?")
     assert of_plan.mode == "tool_only"
     assert of_plan.tool_name == "get_current_weather"
     assert of_plan.tool_args["location"] == "stuttgat"
+
+    answer_service = AnswerService(chat_client=ChatClientStub())
+    answer = answer_service.answer_from_tool_result(
+        query="What is the temperature of Berlin?",
+        tool_context=json.dumps(output),
+    )
+    assert "21.5 degC" in answer
+    assert "Berlin, Berlin, Germany" in answer
+    assert "Mainly clear" in answer
 
     print("Weather tool smoke test passed.")
 
