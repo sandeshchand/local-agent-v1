@@ -30,6 +30,13 @@ Each answer has feedback controls:
 - the thumbs-down button stores negative feedback for the trace,
 - changing the selection updates the same trace feedback row.
 
+The right-side panel includes a feedback review section:
+
+- `All` shows recent feedback,
+- `Liked` shows positive feedback,
+- `Disliked` shows negative feedback,
+- selecting a feedback item opens the full trace.
+
 Timeline steps can include:
 
 - `memory`

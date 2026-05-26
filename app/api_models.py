@@ -65,6 +65,17 @@ class TraceFeedbackResponse(BaseModel):
     updated_at: str
 
 
+class TraceFeedbackItem(BaseModel):
+    feedback_id: int
+    trace_id: int
+    rating: str
+    source: str
+    query: str
+    final_answer: str
+    created_at: str
+    updated_at: str
+
+
 class IngestPathRequest(BaseModel):
     path: str = Field(..., min_length=1)
 

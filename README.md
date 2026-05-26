@@ -268,6 +268,7 @@ It shows:
 
 - compact answer sources,
 - like/dislike answer feedback,
+- a feedback review panel,
 - plan mode,
 - retrieval attempts,
 - routed evidence,

@@ -20,6 +20,7 @@ from app.api_models import (
     IngestPathRequest,
     IngestPathResponse,
     TraceDetail,
+    TraceFeedbackItem,
     TraceFeedbackRequest,
     TraceFeedbackResponse,
     TraceSummary,
@@ -157,6 +158,22 @@ def save_feedback(request_data: TraceFeedbackRequest):
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return TraceFeedbackResponse(**row)
+
+
+@app.get("/api/feedback", response_model=list[TraceFeedbackItem])
+def list_feedback(
+    limit: int = 12,
+    rating: str | None = None,
+):
+    bounded_limit = min(max(limit, 1), 50)
+    try:
+        rows = get_sqlite_store().list_answer_feedback(
+            rating=rating,
+            limit=bounded_limit,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return [TraceFeedbackItem(**row) for row in rows]
 
 
 @app.post("/api/chat", response_model=ChatResponse)

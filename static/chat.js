@@ -89,6 +89,8 @@ function formatValue(value) {
   return String(value);
 }
 
+let currentFeedbackFilter = "all";
+
 function createIcon(paths) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
@@ -184,6 +186,7 @@ async function submitFeedback(traceId, rating, container) {
       body: JSON.stringify({ trace_id: traceId, rating }),
     });
     setFeedbackState(container, rating, "Saved");
+    loadFeedbackItems();
   } catch (error) {
     buttons.forEach((button) => {
       button.disabled = false;
@@ -547,6 +550,60 @@ async function loadRecentTraces() {
   }
 }
 
+function setFeedbackFilter(filter) {
+  currentFeedbackFilter = filter;
+  document.querySelectorAll(".feedback-filter-btn").forEach((button) => {
+    button.classList.toggle("active", button.dataset.feedbackFilter === filter);
+  });
+  loadFeedbackItems();
+}
+
+function renderFeedbackItems(items) {
+  const container = document.getElementById("feedback-review-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!Array.isArray(items) || !items.length) {
+    container.appendChild(createElement("div", "muted", "No feedback yet."));
+    return;
+  }
+
+  items.forEach((item) => {
+    const button = createElement("button", `feedback-review-item ${item.rating || ""}`);
+    button.type = "button";
+
+    const top = createElement("div", "feedback-review-top");
+    top.appendChild(createElement("span", `feedback-rating-pill ${item.rating || ""}`, item.rating || "unknown"));
+    top.appendChild(createElement("span", "feedback-review-time", item.updated_at || ""));
+
+    button.appendChild(top);
+    button.appendChild(
+      createElement(
+        "strong",
+        "",
+        `#${item.trace_id} ${shortText(item.query, 72)}`
+      )
+    );
+    button.appendChild(createElement("span", "", shortText(item.final_answer, 115)));
+    button.addEventListener("click", () => loadTrace(item.trace_id));
+    container.appendChild(button);
+  });
+}
+
+async function loadFeedbackItems() {
+  const query = currentFeedbackFilter === "all" ? "" : `&rating=${currentFeedbackFilter}`;
+  try {
+    const items = await fetchJSON(`/api/feedback?limit=10${query}`);
+    renderFeedbackItems(items);
+  } catch (error) {
+    const container = document.getElementById("feedback-review-list");
+    if (container) {
+      container.innerHTML = "";
+      container.appendChild(createElement("div", "error-text", `Feedback error: ${error.message}`));
+    }
+  }
+}
+
 function renderDocuments(docs) {
   const container = document.getElementById("documents-list");
   if (!container) return;
@@ -655,6 +712,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("send-btn");
   const refreshDocsBtn = document.getElementById("refresh-docs-btn");
   const refreshTracesBtn = document.getElementById("refresh-traces-btn");
+  const feedbackFilterBtns = document.querySelectorAll(".feedback-filter-btn");
   const ingestBtn = document.getElementById("ingest-btn");
   const chatInput = document.getElementById("chat-input");
 
@@ -667,8 +725,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (refreshTracesBtn) {
-    refreshTracesBtn.addEventListener("click", loadRecentTraces);
+    refreshTracesBtn.addEventListener("click", () => {
+      loadRecentTraces();
+      loadFeedbackItems();
+    });
   }
+
+  feedbackFilterBtns.forEach((button) => {
+    button.addEventListener("click", () => setFeedbackFilter(button.dataset.feedbackFilter || "all"));
+  });
 
   if (ingestBtn) {
     ingestBtn.addEventListener("click", ingestPath);
@@ -685,4 +750,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadDocuments();
   loadRecentTraces();
+  loadFeedbackItems();
 });

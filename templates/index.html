@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=6" />
+  <link rel="stylesheet" href="/static/style.css?v=7" />
 </head>
 <body>
   <div class="app-shell">
@@ -123,6 +123,18 @@
         </div>
         <div id="recent-traces" class="recent-traces"></div>
       </section>
+
+      <section class="trace-shell feedback-review-shell">
+        <div class="trace-panel-header compact">
+          <h2>Feedback</h2>
+        </div>
+        <div class="feedback-filter-row" aria-label="Feedback filters">
+          <button type="button" class="feedback-filter-btn active" data-feedback-filter="all">All</button>
+          <button type="button" class="feedback-filter-btn" data-feedback-filter="like">Liked</button>
+          <button type="button" class="feedback-filter-btn" data-feedback-filter="dislike">Disliked</button>
+        </div>
+        <div id="feedback-review-list" class="feedback-review-list"></div>
+      </section>
     </aside>
   </div>
 
@@ -133,6 +145,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=6"></script>
+  <script src="/static/chat.js?v=7"></script>
 </body>
 </html>

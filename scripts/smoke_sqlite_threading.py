@@ -29,6 +29,13 @@ def main() -> None:
             with ThreadPoolExecutor(max_workers=1) as executor:
                 assert executor.submit(save_feedback, "like").result() == "like"
                 assert executor.submit(save_feedback, "dislike").result() == "dislike"
+
+            feedback_items = store.list_answer_feedback(limit=5)
+            assert len(feedback_items) == 1
+            assert feedback_items[0]["rating"] == "dislike"
+            assert feedback_items[0]["query"] == "threaded feedback test"
+            assert store.list_answer_feedback(rating="like", limit=5) == []
+            assert store.list_answer_feedback(rating="dislike", limit=5)[0]["trace_id"] == trace_id
         finally:
             store.close()
 

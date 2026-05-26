@@ -466,6 +466,58 @@ class SQLiteStore:
         conn.commit()
         return dict(row)
 
+    def list_answer_feedback(
+        self,
+        *,
+        rating: str | None = None,
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        if rating is not None and rating not in {"like", "dislike"}:
+            raise ValueError("rating must be 'like' or 'dislike'")
+
+        conn = self.connect()
+        bounded_limit = max(1, min(limit, 100))
+        if rating:
+            rows = conn.execute(
+                """
+                SELECT
+                    f.feedback_id,
+                    f.trace_id,
+                    f.rating,
+                    f.source,
+                    f.created_at,
+                    f.updated_at,
+                    t.query,
+                    t.final_answer
+                FROM answer_feedback f
+                JOIN traces t ON t.trace_id = f.trace_id
+                WHERE f.rating = ?
+                ORDER BY f.updated_at DESC, f.feedback_id DESC
+                LIMIT ?
+                """,
+                (rating, bounded_limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT
+                    f.feedback_id,
+                    f.trace_id,
+                    f.rating,
+                    f.source,
+                    f.created_at,
+                    f.updated_at,
+                    t.query,
+                    t.final_answer
+                FROM answer_feedback f
+                JOIN traces t ON t.trace_id = f.trace_id
+                ORDER BY f.updated_at DESC, f.feedback_id DESC
+                LIMIT ?
+                """,
+                (bounded_limit,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     def list_chunks_for_retrieval(self,doc_id:str | None=None) -> list[dict]:
         conn = self.connect()
         if doc_id:
