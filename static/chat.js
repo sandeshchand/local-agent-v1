@@ -64,6 +64,31 @@ function hideEmptyState() {
   }
 }
 
+function createElement(tag, className = "", text = "") {
+  const element = document.createElement(tag);
+  if (className) {
+    element.className = className;
+  }
+  if (text) {
+    element.textContent = text;
+  }
+  return element;
+}
+
+function shortText(value, maxLength = 160) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 3)}...`;
+}
+
+function formatValue(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "boolean") return value ? "yes" : "no";
+  if (Array.isArray(value)) return value.length ? value.join(", ") : "-";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
 function addMessage(role, content, extraClass = "") {
   hideEmptyState();
 
@@ -141,15 +166,268 @@ function addAssistantResponse(answer, traceId, citations = []) {
     body.appendChild(citationList);
   }
 
-  const trace = document.createElement("div");
+  const traceRow = document.createElement("div");
+  traceRow.className = "trace-action-row";
+
+  const trace = document.createElement("button");
+  trace.type = "button";
   trace.className = "trace-badge";
-  trace.textContent = `Trace ID: ${traceId}`;
-  body.appendChild(trace);
+  trace.textContent = `Trace ${traceId}`;
+  trace.addEventListener("click", () => loadTrace(traceId));
+  traceRow.appendChild(trace);
+  body.appendChild(traceRow);
 
   wrapper.appendChild(role);
   wrapper.appendChild(body);
   chatWindow.appendChild(wrapper);
   chatWindow.scrollTop = chatWindow.scrollHeight;
+  loadTrace(traceId);
+  loadRecentTraces();
+}
+
+function metric(label, value, tone = "") {
+  const item = createElement("div", `trace-metric ${tone}`);
+  item.appendChild(createElement("span", "trace-metric-label", label));
+  item.appendChild(createElement("strong", "", formatValue(value)));
+  return item;
+}
+
+function setTraceStatus(text) {
+  const empty = document.getElementById("trace-empty");
+  const detail = document.getElementById("trace-detail");
+  if (empty) {
+    empty.textContent = text;
+    empty.style.display = "block";
+  }
+  if (detail) {
+    detail.classList.add("hidden");
+  }
+}
+
+function renderKeyValues(container, values) {
+  Object.entries(values).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "" || value === false) {
+      return;
+    }
+    const row = createElement("div", "trace-kv");
+    row.appendChild(createElement("span", "", key));
+    row.appendChild(createElement("strong", "", formatValue(value)));
+    container.appendChild(row);
+  });
+}
+
+function stepTitle(step) {
+  const type = step.type || "step";
+  if (type === "retrieve") return `Retrieval attempt ${step.attempt || 1}`;
+  if (type === "guardrail") return `Guardrail: ${step.status || "checked"}`;
+  if (type === "tool_call") return `Tool: ${step.tool_name || "unknown"}`;
+  if (type === "verify") return `Verifier: ${step.status || "checked"}`;
+  if (type === "answer_repair") return "Answer repair";
+  if (type === "retrieval_retry_decision") return "Retry decision";
+  return type.replace(/_/g, " ");
+}
+
+function stepTone(step) {
+  const status = String(step.status || "").toLowerCase();
+  if (status.includes("verified") || status === "allow") return "ok";
+  if (status.includes("approval") || status === "needs_approval") return "warn";
+  if (status.includes("deny") || status.includes("error")) return "bad";
+  if (step.accepted === true || step.success === true) return "ok";
+  if (step.accepted === false || step.success === false) return "warn";
+  return "";
+}
+
+function renderStep(step) {
+  const item = createElement("div", `trace-step ${stepTone(step)}`);
+  const title = createElement("div", "trace-step-title");
+  title.appendChild(createElement("span", "", stepTitle(step)));
+  title.appendChild(createElement("em", "", step.step !== undefined ? `#${step.step}` : ""));
+  item.appendChild(title);
+
+  const details = createElement("div", "trace-step-details");
+  if (step.type === "retrieve") {
+    renderKeyValues(details, {
+      query: shortText(step.retrieval_query, 120),
+      scope: step.candidate_scope,
+      results: step.result_count,
+      selected: step.selected_count,
+      context: step.answer_context_count,
+      retry: step.retry,
+      reason: step.retry_reason,
+    });
+    const routed = Array.isArray(step.routed_docs) ? step.routed_docs.slice(0, 3) : [];
+    if (routed.length) {
+      const docs = createElement("div", "trace-mini-list");
+      routed.forEach((doc) => {
+        docs.appendChild(
+          createElement(
+            "div",
+            "",
+            `${shortText(doc.title, 86)} - score ${Number(doc.routing_score || 0).toFixed(2)}`
+          )
+        );
+      });
+      details.appendChild(docs);
+    }
+  } else if (step.type === "guardrail") {
+    renderKeyValues(details, {
+      tool: step.tool_name,
+      status: step.status,
+      approved: step.approved,
+      approval_required: step.requires_approval,
+      reason: step.reason,
+    });
+  } else if (step.type === "verify") {
+    renderKeyValues(details, {
+      status: step.status,
+      grounded: step.grounded,
+      issues: Array.isArray(step.issues) ? step.issues.join("; ") : "",
+    });
+  } else {
+    renderKeyValues(details, step);
+  }
+
+  item.appendChild(details);
+  return item;
+}
+
+function renderEvidenceItem(item, index) {
+  const evidence = createElement("div", "evidence-item");
+  evidence.appendChild(
+    createElement(
+      "div",
+      "evidence-title",
+      `[${index + 1}] ${shortText(item.title || "Untitled", 95)}`
+    )
+  );
+  evidence.appendChild(
+    createElement(
+      "div",
+      "evidence-meta",
+      `Page ${formatValue(item.page_number || item.page_numbers)} - ${shortText(item.section_title, 80)}`
+    )
+  );
+  evidence.appendChild(createElement("p", "", shortText(item.text, 260)));
+  return evidence;
+}
+
+function renderTrace(trace) {
+  const empty = document.getElementById("trace-empty");
+  const detail = document.getElementById("trace-detail");
+  const idLabel = document.getElementById("trace-id-label");
+  const query = document.getElementById("trace-query");
+  const statusPill = document.getElementById("trace-status-pill");
+  const metrics = document.getElementById("trace-metrics");
+  const steps = document.getElementById("trace-steps");
+  const evidence = document.getElementById("trace-evidence");
+  const tools = document.getElementById("trace-tools");
+  const raw = document.getElementById("trace-raw-json");
+
+  if (!detail || !empty || !metrics || !steps || !evidence || !tools || !raw) return;
+
+  empty.style.display = "none";
+  detail.classList.remove("hidden");
+
+  const verification = trace.verification || {};
+  const plan = trace.plan || {};
+  const retrievedItems = Array.isArray(trace.retrieved_items) ? trace.retrieved_items : [];
+  const toolResults = Array.isArray(trace.tool_results) ? trace.tool_results : [];
+
+  idLabel.textContent = `Trace ${trace.trace_id} - ${trace.created_at || ""}`;
+  query.textContent = trace.query || "Untitled trace";
+  statusPill.textContent = verification.status || "no verifier";
+  statusPill.className = `trace-status-pill ${
+    verification.status === "verified" ? "ok" : verification.status ? "warn" : ""
+  }`;
+
+  metrics.innerHTML = "";
+  metrics.appendChild(metric("Mode", plan.mode || "unknown"));
+  metrics.appendChild(metric("Top K", trace.top_k));
+  metrics.appendChild(metric("Evidence", retrievedItems.length));
+  metrics.appendChild(metric("Tools", toolResults.length));
+
+  steps.innerHTML = "";
+  const stepItems = Array.isArray(trace.steps) ? trace.steps : [];
+  if (stepItems.length) {
+    stepItems.forEach((step) => steps.appendChild(renderStep(step)));
+  } else {
+    steps.appendChild(createElement("div", "muted", "No trace steps recorded."));
+  }
+
+  evidence.innerHTML = "";
+  if (retrievedItems.length) {
+    retrievedItems.slice(0, 6).forEach((item, index) => evidence.appendChild(renderEvidenceItem(item, index)));
+  } else {
+    evidence.appendChild(createElement("div", "muted", "No retrieved evidence for this trace."));
+  }
+
+  tools.innerHTML = "";
+  if (toolResults.length) {
+    toolResults.forEach((tool) => {
+      const item = createElement("div", "tool-result-item");
+      renderKeyValues(item, {
+        tool: tool.tool_name,
+        success: tool.success,
+        output: shortText(tool.output, 220),
+        error: tool.error,
+      });
+      tools.appendChild(item);
+    });
+  } else {
+    tools.appendChild(createElement("div", "muted", "No tool result for this trace."));
+  }
+
+  raw.textContent = JSON.stringify(trace, null, 2);
+}
+
+async function loadTrace(traceId) {
+  if (!traceId) return;
+  setTraceStatus(`Loading trace ${traceId}...`);
+  try {
+    const trace = await fetchJSON(`/api/traces/${traceId}`);
+    renderTrace(trace);
+  } catch (error) {
+    setTraceStatus(`Could not load trace: ${error.message}`);
+  }
+}
+
+function renderRecentTraces(traces) {
+  const container = document.getElementById("recent-traces");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!traces.length) {
+    container.appendChild(createElement("div", "muted", "No traces yet."));
+    return;
+  }
+
+  traces.forEach((trace) => {
+    const item = createElement("button", "recent-trace-item");
+    item.type = "button";
+    item.appendChild(createElement("strong", "", `#${trace.trace_id} ${shortText(trace.query, 70)}`));
+    item.appendChild(
+      createElement(
+        "span",
+        "",
+        `${trace.verification_status || "no verifier"} - ${trace.created_at || ""}`
+      )
+    );
+    item.addEventListener("click", () => loadTrace(trace.trace_id));
+    container.appendChild(item);
+  });
+}
+
+async function loadRecentTraces() {
+  try {
+    const traces = await fetchJSON("/api/traces?limit=8");
+    renderRecentTraces(traces);
+  } catch (error) {
+    const container = document.getElementById("recent-traces");
+    if (container) {
+      container.innerHTML = "";
+      container.appendChild(createElement("div", "error-text", `Trace error: ${error.message}`));
+    }
+  }
 }
 
 function renderDocuments(docs) {
@@ -259,6 +537,7 @@ async function ingestPath() {
 document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("send-btn");
   const refreshDocsBtn = document.getElementById("refresh-docs-btn");
+  const refreshTracesBtn = document.getElementById("refresh-traces-btn");
   const ingestBtn = document.getElementById("ingest-btn");
   const chatInput = document.getElementById("chat-input");
 
@@ -268,6 +547,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (refreshDocsBtn) {
     refreshDocsBtn.addEventListener("click", loadDocuments);
+  }
+
+  if (refreshTracesBtn) {
+    refreshTracesBtn.addEventListener("click", loadRecentTraces);
   }
 
   if (ingestBtn) {
@@ -284,4 +567,5 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   loadDocuments();
+  loadRecentTraces();
 });

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=3" />
+  <link rel="stylesheet" href="/static/style.css?v=4" />
 </head>
 <body>
   <div class="app-shell">
@@ -47,7 +47,7 @@
       <section class="chat-header">
         <div>
           <h2>Chat</h2>
-          <p>Ask questions about your indexed PDFs.</p>
+          <p>Ask about PDFs, current weather, or tool-supported tasks.</p>
         </div>
         <div id="chat-status" class="chat-status">Ready</div>
       </section>
@@ -69,6 +69,61 @@
         <button id="send-btn" type="button">Send</button>
       </section>
     </main>
+
+    <aside class="trace-panel">
+      <section class="trace-shell">
+        <div class="trace-panel-header">
+          <div>
+            <h2>Trace</h2>
+            <p>Plan, retrieval, tools, guardrails, and verification.</p>
+          </div>
+          <button id="refresh-traces-btn" type="button" class="secondary-btn">Refresh</button>
+        </div>
+
+        <div id="trace-empty" class="trace-empty">
+          Select a trace from an answer or recent run.
+        </div>
+
+        <div id="trace-detail" class="trace-detail hidden">
+          <div class="trace-title-row">
+            <div>
+              <div id="trace-id-label" class="trace-id-label"></div>
+              <h3 id="trace-query"></h3>
+            </div>
+            <div id="trace-status-pill" class="trace-status-pill"></div>
+          </div>
+
+          <div id="trace-metrics" class="trace-metrics"></div>
+
+          <section class="trace-block">
+            <h4>Timeline</h4>
+            <div id="trace-steps" class="trace-steps"></div>
+          </section>
+
+          <section class="trace-block">
+            <h4>Evidence</h4>
+            <div id="trace-evidence" class="trace-evidence"></div>
+          </section>
+
+          <section class="trace-block">
+            <h4>Tool Results</h4>
+            <div id="trace-tools" class="trace-tools"></div>
+          </section>
+
+          <details class="trace-raw">
+            <summary>Raw trace JSON</summary>
+            <pre id="trace-raw-json"></pre>
+          </details>
+        </div>
+      </section>
+
+      <section class="trace-shell recent-traces-shell">
+        <div class="trace-panel-header compact">
+          <h2>Recent</h2>
+        </div>
+        <div id="recent-traces" class="recent-traces"></div>
+      </section>
+    </aside>
   </div>
 
   <template id="message-template">
@@ -78,6 +133,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=3"></script>
+  <script src="/static/chat.js?v=4"></script>
 </body>
 </html>

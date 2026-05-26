@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -24,6 +26,29 @@ class ChatResponse(BaseModel):
     reason: str =""
     retrieval_query: str | None = None
     citations: list[CitationItem]
+
+
+class TraceSummary(BaseModel):
+    trace_id: int
+    session_id: str
+    query: str
+    final_answer: str
+    verification_status: str | None = None
+    created_at: str
+
+
+class TraceDetail(BaseModel):
+    trace_id: int
+    session_id: str
+    query: str
+    top_k: int
+    final_answer: str
+    plan: dict[str, Any] = Field(default_factory=dict)
+    retrieved_items: list[dict[str, Any]] = Field(default_factory=list)
+    steps: list[dict[str, Any]] = Field(default_factory=list)
+    tool_results: list[dict[str, Any]] = Field(default_factory=list)
+    verification: dict[str, Any] = Field(default_factory=dict)
+    created_at: str
 
 
 class IngestPathRequest(BaseModel):

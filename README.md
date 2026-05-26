@@ -260,6 +260,26 @@ Detailed implementation notes:
 docs/WEB_TOOLS.md
 ```
 
+## UI Trace View
+
+The web UI includes a right-side trace inspector for debugging answer quality.
+
+It shows:
+
+- plan mode,
+- retrieval attempts,
+- routed evidence,
+- guardrail decisions,
+- tool results,
+- verifier status,
+- raw trace JSON.
+
+Detailed notes:
+
+```text
+docs/UI_TRACE_VIEW.md
+```
+
 Run the web app:
 
 ```cmd

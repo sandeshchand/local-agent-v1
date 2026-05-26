@@ -78,7 +78,12 @@ MCP output should be treated as tool context, not as PDF evidence. If the user a
 
 Goal: make bad answers easier to debug from the app UI.
 
-What to show:
+Status:
+
+- UI trace inspector is implemented in the web app.
+- The web chat endpoint now returns the full orchestrator trace id.
+
+It shows:
 
 - selected plan mode,
 - routed documents,
@@ -87,7 +92,9 @@ What to show:
 - evidence chunks,
 - verifier status,
 - answer repair status,
-- final citations.
+- final citations,
+- guardrail decisions,
+- tool results.
 
 This will help us quickly understand whether a bad answer came from routing, retrieval, evidence selection, answer generation, or verification.
 

@@ -374,6 +374,34 @@ class SQLiteStore:
         conn.commit()
         return int(cursor.lastrowid)
 
+    def get_trace(self, trace_id: int) -> dict[str, Any] | None:
+        conn = self.connect()
+        row = conn.execute(
+            """
+            SELECT trace_id, session_id, query, top_k, retrieved_json, final_answer,
+                   steps_json, tool_results_json, verification_json, created_at
+            FROM traces
+            WHERE trace_id = ?
+            """,
+            (trace_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        return dict(row)
+
+    def list_traces(self, limit: int = 20) -> list[dict[str, Any]]:
+        conn = self.connect()
+        rows = conn.execute(
+            """
+            SELECT trace_id, session_id, query, final_answer, verification_json, created_at
+            FROM traces
+            ORDER BY trace_id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
     def list_chunks_for_retrieval(self,doc_id:str | None=None) -> list[dict]:
         conn = self.connect()
         if doc_id:

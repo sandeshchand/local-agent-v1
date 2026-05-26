@@ -4,14 +4,14 @@
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
   background: #0b1220;
   color: #e5e7eb;
 }
 
 .app-shell {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 330px minmax(0, 1fr) 420px;
   min-height: 100vh;
 }
 
@@ -163,6 +163,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  min-width: 0;
 }
 
 .chat-header {
@@ -272,7 +273,9 @@ button:disabled {
 }
 
 .trace-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 12px;
   padding: 6px 10px;
   border-radius: 999px;
@@ -280,6 +283,18 @@ button:disabled {
   border: 1px solid #334155;
   color: #cbd5e1;
   font-size: 12px;
+  font-weight: 700;
+}
+
+.trace-badge:hover {
+  background: #0f766e;
+  border-color: #14b8a6;
+}
+
+.trace-action-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .error-message {
@@ -301,6 +316,311 @@ textarea {
   min-height: 72px;
 }
 
+.trace-panel {
+  height: 100vh;
+  overflow-y: auto;
+  border-left: 1px solid #243042;
+  background: #0d1626;
+  padding: 18px;
+}
+
+.trace-shell {
+  border: 1px solid #26384f;
+  border-radius: 8px;
+  background: #121d2e;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.trace-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.trace-panel-header.compact {
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.trace-panel-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.trace-panel-header p {
+  margin: 5px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.trace-empty {
+  color: #94a3b8;
+  border: 1px dashed #334155;
+  border-radius: 8px;
+  padding: 16px;
+  line-height: 1.5;
+  background: #0f172a;
+}
+
+.hidden {
+  display: none;
+}
+
+.trace-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid #26384f;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+.trace-id-label {
+  color: #38bdf8;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.trace-title-row h3 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.35;
+  color: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+.trace-status-pill {
+  flex: 0 0 auto;
+  border: 1px solid #475569;
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.trace-status-pill.ok {
+  border-color: #22c55e;
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.trace-status-pill.warn {
+  border-color: #f59e0b;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.trace-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.trace-metric {
+  min-width: 0;
+  border: 1px solid #26384f;
+  border-radius: 8px;
+  padding: 9px;
+  background: #0f172a;
+}
+
+.trace-metric-label {
+  display: block;
+  color: #94a3b8;
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+
+.trace-metric strong {
+  display: block;
+  color: #e5e7eb;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.trace-block {
+  border-top: 1px solid #26384f;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.trace-block h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.trace-steps,
+.trace-evidence,
+.trace-tools,
+.recent-traces {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trace-step,
+.evidence-item,
+.tool-result-item {
+  border: 1px solid #26384f;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 10px;
+}
+
+.trace-step.ok {
+  border-left: 3px solid #22c55e;
+}
+
+.trace-step.warn {
+  border-left: 3px solid #f59e0b;
+}
+
+.trace-step.bad {
+  border-left: 3px solid #ef4444;
+}
+
+.trace-step-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #f8fafc;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.trace-step-title em {
+  color: #94a3b8;
+  font-style: normal;
+  font-size: 12px;
+}
+
+.trace-step-details,
+.tool-result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trace-kv {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.trace-kv span {
+  color: #94a3b8;
+}
+
+.trace-kv strong {
+  color: #e5e7eb;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.trace-mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.evidence-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 5px;
+}
+
+.evidence-meta {
+  font-size: 12px;
+  color: #38bdf8;
+  margin-bottom: 6px;
+}
+
+.evidence-item p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.trace-raw {
+  border-top: 1px solid #26384f;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.trace-raw summary {
+  cursor: pointer;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.trace-raw pre {
+  max-height: 320px;
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid #26384f;
+  background: #020817;
+  padding: 10px;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.recent-trace-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #26384f;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e5e7eb;
+  padding: 10px;
+}
+
+.recent-trace-item:hover {
+  background: #123044;
+  border-color: #38bdf8;
+}
+
+.recent-trace-item strong,
+.recent-trace-item span {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.recent-trace-item strong {
+  font-size: 13px;
+}
+
+.recent-trace-item span {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
 @media (max-width: 960px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -313,5 +633,28 @@ textarea {
 
   .chat-input-bar {
     grid-template-columns: 1fr;
+  }
+
+  .main-content,
+  .trace-panel {
+    height: auto;
+  }
+
+  .trace-panel {
+    border-left: none;
+    border-top: 1px solid #243042;
+  }
+}
+
+@media (max-width: 1240px) and (min-width: 961px) {
+  .app-shell {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+
+  .trace-panel {
+    grid-column: 1 / -1;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid #243042;
   }
 }

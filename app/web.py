@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-
-
 
 from app.api_models import (
     ChatRequest,
@@ -19,12 +19,13 @@ from app.api_models import (
     IngestFileResult,
     IngestPathRequest,
     IngestPathResponse,
+    TraceDetail,
+    TraceSummary,
 )
 from app.bootstrap import bootstrap_app
 from app.dependencies import AppDependencies
 from ingestion.file_loader import discover_pdf_files
 from ingestion.pipeline import IngestionPipeline
-from observability.traces import save_trace
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -50,6 +51,44 @@ def build_citations(results: list[dict]) -> list[CitationItem]:
             )
         )
     return citations
+
+
+def parse_json_field(raw: str | None, default: Any) -> Any:
+    if not raw:
+        return default
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return default
+
+
+def build_trace_detail(row: dict[str, Any]) -> TraceDetail:
+    retrieved_payload = parse_json_field(row.get("retrieved_json"), {})
+    return TraceDetail(
+        trace_id=int(row["trace_id"]),
+        session_id=row.get("session_id") or "default",
+        query=row.get("query") or "",
+        top_k=int(row.get("top_k") or 0),
+        final_answer=row.get("final_answer") or "",
+        plan=retrieved_payload.get("plan") or {},
+        retrieved_items=retrieved_payload.get("retrieved_items") or [],
+        steps=parse_json_field(row.get("steps_json"), []),
+        tool_results=parse_json_field(row.get("tool_results_json"), []),
+        verification=parse_json_field(row.get("verification_json"), {}),
+        created_at=str(row.get("created_at") or ""),
+    )
+
+
+def build_trace_summary(row: dict[str, Any]) -> TraceSummary:
+    verification = parse_json_field(row.get("verification_json"), {})
+    return TraceSummary(
+        trace_id=int(row["trace_id"]),
+        session_id=row.get("session_id") or "default",
+        query=row.get("query") or "",
+        final_answer=row.get("final_answer") or "",
+        verification_status=verification.get("status"),
+        created_at=str(row.get("created_at") or ""),
+    )
 
 
 app = FastAPI(title="Local Agent V1")
@@ -79,6 +118,22 @@ def list_documents():
     return [DocumentItem(**doc) for doc in docs]
 
 
+@app.get("/api/traces", response_model=list[TraceSummary])
+def list_traces(limit: int = 12):
+    deps = get_deps()
+    bounded_limit = min(max(limit, 1), 50)
+    return [build_trace_summary(row) for row in deps.sqlite_store.list_traces(limit=bounded_limit)]
+
+
+@app.get("/api/traces/{trace_id}", response_model=TraceDetail)
+def get_trace(trace_id: int):
+    deps = get_deps()
+    row = deps.sqlite_store.get_trace(trace_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Trace {trace_id} not found.")
+    return build_trace_detail(row)
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(request_data: ChatRequest):
     deps = get_deps()
@@ -88,22 +143,15 @@ def chat(request_data: ChatRequest):
         approved_tools=request_data.approved_tools,
     )
 
-    trace_id = save_trace(
-        sqlite_store=deps.sqlite_store,
-        query=request_data.query,
-        top_k=deps.config.top_k,
-        retrieved_items=results["citations"],
-        final_answer=results["answer"],
-        plan=results["plan"],
-    )
     return ChatResponse(
         answer=results["answer"],
-        trace_id=trace_id,
+        trace_id=results["trace_id"],
         mode=results["mode"],
         reason=results["reason"],
-        retrieval_query=results.get("retrieval_query"), 
+        retrieval_query=results.get("retrieval_query"),
         citations=build_citations(results["citations"]),
     )
+
 
 @app.post("/api/ingest-path", response_model=IngestPathResponse)
 def ingest_path(request_data: IngestPathRequest):
