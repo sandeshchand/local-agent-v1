@@ -130,6 +130,19 @@ class SQLiteStore:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS answer_feedback (
+                feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                trace_id INTEGER NOT NULL UNIQUE,
+                rating TEXT NOT NULL CHECK (rating IN ('like', 'dislike')),
+                source TEXT NOT NULL DEFAULT 'web',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (trace_id) REFERENCES traces(trace_id)
+            )
+            """
+        )
 
         conn.commit()
     def ensure_session(self, session_id: str) -> None:
@@ -401,6 +414,50 @@ class SQLiteStore:
             (limit,),
         ).fetchall()
         return [dict(row) for row in rows]
+
+    def upsert_answer_feedback(
+        self,
+        *,
+        trace_id: int,
+        rating: str,
+        source: str = "web",
+    ) -> dict[str, Any]:
+        if rating not in {"like", "dislike"}:
+            raise ValueError("rating must be 'like' or 'dislike'")
+
+        conn = self.connect()
+        trace = conn.execute(
+            """
+            SELECT trace_id
+            FROM traces
+            WHERE trace_id = ?
+            """,
+            (trace_id,),
+        ).fetchone()
+        if trace is None:
+            raise ValueError(f"trace {trace_id} does not exist")
+
+        conn.execute(
+            """
+            INSERT INTO answer_feedback (trace_id, rating, source)
+            VALUES (?, ?, ?)
+            ON CONFLICT(trace_id) DO UPDATE SET
+                rating = excluded.rating,
+                source = excluded.source,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (trace_id, rating, source),
+        )
+        row = conn.execute(
+            """
+            SELECT feedback_id, trace_id, rating, source, created_at, updated_at
+            FROM answer_feedback
+            WHERE trace_id = ?
+            """,
+            (trace_id,),
+        ).fetchone()
+        conn.commit()
+        return dict(row)
 
     def list_chunks_for_retrieval(self,doc_id:str | None=None) -> list[dict]:
         conn = self.connect()

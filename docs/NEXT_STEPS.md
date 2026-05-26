@@ -82,6 +82,8 @@ Status:
 
 - UI trace inspector is implemented in the web app.
 - The web chat endpoint now returns the full orchestrator trace id.
+- Answer citations are shown in one compact source box.
+- Users can store like/dislike feedback for each answer trace.
 
 It shows:
 

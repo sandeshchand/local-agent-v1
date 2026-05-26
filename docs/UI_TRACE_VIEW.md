@@ -18,6 +18,18 @@ For each chat response, the trace view shows:
 - tool results,
 - raw trace JSON.
 
+The answer card also keeps citations compact:
+
+- all answer sources are shown in one source box,
+- long file paths are shortened to the file name,
+- the full source path remains available as hover text.
+
+Each answer has feedback controls:
+
+- `Like` stores positive feedback for the trace,
+- `Dislike` stores negative feedback for the trace,
+- changing the selection updates the same trace feedback row.
+
 Timeline steps can include:
 
 - `memory`
@@ -58,6 +70,8 @@ This matters because the orchestrator trace contains the full steps, tool result
 Trace evidence is for debugging. It does not change answer behavior.
 
 PDF answers must still cite retrieved PDF chunks. Tool output, including weather output, is shown as tool context and not as PDF evidence.
+
+Feedback is also metadata. It does not change answer behavior during the same request. It gives us data for later evaluation and ranking improvements.
 
 ## Verification
 

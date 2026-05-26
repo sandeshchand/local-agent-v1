@@ -266,6 +266,8 @@ The web UI includes a right-side trace inspector for debugging answer quality.
 
 It shows:
 
+- compact answer sources,
+- like/dislike answer feedback,
 - plan mode,
 - retrieval attempts,
 - routed evidence,

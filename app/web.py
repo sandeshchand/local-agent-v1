@@ -20,6 +20,8 @@ from app.api_models import (
     IngestPathRequest,
     IngestPathResponse,
     TraceDetail,
+    TraceFeedbackRequest,
+    TraceFeedbackResponse,
     TraceSummary,
 )
 from app.bootstrap import bootstrap_app
@@ -132,6 +134,20 @@ def get_trace(trace_id: int):
     if row is None:
         raise HTTPException(status_code=404, detail=f"Trace {trace_id} not found.")
     return build_trace_detail(row)
+
+
+@app.post("/api/feedback", response_model=TraceFeedbackResponse)
+def save_feedback(request_data: TraceFeedbackRequest):
+    deps = get_deps()
+    try:
+        row = deps.sqlite_store.upsert_answer_feedback(
+            trace_id=request_data.trace_id,
+            rating=request_data.rating,
+            source="web",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return TraceFeedbackResponse(**row)
 
 
 @app.post("/api/chat", response_model=ChatResponse)

@@ -89,6 +89,105 @@ function formatValue(value) {
   return String(value);
 }
 
+function sourceFileName(path) {
+  const text = String(path || "").trim();
+  if (!text) return "Unknown file";
+  const parts = text.split(/[\\/]/).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : text;
+}
+
+function renderSourcesBox(citations) {
+  const box = createElement("section", "sources-box");
+  const header = createElement("div", "sources-header");
+  header.appendChild(createElement("strong", "", "Sources"));
+  header.appendChild(createElement("span", "", `${citations.length} cited chunk${citations.length === 1 ? "" : "s"}`));
+  box.appendChild(header);
+
+  const list = createElement("ol", "sources-list");
+  citations.forEach((citation) => {
+    const item = createElement("li", "source-row");
+    const title = createElement(
+      "div",
+      "source-main",
+      `[${citation.index}] ${shortText(citation.title, 110)} - page ${formatValue(citation.page_number)}`
+    );
+    const file = createElement("div", "source-meta", sourceFileName(citation.source_path));
+    file.title = citation.source_path || "";
+
+    item.appendChild(title);
+    item.appendChild(file);
+    list.appendChild(item);
+  });
+
+  box.appendChild(list);
+  return box;
+}
+
+function setFeedbackState(container, selectedRating, statusText) {
+  const buttons = container.querySelectorAll(".feedback-btn");
+  buttons.forEach((button) => {
+    const isSelected = button.dataset.rating === selectedRating;
+    button.disabled = false;
+    button.classList.toggle("selected", isSelected);
+  });
+
+  const status = container.querySelector(".feedback-status");
+  if (status) {
+    status.textContent = statusText;
+  }
+}
+
+async function submitFeedback(traceId, rating, container) {
+  if (!traceId || !container) return;
+
+  const buttons = container.querySelectorAll(".feedback-btn");
+  const status = container.querySelector(".feedback-status");
+  buttons.forEach((button) => {
+    button.disabled = true;
+  });
+  if (status) {
+    status.textContent = "Saving...";
+  }
+
+  try {
+    await fetchJSON("/api/feedback", {
+      method: "POST",
+      body: JSON.stringify({ trace_id: traceId, rating }),
+    });
+    setFeedbackState(container, rating, "Saved");
+  } catch (error) {
+    buttons.forEach((button) => {
+      button.disabled = false;
+    });
+    if (status) {
+      status.textContent = `Could not save: ${error.message}`;
+    }
+  }
+}
+
+function renderFeedbackControls(traceId) {
+  const container = createElement("div", "feedback-row");
+  container.appendChild(createElement("span", "feedback-label", "Was this answer useful?"));
+
+  const likeButton = createElement("button", "feedback-btn", "Like");
+  likeButton.type = "button";
+  likeButton.dataset.rating = "like";
+
+  const dislikeButton = createElement("button", "feedback-btn", "Dislike");
+  dislikeButton.type = "button";
+  dislikeButton.dataset.rating = "dislike";
+
+  const status = createElement("span", "feedback-status", "");
+
+  likeButton.addEventListener("click", () => submitFeedback(traceId, "like", container));
+  dislikeButton.addEventListener("click", () => submitFeedback(traceId, "dislike", container));
+
+  container.appendChild(likeButton);
+  container.appendChild(dislikeButton);
+  container.appendChild(status);
+  return container;
+}
+
 function addMessage(role, content, extraClass = "") {
   hideEmptyState();
 
@@ -144,27 +243,10 @@ function addAssistantResponse(answer, traceId, citations = []) {
   body.appendChild(answerBox);
 
   if (Array.isArray(citations) && citations.length > 0) {
-    const citationTitle = document.createElement("div");
-    citationTitle.className = "citation-title";
-    citationTitle.textContent = "Sources";
-    body.appendChild(citationTitle);
-
-    const citationList = document.createElement("div");
-    citationList.className = "citation-list";
-
-    citations.forEach((c) => {
-      const item = document.createElement("div");
-      item.className = "citation-item";
-      item.innerHTML = `
-        <div><strong>[${c.index}] ${c.title}</strong></div>
-        <div>Page: ${c.page_number}</div>
-        <div class="citation-path">${c.source_path}</div>
-      `;
-      citationList.appendChild(item);
-    });
-
-    body.appendChild(citationList);
+    body.appendChild(renderSourcesBox(citations));
   }
+
+  body.appendChild(renderFeedbackControls(traceId));
 
   const traceRow = document.createElement("div");
   traceRow.className = "trace-action-row";

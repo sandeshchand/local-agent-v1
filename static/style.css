@@ -247,29 +247,106 @@ button:disabled {
   margin-bottom: 14px;
 }
 
-.citation-title {
-  font-weight: 700;
-  margin: 8px 0 10px 0;
-}
-
-.citation-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.citation-item {
+.sources-box {
   background: #0b1220;
   border: 1px solid #334155;
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 10px 12px;
-  font-size: 13px;
-  line-height: 1.5;
+  margin-bottom: 12px;
+  white-space: normal;
 }
 
-.citation-path {
+.sources-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.sources-header strong {
+  font-size: 13px;
+  color: #f8fafc;
+}
+
+.sources-header span {
   color: #94a3b8;
-  word-break: break-word;
+  font-size: 12px;
+}
+
+.sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.source-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 150px);
+  gap: 10px;
+  align-items: start;
+  border-top: 1px solid #1f2937;
+  padding-top: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.source-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.source-main {
+  color: #dbeafe;
+  overflow-wrap: anywhere;
+}
+
+.source-meta {
+  color: #94a3b8;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedback-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 10px;
+  white-space: normal;
+}
+
+.feedback-label,
+.feedback-status {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.feedback-btn {
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #cbd5e1;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.feedback-btn:hover {
+  background: #164e63;
+  border-color: #38bdf8;
+}
+
+.feedback-btn.selected {
+  background: #0f766e;
+  border-color: #14b8a6;
+  color: #ecfeff;
 }
 
 .trace-badge {
@@ -633,6 +710,15 @@ textarea {
 
   .chat-input-bar {
     grid-template-columns: 1fr;
+  }
+
+  .source-row {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .source-meta {
+    text-align: left;
   }
 
   .main-content,

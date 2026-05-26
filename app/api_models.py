@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -49,6 +49,20 @@ class TraceDetail(BaseModel):
     tool_results: list[dict[str, Any]] = Field(default_factory=list)
     verification: dict[str, Any] = Field(default_factory=dict)
     created_at: str
+
+
+class TraceFeedbackRequest(BaseModel):
+    trace_id: int = Field(..., gt=0)
+    rating: Literal["like", "dislike"]
+
+
+class TraceFeedbackResponse(BaseModel):
+    feedback_id: int
+    trace_id: int
+    rating: str
+    source: str
+    created_at: str
+    updated_at: str
 
 
 class IngestPathRequest(BaseModel):
