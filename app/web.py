@@ -25,9 +25,11 @@ from app.api_models import (
     TraceSummary,
 )
 from app.bootstrap import bootstrap_app
+from app.config import load_config
 from app.dependencies import AppDependencies
 from ingestion.file_loader import discover_pdf_files
 from ingestion.pipeline import IngestionPipeline
+from storage.sqlite_store import SQLiteStore
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -37,6 +39,14 @@ STATIC_DIR = BASE_DIR / "static"
 @lru_cache(maxsize=1)
 def get_deps() -> AppDependencies:
     return bootstrap_app(".env")
+
+
+@lru_cache(maxsize=1)
+def get_sqlite_store() -> SQLiteStore:
+    config = load_config(".env")
+    store = SQLiteStore(config.sqlite_path)
+    store.initialize()
+    return store
 
 
 def build_citations(results: list[dict]) -> list[CitationItem]:
@@ -115,22 +125,22 @@ def health():
 
 @app.get("/api/documents", response_model=list[DocumentItem])
 def list_documents():
-    deps = get_deps()
-    docs = deps.sqlite_store.list_documents()
+    docs = get_sqlite_store().list_documents()
     return [DocumentItem(**doc) for doc in docs]
 
 
 @app.get("/api/traces", response_model=list[TraceSummary])
 def list_traces(limit: int = 12):
-    deps = get_deps()
     bounded_limit = min(max(limit, 1), 50)
-    return [build_trace_summary(row) for row in deps.sqlite_store.list_traces(limit=bounded_limit)]
+    return [
+        build_trace_summary(row)
+        for row in get_sqlite_store().list_traces(limit=bounded_limit)
+    ]
 
 
 @app.get("/api/traces/{trace_id}", response_model=TraceDetail)
 def get_trace(trace_id: int):
-    deps = get_deps()
-    row = deps.sqlite_store.get_trace(trace_id)
+    row = get_sqlite_store().get_trace(trace_id)
     if row is None:
         raise HTTPException(status_code=404, detail=f"Trace {trace_id} not found.")
     return build_trace_detail(row)
@@ -138,9 +148,8 @@ def get_trace(trace_id: int):
 
 @app.post("/api/feedback", response_model=TraceFeedbackResponse)
 def save_feedback(request_data: TraceFeedbackRequest):
-    deps = get_deps()
     try:
-        row = deps.sqlite_store.upsert_answer_feedback(
+        row = get_sqlite_store().upsert_answer_feedback(
             trace_id=request_data.trace_id,
             rating=request_data.rating,
             source="web",

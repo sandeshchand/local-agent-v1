@@ -89,6 +89,35 @@ function formatValue(value) {
   return String(value);
 }
 
+function createIcon(paths) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+
+  paths.forEach((pathData) => {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", pathData);
+    svg.appendChild(path);
+  });
+
+  return svg;
+}
+
+function createThumbIcon(rating) {
+  if (rating === "dislike") {
+    return createIcon([
+      "M17 14V2",
+      "M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z",
+    ]);
+  }
+
+  return createIcon([
+    "M7 10v12",
+    "M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z",
+  ]);
+}
+
 function sourceFileName(path) {
   const text = String(path || "").trim();
   if (!text) return "Unknown file";
@@ -169,13 +198,19 @@ function renderFeedbackControls(traceId) {
   const container = createElement("div", "feedback-row");
   container.appendChild(createElement("span", "feedback-label", "Was this answer useful?"));
 
-  const likeButton = createElement("button", "feedback-btn", "Like");
+  const likeButton = createElement("button", "feedback-btn");
   likeButton.type = "button";
   likeButton.dataset.rating = "like";
+  likeButton.setAttribute("aria-label", "Like this answer");
+  likeButton.title = "Like this answer";
+  likeButton.appendChild(createThumbIcon("like"));
 
-  const dislikeButton = createElement("button", "feedback-btn", "Dislike");
+  const dislikeButton = createElement("button", "feedback-btn");
   dislikeButton.type = "button";
   dislikeButton.dataset.rating = "dislike";
+  dislikeButton.setAttribute("aria-label", "Dislike this answer");
+  dislikeButton.title = "Dislike this answer";
+  dislikeButton.appendChild(createThumbIcon("dislike"));
 
   const status = createElement("span", "feedback-status", "");
 

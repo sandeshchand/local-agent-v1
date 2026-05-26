@@ -26,8 +26,8 @@ The answer card also keeps citations compact:
 
 Each answer has feedback controls:
 
-- `Like` stores positive feedback for the trace,
-- `Dislike` stores negative feedback for the trace,
+- the thumbs-up button stores positive feedback for the trace,
+- the thumbs-down button stores negative feedback for the trace,
 - changing the selection updates the same trace feedback row.
 
 Timeline steps can include:
