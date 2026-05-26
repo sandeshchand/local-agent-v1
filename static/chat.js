@@ -89,6 +89,11 @@ function formatValue(value) {
   return String(value);
 }
 
+function formatPercent(value) {
+  const number = Number(value || 0);
+  return `${Math.round(number * 100)}%`;
+}
+
 let currentFeedbackFilter = "all";
 
 function createIcon(paths) {
@@ -186,6 +191,7 @@ async function submitFeedback(traceId, rating, container) {
       body: JSON.stringify({ trace_id: traceId, rating }),
     });
     setFeedbackState(container, rating, "Saved");
+    loadFeedbackSummary();
     loadFeedbackItems();
   } catch (error) {
     buttons.forEach((button) => {
@@ -558,6 +564,54 @@ function setFeedbackFilter(filter) {
   loadFeedbackItems();
 }
 
+function renderFeedbackSummary(summary) {
+  const container = document.getElementById("feedback-summary");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!summary) {
+    container.appendChild(createElement("div", "muted", "No feedback summary yet."));
+    return;
+  }
+
+  const metrics = [
+    ["Total", summary.total_count],
+    ["Liked", summary.like_count],
+    ["Disliked", summary.dislike_count],
+    ["Dislike Rate", formatPercent(summary.dislike_rate)],
+  ];
+
+  const grid = createElement("div", "feedback-summary-grid");
+  metrics.forEach(([label, value]) => {
+    const item = createElement("div", "feedback-summary-item");
+    item.appendChild(createElement("span", "", label));
+    item.appendChild(createElement("strong", "", formatValue(value)));
+    grid.appendChild(item);
+  });
+  container.appendChild(grid);
+
+  const recentDislikes = Array.isArray(summary.recent_dislikes)
+    ? summary.recent_dislikes.length
+    : 0;
+  const cue = recentDislikes
+    ? `${recentDislikes} recent disliked answer${recentDislikes === 1 ? "" : "s"} ready for review.`
+    : "No disliked answers in the review queue.";
+  container.appendChild(createElement("div", "feedback-summary-cue", cue));
+}
+
+async function loadFeedbackSummary() {
+  try {
+    const summary = await fetchJSON("/api/feedback/summary");
+    renderFeedbackSummary(summary);
+  } catch (error) {
+    const container = document.getElementById("feedback-summary");
+    if (container) {
+      container.innerHTML = "";
+      container.appendChild(createElement("div", "error-text", `Feedback summary error: ${error.message}`));
+    }
+  }
+}
+
 function renderFeedbackItems(items) {
   const container = document.getElementById("feedback-review-list");
   if (!container) return;
@@ -727,6 +781,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (refreshTracesBtn) {
     refreshTracesBtn.addEventListener("click", () => {
       loadRecentTraces();
+      loadFeedbackSummary();
       loadFeedbackItems();
     });
   }
@@ -750,5 +805,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadDocuments();
   loadRecentTraces();
+  loadFeedbackSummary();
   loadFeedbackItems();
 });

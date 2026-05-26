@@ -518,6 +518,33 @@ class SQLiteStore:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def get_answer_feedback_summary(self, *, recent_limit: int = 5) -> dict[str, Any]:
+        conn = self.connect()
+        summary = conn.execute(
+            """
+            SELECT
+                COUNT(*) AS total_count,
+                COALESCE(SUM(CASE WHEN rating = 'like' THEN 1 ELSE 0 END), 0) AS like_count,
+                COALESCE(SUM(CASE WHEN rating = 'dislike' THEN 1 ELSE 0 END), 0) AS dislike_count,
+                MAX(updated_at) AS latest_feedback_at
+            FROM answer_feedback
+            """
+        ).fetchone()
+        total_count = int(summary["total_count"] or 0)
+        dislike_count = int(summary["dislike_count"] or 0)
+        dislike_rate = (dislike_count / total_count) if total_count else 0.0
+        return {
+            "total_count": total_count,
+            "like_count": int(summary["like_count"] or 0),
+            "dislike_count": dislike_count,
+            "dislike_rate": dislike_rate,
+            "latest_feedback_at": summary["latest_feedback_at"] or "",
+            "recent_dislikes": self.list_answer_feedback(
+                rating="dislike",
+                limit=max(1, min(recent_limit, 20)),
+            ),
+        }
+
     def list_chunks_for_retrieval(self,doc_id:str | None=None) -> list[dict]:
         conn = self.connect()
         if doc_id:

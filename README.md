@@ -26,6 +26,7 @@ Completed:
 - Answer repair after verifier failure
 - Tool-call guardrails with allow, deny, and needs-approval decisions
 - Read-only current weather web tool
+- Web feedback analytics for answer review
 - Multi-document gold QA evaluation
 - Optional OCR path for scanned/image-only PDFs
 - CLI memory inspection and manual memory creation
@@ -269,6 +270,7 @@ It shows:
 - compact answer sources,
 - like/dislike answer feedback,
 - a feedback review panel,
+- feedback analytics summary,
 - plan mode,
 - retrieval attempts,
 - routed evidence,
@@ -281,6 +283,7 @@ Detailed notes:
 
 ```text
 docs/UI_TRACE_VIEW.md
+docs/FEEDBACK_ANALYTICS.md
 ```
 
 Run the web app:
@@ -371,6 +374,7 @@ venv\Scripts\python.exe scripts\run_regression.py
 ```
 
 This runs compile checks, memory smoke, guardrails smoke, weather-tool smoke, and focused RAG eval.
+It also runs SQLite and feedback analytics smoke checks.
 
 Run compile and smoke checks only:
 

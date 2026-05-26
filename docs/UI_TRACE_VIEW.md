@@ -32,10 +32,17 @@ Each answer has feedback controls:
 
 The right-side panel includes a feedback review section:
 
+- summary tiles show total feedback, likes, dislikes, and dislike rate,
 - `All` shows recent feedback,
 - `Liked` shows positive feedback,
 - `Disliked` shows negative feedback,
 - selecting a feedback item opens the full trace.
+
+Detailed feedback analytics notes:
+
+```text
+docs/FEEDBACK_ANALYTICS.md
+```
 
 Timeline steps can include:
 
@@ -86,6 +93,7 @@ Run:
 
 ```cmd
 venv\Scripts\python.exe -m py_compile app\web.py app\api_models.py storage\sqlite_store.py
+venv\Scripts\python.exe scripts\smoke_feedback_analytics.py
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```
 

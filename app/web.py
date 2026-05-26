@@ -15,6 +15,7 @@ from app.api_models import (
     ChatResponse,
     CitationItem,
     DocumentItem,
+    FeedbackSummary,
     HealthResponse,
     IngestFileResult,
     IngestPathRequest,
@@ -174,6 +175,11 @@ def list_feedback(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return [TraceFeedbackItem(**row) for row in rows]
+
+
+@app.get("/api/feedback/summary", response_model=FeedbackSummary)
+def feedback_summary():
+    return FeedbackSummary(**get_sqlite_store().get_answer_feedback_summary())
 
 
 @app.post("/api/chat", response_model=ChatResponse)

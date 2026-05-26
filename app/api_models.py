@@ -76,6 +76,15 @@ class TraceFeedbackItem(BaseModel):
     updated_at: str
 
 
+class FeedbackSummary(BaseModel):
+    total_count: int
+    like_count: int
+    dislike_count: int
+    dislike_rate: float
+    latest_feedback_at: str
+    recent_dislikes: list[TraceFeedbackItem]
+
+
 class IngestPathRequest(BaseModel):
     path: str = Field(..., min_length=1)
 
