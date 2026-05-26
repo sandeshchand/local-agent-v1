@@ -284,14 +284,23 @@ docs/UI_TRACE_VIEW.md
 
 Run the web app:
 
-```cmd
-uvicorn app.web:app --reload
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start_web.ps1
 ```
 
 Then open:
 
 ```text
 http://127.0.0.1:8000
+```
+
+Use the helper script instead of running `uvicorn` from another Python installation.
+The app uses local Qdrant storage, so only one `app.web:app` server should run at a time.
+The helper stops stale `uvicorn app.web:app` processes, starts the server from `venv`, and writes logs to:
+
+```text
+logs/web.out.log
+logs/web.err.log
 ```
 
 ## Gold QA Evaluation
