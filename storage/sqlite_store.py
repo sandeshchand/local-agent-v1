@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -10,12 +11,18 @@ class SQLiteStore:
         self.db_path = Path(db_path).expanduser().resolve()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._connection: sqlite3.Connection | None = None
+        self._lock = threading.RLock()
 
     def connect(self) -> sqlite3.Connection:
-        if self._connection is None:
-            self.db_path.parent.mkdir(parents=True, exist_ok=True)
-            self._connection = sqlite3.connect(str(self.db_path))
-            self._connection.row_factory = sqlite3.Row
+        with self._lock:
+            if self._connection is None:
+                self.db_path.parent.mkdir(parents=True, exist_ok=True)
+                self._connection = sqlite3.connect(
+                    str(self.db_path),
+                    check_same_thread=False,
+                    timeout=30,
+                )
+                self._connection.row_factory = sqlite3.Row
         return self._connection
 
     def initialize(self) -> None:
