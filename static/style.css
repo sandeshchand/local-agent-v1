@@ -741,6 +741,142 @@ textarea {
   gap: 8px;
 }
 
+.eval-candidate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.eval-candidate-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #26384f;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 10px;
+}
+
+.eval-candidate-item strong,
+.eval-candidate-item span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.eval-candidate-item strong {
+  color: #f8fafc;
+  font-size: 13px;
+}
+
+.eval-candidate-item span {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.eval-candidate-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.eval-status-pill {
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #cbd5e1;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.eval-status-pill.reviewed {
+  border-color: #38bdf8;
+  color: #bae6fd;
+}
+
+.eval-status-pill.promoted {
+  border-color: #14b8a6;
+  color: #99f6e4;
+}
+
+.eval-candidate-editor {
+  border-top: 1px solid #26384f;
+  padding-top: 12px;
+}
+
+.eval-candidate-editor h3 {
+  margin: 0 0 8px;
+  color: #f8fafc;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.eval-question {
+  margin: 0 0 10px;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.eval-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 9px;
+}
+
+.eval-field span {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.eval-field input,
+.eval-field textarea {
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.eval-preview {
+  border: 1px solid #26384f;
+  border-radius: 8px;
+  background: #0b1220;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.eval-preview summary {
+  cursor: pointer;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.eval-preview p {
+  margin: 8px 0 0;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.eval-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.eval-editor-status {
+  min-height: 18px;
+  margin-top: 8px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
 .feedback-summary {
   margin-bottom: 12px;
 }

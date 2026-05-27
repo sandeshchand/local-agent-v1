@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=10" />
+  <link rel="stylesheet" href="/static/style.css?v=11" />
 </head>
 <body>
   <div class="app-shell">
@@ -136,6 +136,15 @@
         </div>
         <div id="feedback-review-list" class="feedback-review-list"></div>
       </section>
+
+      <section class="trace-shell eval-candidate-shell">
+        <div class="trace-panel-header compact">
+          <h2>Eval Drafts</h2>
+          <button id="refresh-eval-candidates-btn" type="button" class="secondary-btn">Refresh</button>
+        </div>
+        <div id="eval-candidate-list" class="eval-candidate-list"></div>
+        <div id="eval-candidate-editor" class="eval-candidate-editor hidden"></div>
+      </section>
     </aside>
   </div>
 
@@ -146,6 +155,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=10"></script>
+  <script src="/static/chat.js?v=11"></script>
 </body>
 </html>

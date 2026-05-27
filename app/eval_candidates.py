@@ -10,6 +10,7 @@ from storage.sqlite_store import SQLiteStore
 
 
 DEFAULT_CANDIDATES_PATH = Path("data/evals/feedback_eval_candidates.json")
+DEFAULT_GOLD_EVAL_PATH = Path("test/eval_multi_doc_rag.json")
 _WRITE_LOCK = threading.RLock()
 
 
@@ -44,6 +45,173 @@ def write_feedback_eval_candidates(
         encoding="utf-8",
     )
     temp_path.replace(candidate_path)
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _clean_text(value: Any) -> str:
+    return str(value or "").strip()
+
+
+def _clean_requirement_list(value: Any) -> list[Any]:
+    if not isinstance(value, list):
+        return []
+    cleaned: list[Any] = []
+    for item in value:
+        if isinstance(item, list):
+            alternatives = [_clean_text(part) for part in item if _clean_text(part)]
+            if alternatives:
+                cleaned.append(alternatives)
+            continue
+        text = _clean_text(item)
+        if text:
+            cleaned.append(text)
+    return cleaned
+
+
+def _candidate_index(candidates: list[dict[str, Any]], candidate_id: str) -> int:
+    for index, candidate in enumerate(candidates):
+        if candidate.get("id") == candidate_id:
+            return index
+    raise LookupError(f"eval candidate {candidate_id} does not exist")
+
+
+def list_feedback_eval_candidates(
+    path: str | Path = DEFAULT_CANDIDATES_PATH,
+    *,
+    limit: int = 20,
+) -> list[dict[str, Any]]:
+    candidates = load_feedback_eval_candidates(path)
+    bounded_limit = max(1, min(limit, 100))
+    return candidates[:bounded_limit]
+
+
+def update_feedback_eval_candidate(
+    candidate_id: str,
+    updates: dict[str, Any],
+    *,
+    path: str | Path = DEFAULT_CANDIDATES_PATH,
+) -> dict[str, Any]:
+    editable_fields = {
+        "doc",
+        "expected_doc_title",
+        "expected_answer",
+        "must_have",
+        "should_have",
+        "must_not_have",
+        "notes",
+        "status",
+    }
+    candidate_path = Path(path)
+    with _WRITE_LOCK:
+        candidates = load_feedback_eval_candidates(candidate_path)
+        index = _candidate_index(candidates, candidate_id)
+        candidate = {**candidates[index]}
+        for field, value in updates.items():
+            if field not in editable_fields:
+                continue
+            if field in {"must_have", "should_have", "must_not_have"}:
+                candidate[field] = _clean_requirement_list(value)
+            elif field == "status":
+                status = _clean_text(value) or "draft"
+                if status not in {"draft", "reviewed", "promoted"}:
+                    raise ValueError("status must be draft, reviewed, or promoted")
+                candidate[field] = status
+            else:
+                candidate[field] = _clean_text(value)
+        candidate["updated_at"] = _now()
+        candidates[index] = candidate
+        write_feedback_eval_candidates(candidates, candidate_path)
+    return candidate
+
+
+def load_gold_eval_items(path: str | Path = DEFAULT_GOLD_EVAL_PATH) -> list[dict[str, Any]]:
+    eval_path = Path(path)
+    if not eval_path.exists():
+        return []
+    raw = json.loads(eval_path.read_text(encoding="utf-8"))
+    if not isinstance(raw, list):
+        raise ValueError("gold eval file must contain a JSON list")
+    return [item for item in raw if isinstance(item, dict)]
+
+
+def write_gold_eval_items(items: list[dict[str, Any]], path: str | Path = DEFAULT_GOLD_EVAL_PATH) -> None:
+    eval_path = Path(path)
+    eval_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = eval_path.with_suffix(f"{eval_path.suffix}.tmp")
+    temp_path.write_text(
+        json.dumps(items, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    temp_path.replace(eval_path)
+
+
+def _gold_item_from_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    if not _clean_text(candidate.get("question")):
+        raise ValueError("candidate question is required")
+    if not _clean_text(candidate.get("expected_answer")):
+        raise ValueError("expected_answer is required before promotion")
+    if not _clean_requirement_list(candidate.get("must_have")):
+        raise ValueError("must_have must contain at least one requirement before promotion")
+
+    return {
+        "id": _clean_text(candidate.get("id")),
+        "doc": _clean_text(candidate.get("doc")) or "feedback",
+        "question": _clean_text(candidate.get("question")),
+        "expected_doc_title": _clean_text(candidate.get("expected_doc_title")),
+        "expected_answer": _clean_text(candidate.get("expected_answer")),
+        "must_have": _clean_requirement_list(candidate.get("must_have")),
+        "should_have": _clean_requirement_list(candidate.get("should_have")),
+        "must_not_have": _clean_requirement_list(candidate.get("must_not_have")),
+    }
+
+
+def promote_feedback_eval_candidate(
+    candidate_id: str,
+    *,
+    candidates_path: str | Path = DEFAULT_CANDIDATES_PATH,
+    gold_eval_path: str | Path = DEFAULT_GOLD_EVAL_PATH,
+) -> dict[str, Any]:
+    candidate_path = Path(candidates_path)
+    eval_path = Path(gold_eval_path)
+    with _WRITE_LOCK:
+        candidates = load_feedback_eval_candidates(candidate_path)
+        candidate_index = _candidate_index(candidates, candidate_id)
+        candidate = {**candidates[candidate_index]}
+        gold_item = _gold_item_from_candidate(candidate)
+
+        gold_items = load_gold_eval_items(eval_path)
+        existing_index = next(
+            (
+                index
+                for index, item in enumerate(gold_items)
+                if item.get("id") == gold_item["id"]
+            ),
+            None,
+        )
+        status = "created"
+        if existing_index is None:
+            gold_items.append(gold_item)
+        else:
+            gold_items[existing_index] = gold_item
+            status = "updated"
+        write_gold_eval_items(gold_items, eval_path)
+
+        candidate["status"] = "promoted"
+        candidate["promoted_at"] = _now()
+        candidate["updated_at"] = candidate["promoted_at"]
+        candidates[candidate_index] = candidate
+        write_feedback_eval_candidates(candidates, candidate_path)
+
+    return {
+        "candidate_id": candidate_id,
+        "status": status,
+        "path": str(eval_path),
+        "gold_item": gold_item,
+        "candidate": candidate,
+    }
 
 
 def _candidate_id(trace_id: int) -> str:
@@ -164,7 +332,7 @@ def create_feedback_eval_candidate(
     if feedback["rating"] != "dislike":
         raise ValueError("only disliked answers can be converted into eval candidates")
 
-    now = datetime.now(timezone.utc).isoformat()
+    now = _now()
     candidate = _build_candidate(trace, feedback, now=now)
     candidate_id = candidate["id"]
     candidate_path = Path(path)

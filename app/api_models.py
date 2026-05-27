@@ -101,6 +101,47 @@ class EvalCandidateResponse(BaseModel):
     candidate: dict[str, Any]
 
 
+class EvalCandidateUpdateRequest(BaseModel):
+    doc: str | None = None
+    expected_doc_title: str | None = None
+    expected_answer: str | None = None
+    must_have: list[Any] | None = None
+    should_have: list[Any] | None = None
+    must_not_have: list[Any] | None = None
+    notes: str | None = None
+    status: Literal["draft", "reviewed", "promoted"] | None = None
+
+
+class EvalCandidateItem(BaseModel):
+    id: str
+    status: str
+    source: str | None = None
+    trace_id: int | None = None
+    feedback_id: int | None = None
+    feedback_rating: str | None = None
+    feedback_issue_type: str | None = None
+    question: str
+    doc: str = ""
+    expected_doc_title: str = ""
+    expected_answer: str = ""
+    must_have: list[Any] = Field(default_factory=list)
+    should_have: list[Any] = Field(default_factory=list)
+    must_not_have: list[Any] = Field(default_factory=list)
+    predicted_answer: str = ""
+    suggested_evidence: list[dict[str, Any]] = Field(default_factory=list)
+    verification: dict[str, Any] = Field(default_factory=dict)
+    created_at: str = ""
+    updated_at: str = ""
+
+
+class EvalCandidatePromoteResponse(BaseModel):
+    candidate_id: str
+    status: Literal["created", "updated"]
+    path: str
+    gold_item: dict[str, Any]
+    candidate: dict[str, Any]
+
+
 class IngestPathRequest(BaseModel):
     path: str = Field(..., min_length=1)
 

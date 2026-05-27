@@ -109,6 +109,28 @@ function feedbackIssueLabel(issueType) {
   return match ? match[1] : "Tag issue";
 }
 
+function requirementsToText(items) {
+  if (!Array.isArray(items)) return "";
+  return items
+    .map((item) => Array.isArray(item) ? item.join(" | ") : String(item || ""))
+    .filter(Boolean)
+    .join("\n");
+}
+
+function textToRequirements(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      if (!line.includes("|")) return line;
+      return line
+        .split("|")
+        .map((part) => part.trim())
+        .filter(Boolean);
+    });
+}
+
 let currentFeedbackFilter = "all";
 
 function createIcon(paths) {
@@ -751,10 +773,185 @@ async function createEvalCandidate(traceId, button) {
     button.textContent = result.status === "created" ? "Eval draft created" : "Eval draft updated";
     button.title = result.path || "";
     button.classList.add("done");
+    loadEvalCandidates();
   } catch (error) {
     button.disabled = false;
     button.textContent = originalText;
     button.title = error.message;
+  }
+}
+
+function renderEvalCandidateList(candidates) {
+  const container = document.getElementById("eval-candidate-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!Array.isArray(candidates) || !candidates.length) {
+    container.appendChild(createElement("div", "muted", "No eval drafts yet."));
+    return;
+  }
+
+  candidates.forEach((candidate) => {
+    const item = createElement("article", "eval-candidate-item");
+    const top = createElement("div", "eval-candidate-top");
+    top.appendChild(createElement("span", `eval-status-pill ${candidate.status || "draft"}`, candidate.status || "draft"));
+    if (candidate.feedback_issue_type) {
+      top.appendChild(createElement("span", "feedback-issue-chip", feedbackIssueLabel(candidate.feedback_issue_type)));
+    }
+    item.appendChild(top);
+    item.appendChild(createElement("strong", "", shortText(candidate.question, 90)));
+    item.appendChild(createElement("span", "", shortText(candidate.expected_doc_title || candidate.doc || "No document title yet.", 90)));
+
+    const actions = createElement("div", "feedback-review-actions");
+    const editButton = createElement("button", "feedback-action-btn", "Review");
+    editButton.type = "button";
+    editButton.addEventListener("click", () => renderEvalCandidateEditor(candidate));
+    actions.appendChild(editButton);
+    item.appendChild(actions);
+    container.appendChild(item);
+  });
+}
+
+function fieldRow(label, element) {
+  const row = createElement("label", "eval-field");
+  row.appendChild(createElement("span", "", label));
+  row.appendChild(element);
+  return row;
+}
+
+function renderEvalCandidateEditor(candidate) {
+  const editor = document.getElementById("eval-candidate-editor");
+  if (!editor) return;
+  editor.innerHTML = "";
+  editor.classList.remove("hidden");
+  editor.dataset.candidateId = candidate.id;
+
+  editor.appendChild(createElement("h3", "", `Review ${candidate.id}`));
+  editor.appendChild(createElement("p", "eval-question", candidate.question || ""));
+
+  const doc = document.createElement("input");
+  doc.id = "eval-doc";
+  doc.value = candidate.doc || "";
+  doc.placeholder = "short doc id, for example docker";
+  editor.appendChild(fieldRow("Doc", doc));
+
+  const expectedDoc = document.createElement("input");
+  expectedDoc.id = "eval-expected-doc-title";
+  expectedDoc.value = candidate.expected_doc_title || "";
+  expectedDoc.placeholder = "expected document title";
+  editor.appendChild(fieldRow("Expected Doc", expectedDoc));
+
+  const expectedAnswer = document.createElement("textarea");
+  expectedAnswer.id = "eval-expected-answer";
+  expectedAnswer.rows = 4;
+  expectedAnswer.value = candidate.expected_answer || "";
+  editor.appendChild(fieldRow("Expected Answer", expectedAnswer));
+
+  const mustHave = document.createElement("textarea");
+  mustHave.id = "eval-must-have";
+  mustHave.rows = 4;
+  mustHave.value = requirementsToText(candidate.must_have);
+  editor.appendChild(fieldRow("Must Have", mustHave));
+
+  const shouldHave = document.createElement("textarea");
+  shouldHave.id = "eval-should-have";
+  shouldHave.rows = 3;
+  shouldHave.value = requirementsToText(candidate.should_have);
+  editor.appendChild(fieldRow("Should Have", shouldHave));
+
+  const mustNotHave = document.createElement("textarea");
+  mustNotHave.id = "eval-must-not-have";
+  mustNotHave.rows = 3;
+  mustNotHave.value = requirementsToText(candidate.must_not_have);
+  editor.appendChild(fieldRow("Must Not Have", mustNotHave));
+
+  const predicted = createElement("details", "eval-preview");
+  predicted.appendChild(createElement("summary", "", "Predicted answer"));
+  predicted.appendChild(createElement("p", "", candidate.predicted_answer || ""));
+  editor.appendChild(predicted);
+
+  const status = createElement("div", "eval-editor-status", "");
+  const actions = createElement("div", "eval-editor-actions");
+  const saveButton = createElement("button", "feedback-action-btn", "Save draft");
+  saveButton.type = "button";
+  saveButton.addEventListener("click", () => saveEvalCandidate(candidate.id, status));
+  actions.appendChild(saveButton);
+
+  const promoteButton = createElement("button", "feedback-action-btn", "Promote");
+  promoteButton.type = "button";
+  promoteButton.addEventListener("click", () => promoteEvalCandidate(candidate.id, status));
+  actions.appendChild(promoteButton);
+
+  if (candidate.trace_id) {
+    const traceButton = createElement("button", "feedback-action-btn", "Open trace");
+    traceButton.type = "button";
+    traceButton.addEventListener("click", () => loadTrace(candidate.trace_id));
+    actions.appendChild(traceButton);
+  }
+
+  editor.appendChild(actions);
+  editor.appendChild(status);
+}
+
+function evalCandidatePayload(status = "reviewed") {
+  return {
+    doc: document.getElementById("eval-doc")?.value || "",
+    expected_doc_title: document.getElementById("eval-expected-doc-title")?.value || "",
+    expected_answer: document.getElementById("eval-expected-answer")?.value || "",
+    must_have: textToRequirements(document.getElementById("eval-must-have")?.value || ""),
+    should_have: textToRequirements(document.getElementById("eval-should-have")?.value || ""),
+    must_not_have: textToRequirements(document.getElementById("eval-must-not-have")?.value || ""),
+    status,
+  };
+}
+
+async function saveEvalCandidate(candidateId, status) {
+  if (!candidateId) return;
+  if (status) status.textContent = "Saving...";
+  try {
+    const candidate = await fetchJSON(`/api/eval-candidates/${encodeURIComponent(candidateId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(evalCandidatePayload("reviewed")),
+    });
+    if (status) status.textContent = "Draft saved.";
+    await loadEvalCandidates();
+    renderEvalCandidateEditor(candidate);
+  } catch (error) {
+    if (status) status.textContent = `Save failed: ${error.message}`;
+  }
+}
+
+async function promoteEvalCandidate(candidateId, status) {
+  if (!candidateId) return;
+  if (status) status.textContent = "Saving before promotion...";
+  try {
+    await fetchJSON(`/api/eval-candidates/${encodeURIComponent(candidateId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(evalCandidatePayload("reviewed")),
+    });
+    if (status) status.textContent = "Promoting...";
+    const result = await fetchJSON(`/api/eval-candidates/${encodeURIComponent(candidateId)}/promote`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    if (status) status.textContent = `Promoted to ${result.path}`;
+    await loadEvalCandidates();
+    renderEvalCandidateEditor(result.candidate);
+  } catch (error) {
+    if (status) status.textContent = `Promotion failed: ${error.message}`;
+  }
+}
+
+async function loadEvalCandidates() {
+  try {
+    const candidates = await fetchJSON("/api/eval-candidates?limit=8");
+    renderEvalCandidateList(candidates);
+  } catch (error) {
+    const container = document.getElementById("eval-candidate-list");
+    if (container) {
+      container.innerHTML = "";
+      container.appendChild(createElement("div", "error-text", `Eval draft error: ${error.message}`));
+    }
   }
 }
 
@@ -866,6 +1063,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("send-btn");
   const refreshDocsBtn = document.getElementById("refresh-docs-btn");
   const refreshTracesBtn = document.getElementById("refresh-traces-btn");
+  const refreshEvalCandidatesBtn = document.getElementById("refresh-eval-candidates-btn");
   const feedbackFilterBtns = document.querySelectorAll(".feedback-filter-btn");
   const ingestBtn = document.getElementById("ingest-btn");
   const chatInput = document.getElementById("chat-input");
@@ -883,7 +1081,12 @@ document.addEventListener("DOMContentLoaded", () => {
       loadRecentTraces();
       loadFeedbackSummary();
       loadFeedbackItems();
+      loadEvalCandidates();
     });
+  }
+
+  if (refreshEvalCandidatesBtn) {
+    refreshEvalCandidatesBtn.addEventListener("click", loadEvalCandidates);
   }
 
   feedbackFilterBtns.forEach((button) => {
@@ -907,4 +1110,5 @@ document.addEventListener("DOMContentLoaded", () => {
   loadRecentTraces();
   loadFeedbackSummary();
   loadFeedbackItems();
+  loadEvalCandidates();
 });

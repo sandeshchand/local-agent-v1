@@ -16,7 +16,10 @@ from app.api_models import (
     CitationItem,
     DocumentItem,
     EvalCandidateCreateRequest,
+    EvalCandidateItem,
+    EvalCandidatePromoteResponse,
     EvalCandidateResponse,
+    EvalCandidateUpdateRequest,
     FeedbackSummary,
     HealthResponse,
     IngestFileResult,
@@ -31,7 +34,12 @@ from app.api_models import (
 from app.bootstrap import bootstrap_app
 from app.config import load_config
 from app.dependencies import AppDependencies
-from app.eval_candidates import create_feedback_eval_candidate
+from app.eval_candidates import (
+    create_feedback_eval_candidate,
+    list_feedback_eval_candidates,
+    promote_feedback_eval_candidate,
+    update_feedback_eval_candidate,
+)
 from ingestion.file_loader import discover_pdf_files
 from ingestion.pipeline import IngestionPipeline
 from storage.sqlite_store import SQLiteStore
@@ -40,6 +48,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 EVAL_CANDIDATES_PATH = BASE_DIR / "data" / "evals" / "feedback_eval_candidates.json"
+GOLD_EVAL_PATH = BASE_DIR / "test" / "eval_multi_doc_rag.json"
 
 
 @lru_cache(maxsize=1)
@@ -201,6 +210,46 @@ def create_eval_candidate(request_data: EvalCandidateCreateRequest):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return EvalCandidateResponse(**result)
+
+
+@app.get("/api/eval-candidates", response_model=list[EvalCandidateItem])
+def list_eval_candidates(limit: int = 20):
+    rows = list_feedback_eval_candidates(
+        EVAL_CANDIDATES_PATH,
+        limit=min(max(limit, 1), 100),
+    )
+    return [EvalCandidateItem(**row) for row in rows]
+
+
+@app.patch("/api/eval-candidates/{candidate_id}", response_model=EvalCandidateItem)
+def update_eval_candidate(candidate_id: str, request_data: EvalCandidateUpdateRequest):
+    updates = request_data.model_dump(exclude_none=True)
+    try:
+        candidate = update_feedback_eval_candidate(
+            candidate_id,
+            updates,
+            path=EVAL_CANDIDATES_PATH,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return EvalCandidateItem(**candidate)
+
+
+@app.post("/api/eval-candidates/{candidate_id}/promote", response_model=EvalCandidatePromoteResponse)
+def promote_eval_candidate(candidate_id: str):
+    try:
+        result = promote_feedback_eval_candidate(
+            candidate_id,
+            candidates_path=EVAL_CANDIDATES_PATH,
+            gold_eval_path=GOLD_EVAL_PATH,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return EvalCandidatePromoteResponse(**result)
 
 
 @app.post("/api/chat", response_model=ChatResponse)

@@ -40,6 +40,13 @@ The right-side panel includes a feedback review section:
 - disliked items include a `Create eval` action that writes a draft candidate.
 - disliked items can be tagged as wrong document, bad retrieval, weak answer, missing citation, tool issue, or other.
 
+The Eval Drafts section supports:
+
+- reviewing candidates created from disliked answers,
+- editing expected answer and requirement fields,
+- saving reviewed drafts,
+- promoting reviewed drafts into `test/eval_multi_doc_rag.json`.
+
 Detailed feedback analytics notes:
 
 ```text
@@ -98,6 +105,7 @@ venv\Scripts\python.exe -m py_compile app\web.py app\api_models.py storage\sqlit
 venv\Scripts\python.exe scripts\smoke_feedback_analytics.py
 venv\Scripts\python.exe scripts\smoke_feedback_issue_tags.py
 venv\Scripts\python.exe scripts\smoke_eval_candidates.py
+venv\Scripts\python.exe scripts\smoke_eval_candidate_review.py
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```
 
