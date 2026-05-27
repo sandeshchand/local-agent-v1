@@ -9,7 +9,9 @@ It is intentionally general-purpose. It does not contain document-specific keywo
 - `POST /api/feedback` stores or updates one rating per trace.
 - `GET /api/feedback` lists recent feedback items, optionally filtered by `like` or `dislike`.
 - `GET /api/feedback/summary` returns aggregate feedback counts and recent disliked traces.
+- `POST /api/eval-candidates` converts a disliked trace into a draft eval candidate.
 - The web UI shows summary tiles above the feedback review list.
+- Disliked feedback items include a `Create eval` button.
 
 ## Summary Fields
 
@@ -38,18 +40,38 @@ It is intentionally general-purpose. It does not contain document-specific keywo
 4. Review the summary tiles and disliked answers.
 5. Click a disliked item to inspect the trace.
 6. Decide whether the problem is retrieval, routing, evidence selection, answer generation, or verification.
+7. Click `Create eval` when the weak answer should become a repeatable test candidate.
+
+Draft candidates are written to:
+
+```text
+data/evals/feedback_eval_candidates.json
+```
+
+This file is local generated data. It is not the gold benchmark.
 
 ## Evaluation Workflow
 
 When a disliked answer reveals a repeatable issue:
 
-1. Add the query to `test/eval_multi_doc_rag.json`.
-2. Add `must_have`, `should_have`, and `must_not_have` fields.
-3. Run a targeted eval for that item.
-4. Fix the general system behavior.
-5. Run regression before committing.
+1. Click `Create eval` in the Feedback panel.
+2. Open `data/evals/feedback_eval_candidates.json`.
+3. Fill `expected_answer`, `must_have`, `should_have`, and `must_not_have`.
+4. Promote the reviewed item into `test/eval_multi_doc_rag.json`.
+5. Run a targeted eval for that item.
+6. Fix the general system behavior.
+7. Run regression before committing.
 
 This prevents us from overfitting to one chat result while still learning from real user feedback.
+
+The draft candidate stores:
+
+- original query,
+- predicted answer,
+- suggested document title,
+- compact retrieved evidence,
+- verifier payload,
+- trace id and feedback id.
 
 ## Verification
 
@@ -57,5 +79,6 @@ Run:
 
 ```cmd
 venv\Scripts\python.exe scripts\smoke_feedback_analytics.py
+venv\Scripts\python.exe scripts\smoke_eval_candidates.py
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```

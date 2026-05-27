@@ -85,6 +85,18 @@ class FeedbackSummary(BaseModel):
     recent_dislikes: list[TraceFeedbackItem]
 
 
+class EvalCandidateCreateRequest(BaseModel):
+    trace_id: int = Field(..., gt=0)
+
+
+class EvalCandidateResponse(BaseModel):
+    candidate_id: str
+    trace_id: int
+    status: Literal["created", "updated"]
+    path: str
+    candidate: dict[str, Any]
+
+
 class IngestPathRequest(BaseModel):
     path: str = Field(..., min_length=1)
 

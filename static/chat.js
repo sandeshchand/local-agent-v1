@@ -622,25 +622,38 @@ function renderFeedbackItems(items) {
     return;
   }
 
-  items.forEach((item) => {
-    const button = createElement("button", `feedback-review-item ${item.rating || ""}`);
-    button.type = "button";
+  items.forEach((record) => {
+    const item = createElement("article", `feedback-review-item ${record.rating || ""}`);
 
     const top = createElement("div", "feedback-review-top");
-    top.appendChild(createElement("span", `feedback-rating-pill ${item.rating || ""}`, item.rating || "unknown"));
-    top.appendChild(createElement("span", "feedback-review-time", item.updated_at || ""));
+    top.appendChild(createElement("span", `feedback-rating-pill ${record.rating || ""}`, record.rating || "unknown"));
+    top.appendChild(createElement("span", "feedback-review-time", record.updated_at || ""));
 
-    button.appendChild(top);
-    button.appendChild(
+    item.appendChild(top);
+    item.appendChild(
       createElement(
         "strong",
         "",
-        `#${item.trace_id} ${shortText(item.query, 72)}`
+        `#${record.trace_id} ${shortText(record.query, 72)}`
       )
     );
-    button.appendChild(createElement("span", "", shortText(item.final_answer, 115)));
-    button.addEventListener("click", () => loadTrace(item.trace_id));
-    container.appendChild(button);
+    item.appendChild(createElement("span", "", shortText(record.final_answer, 115)));
+
+    const actions = createElement("div", "feedback-review-actions");
+    const openButton = createElement("button", "feedback-action-btn", "Open trace");
+    openButton.type = "button";
+    openButton.addEventListener("click", () => loadTrace(record.trace_id));
+    actions.appendChild(openButton);
+
+    if (record.rating === "dislike") {
+      const evalButton = createElement("button", "feedback-action-btn", "Create eval");
+      evalButton.type = "button";
+      evalButton.addEventListener("click", () => createEvalCandidate(record.trace_id, evalButton));
+      actions.appendChild(evalButton);
+    }
+
+    item.appendChild(actions);
+    container.appendChild(item);
   });
 }
 
@@ -655,6 +668,28 @@ async function loadFeedbackItems() {
       container.innerHTML = "";
       container.appendChild(createElement("div", "error-text", `Feedback error: ${error.message}`));
     }
+  }
+}
+
+async function createEvalCandidate(traceId, button) {
+  if (!traceId || !button) return;
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = "Creating...";
+  button.classList.remove("done");
+
+  try {
+    const result = await fetchJSON("/api/eval-candidates", {
+      method: "POST",
+      body: JSON.stringify({ trace_id: traceId }),
+    });
+    button.textContent = result.status === "created" ? "Eval draft created" : "Eval draft updated";
+    button.title = result.path || "";
+    button.classList.add("done");
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = originalText;
+    button.title = error.message;
   }
 }
 

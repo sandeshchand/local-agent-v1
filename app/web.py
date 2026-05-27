@@ -15,6 +15,8 @@ from app.api_models import (
     ChatResponse,
     CitationItem,
     DocumentItem,
+    EvalCandidateCreateRequest,
+    EvalCandidateResponse,
     FeedbackSummary,
     HealthResponse,
     IngestFileResult,
@@ -29,6 +31,7 @@ from app.api_models import (
 from app.bootstrap import bootstrap_app
 from app.config import load_config
 from app.dependencies import AppDependencies
+from app.eval_candidates import create_feedback_eval_candidate
 from ingestion.file_loader import discover_pdf_files
 from ingestion.pipeline import IngestionPipeline
 from storage.sqlite_store import SQLiteStore
@@ -36,6 +39,7 @@ from storage.sqlite_store import SQLiteStore
 BASE_DIR = Path(__file__).resolve().parents[1]
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
+EVAL_CANDIDATES_PATH = BASE_DIR / "data" / "evals" / "feedback_eval_candidates.json"
 
 
 @lru_cache(maxsize=1)
@@ -180,6 +184,21 @@ def list_feedback(
 @app.get("/api/feedback/summary", response_model=FeedbackSummary)
 def feedback_summary():
     return FeedbackSummary(**get_sqlite_store().get_answer_feedback_summary())
+
+
+@app.post("/api/eval-candidates", response_model=EvalCandidateResponse)
+def create_eval_candidate(request_data: EvalCandidateCreateRequest):
+    try:
+        result = create_feedback_eval_candidate(
+            get_sqlite_store(),
+            request_data.trace_id,
+            path=EVAL_CANDIDATES_PATH,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return EvalCandidateResponse(**result)
 
 
 @app.post("/api/chat", response_model=ChatResponse)

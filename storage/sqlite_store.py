@@ -466,6 +466,20 @@ class SQLiteStore:
         conn.commit()
         return dict(row)
 
+    def get_answer_feedback_for_trace(self, trace_id: int) -> dict[str, Any] | None:
+        conn = self.connect()
+        row = conn.execute(
+            """
+            SELECT feedback_id, trace_id, rating, source, created_at, updated_at
+            FROM answer_feedback
+            WHERE trace_id = ?
+            """,
+            (trace_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        return dict(row)
+
     def list_answer_feedback(
         self,
         *,

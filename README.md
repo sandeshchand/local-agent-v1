@@ -27,6 +27,7 @@ Completed:
 - Tool-call guardrails with allow, deny, and needs-approval decisions
 - Read-only current weather web tool
 - Web feedback analytics for answer review
+- Draft eval candidate creation from disliked answers
 - Multi-document gold QA evaluation
 - Optional OCR path for scanned/image-only PDFs
 - CLI memory inspection and manual memory creation
@@ -271,6 +272,7 @@ It shows:
 - like/dislike answer feedback,
 - a feedback review panel,
 - feedback analytics summary,
+- draft eval candidate creation from disliked answers,
 - plan mode,
 - retrieval attempts,
 - routed evidence,
@@ -374,7 +376,7 @@ venv\Scripts\python.exe scripts\run_regression.py
 ```
 
 This runs compile checks, memory smoke, guardrails smoke, weather-tool smoke, and focused RAG eval.
-It also runs SQLite and feedback analytics smoke checks.
+It also runs SQLite, feedback analytics, and feedback-to-eval smoke checks.
 
 Run compile and smoke checks only:
 
