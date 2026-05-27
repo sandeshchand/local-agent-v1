@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 from agent.schemas import ToolSpec, ToolResult
 
+
 class ToolRegistry:
     def __init__(self) -> None:
         self._tools: dict[str, tuple[ToolSpec, Callable[..., Any]]] = {}
@@ -24,24 +25,24 @@ class ToolRegistry:
     def list_tools(self) -> list[ToolSpec]:
         return [spec for spec, _ in self._tools.values()]
 
-    def execute(self, name:str, **kwargs:Any) -> ToolResult:
-        if name not in self._tools:
+    def execute(self, tool_name: str, **kwargs: Any) -> ToolResult:
+        if tool_name not in self._tools:
             return ToolResult(
-                tool_name=name,
+                tool_name=tool_name,
                 success=False,
-                error=f"Tool '{name}' not found"
+                error=f"Tool '{tool_name}' not found",
             )
-        spec, fn = self._tools[name]
+        spec, fn = self._tools[tool_name]
         try:
             result = fn(**kwargs)
             return ToolResult(
                 tool_name=spec.name,
                 success=True,
-                output=result
+                output=result,
             )
-        except Exception as e:
+        except Exception as exc:
             return ToolResult(
                 tool_name=spec.name,
                 success=False,
-                error=str(e)
+                error=str(exc),
             )

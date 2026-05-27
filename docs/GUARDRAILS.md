@@ -122,6 +122,6 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_feat
 
 ## Next Improvements
 
-1. Reuse the same policy shape for MCP tools.
-2. Add file-operation categories before write/delete tools are introduced.
-3. Show guardrail decisions in the UI trace view.
+1. Add file-operation categories before write/delete tools are introduced.
+2. Add path allowlists before wiring writable File MCP tools.
+3. Show approval-required tool prompts in the UI.

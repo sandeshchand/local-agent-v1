@@ -31,6 +31,7 @@ from app.api_models import (
     TraceFeedbackRequest,
     TraceFeedbackResponse,
     TraceSummary,
+    ToolItem,
 )
 from app.bootstrap import bootstrap_app
 from app.config import load_config
@@ -139,6 +140,12 @@ def index(request: Request):
 @app.get("/health", response_model=HealthResponse)
 def health():
     return HealthResponse(status="ok")
+
+
+@app.get("/api/tools", response_model=list[ToolItem])
+def list_tools():
+    tools = get_deps().tool_registry.list_tools()
+    return [ToolItem(**tool.model_dump()) for tool in tools]
 
 
 @app.get("/api/documents", response_model=list[DocumentItem])

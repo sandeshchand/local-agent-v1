@@ -298,6 +298,7 @@ class Orchestrator:
             return [], self._verify_and_maybe_repair(query, [], state)
 
         tool_name, tool_args = self._tool_call_name_args(action)
+        tool_spec = self.tool_registry.get_tool_spec(tool_name)
         tool_result = self.tool_registry.execute(tool_name, **tool_args)
         state.tool_results.append(tool_result)
         state.steps.append(
@@ -305,6 +306,8 @@ class Orchestrator:
                 "step": step_no,
                 "type": "tool_call",
                 "tool_name": tool_name,
+                "tool_source": tool_spec.source if tool_spec else "unknown",
+                "tool_metadata": tool_spec.metadata if tool_spec else {},
                 "success": tool_result.success,
                 "notes": action.notes,
             }

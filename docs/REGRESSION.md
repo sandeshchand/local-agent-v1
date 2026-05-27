@@ -17,6 +17,7 @@ Default behavior:
 - Python compile checks for core app, agent, retrieval, and smoke-test files.
 - Memory smoke test.
 - Guardrails smoke test.
+- MCP adapter smoke test.
 - Weather tool smoke test.
 - Focused RAG quality eval.
 
@@ -58,7 +59,7 @@ venv\Scripts\python.exe scripts\run_regression.py --ids docker_watchtower_featur
 ## What This Does Not Cover Yet
 
 - Live weather API calls.
-- MCP tool execution.
+- Live MCP server execution.
 - UI rendering.
 - Full browser tests.
 

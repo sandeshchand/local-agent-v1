@@ -25,6 +25,7 @@ Completed:
 - Generic verifier
 - Answer repair after verifier failure
 - Tool-call guardrails with allow, deny, and needs-approval decisions
+- Generic MCP tool adapter with approval-required-by-default registration
 - Read-only current weather web tool
 - Web feedback analytics for answer review
 - Draft eval candidate creation from disliked answers
@@ -55,6 +56,7 @@ User query
 -> Planner
 -> ToolRouter
    -> guardrails when a tool call is selected
+   -> MCP-style tools through the guarded tool registry
    -> current weather web tool for weather/current-temperature questions
 -> DocumentRouter
 -> RetrievalService
@@ -243,6 +245,24 @@ Detailed implementation notes:
 docs/GUARDRAILS.md
 ```
 
+## MCP Integration
+
+MCP V1 provides a generic adapter for MCP-style tool discovery and execution through the existing guarded tool registry.
+
+Current behavior:
+
+- MCP tools register as `mcp.<server>.<tool>`,
+- MCP tools require approval by default,
+- read-only MCP tools can be allowed when their metadata declares read-only behavior,
+- registered tools are visible through `GET /api/tools`,
+- MCP output is treated as tool context, not PDF citation evidence.
+
+Detailed implementation notes:
+
+```text
+docs/MCP.md
+```
+
 ## Web Tools
 
 The first web-based tool is:
@@ -381,7 +401,7 @@ Run the standard local regression gate:
 venv\Scripts\python.exe scripts\run_regression.py
 ```
 
-This runs compile checks, memory smoke, guardrails smoke, weather-tool smoke, and focused RAG eval.
+This runs compile checks, memory smoke, guardrails smoke, MCP adapter smoke, weather-tool smoke, and focused RAG eval.
 It also runs SQLite, feedback analytics, feedback issue tag, feedback-to-eval, eval candidate review, and eval candidate run smoke checks.
 
 Run compile and smoke checks only:
@@ -436,6 +456,7 @@ It currently performs:
 - answer repair when verification fails
 - one generic full-corpus retrieval retry when the first answer has no citations or still fails verification
 - tool-call guardrail decisions before tool execution
+- MCP-style tool metadata in tool traces
 - trace saving to SQLite
 
 Detailed implementation notes:
@@ -515,8 +536,8 @@ Use the report fields:
 ## Next Engineering Steps
 
 1. Add memory-specific multi-turn eval tests.
-2. Add 3-5 gold QA questions for every new daily PDF.
-3. Add a small regression command that runs before every commit.
+2. Wire a real read-only File MCP server through `app/mcp_adapter.py`.
+3. Add 3-5 gold QA questions for every new daily PDF.
 4. Improve citation formatting and remove duplicated citation text.
-5. Add guardrails before tool execution and external integrations.
+5. Add path allowlists before any file write/delete tools.
 6. Add a simple evaluation summary dashboard or HTML report.

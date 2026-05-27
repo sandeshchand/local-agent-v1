@@ -36,7 +36,8 @@ Status:
 
 - Tool-call guardrails v1 is implemented.
 - Request-scoped approval for approval-required tools is implemented.
-- MCP and file-operation guardrails are still future work.
+- MCP-style tools now reuse the same guardrail shape.
+- File-operation guardrails are still future work.
 
 Implemented:
 
@@ -47,8 +48,8 @@ Implemented:
 
 Next guardrail work:
 
-- Extend the same policy shape to MCP tools after MCP execution is wired.
 - Add file-operation categories before write/delete tools are introduced.
+- Add path allowlists before a File MCP server can write or delete files.
 
 Important rule:
 
@@ -61,14 +62,16 @@ Goal: support external tools through a clean connector layer.
 Status:
 
 - A narrow read-only current weather web tool is implemented.
-- A generic MCP adapter layer is still future work.
+- A generic MCP adapter layer is implemented in `app/mcp_adapter.py`.
+- Registered tools are visible through `GET /api/tools`.
+- A real File MCP server is not wired yet.
 
 What to implement:
 
-- A generic MCP tool adapter.
-- Tool metadata discovery.
-- Tool allowlist or approval rules.
-- Trace steps for MCP tool selection, arguments, result, and errors.
+- A concrete MCP client wrapper for the chosen transport.
+- A read-only File MCP server first.
+- Tool allowlists and path allowlists.
+- UI approval prompts for approval-required tool calls.
 
 Important rule:
 

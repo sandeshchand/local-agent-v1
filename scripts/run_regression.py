@@ -20,6 +20,7 @@ COMPILE_TARGETS = [
     "app/api_models.py",
     "app/eval_candidates.py",
     "app/eval_runner.py",
+    "app/mcp_adapter.py",
     "app/tool_registry.py",
     "app/weather_tool.py",
     "retrieval/answer_service.py",
@@ -32,6 +33,7 @@ COMPILE_TARGETS = [
     "scripts/smoke_eval_candidate_run.py",
     "scripts/smoke_feedback_issue_tags.py",
     "scripts/smoke_guardrails.py",
+    "scripts/smoke_mcp_adapter.py",
     "scripts/smoke_weather_tool.py",
     "scripts/eval_rag_quality.py",
 ]
@@ -99,6 +101,7 @@ def main() -> None:
     run_step("Eval candidate run smoke", [sys.executable, "scripts/smoke_eval_candidate_run.py"])
     run_step("Feedback issue tag smoke", [sys.executable, "scripts/smoke_feedback_issue_tags.py"])
     run_step("Guardrails smoke", [sys.executable, "scripts/smoke_guardrails.py"])
+    run_step("MCP adapter smoke", [sys.executable, "scripts/smoke_mcp_adapter.py"])
     run_step("Weather tool smoke", [sys.executable, "scripts/smoke_weather_tool.py"])
 
     if args.skip_rag:

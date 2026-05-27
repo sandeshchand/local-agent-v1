@@ -181,3 +181,11 @@ class HealthResponse(BaseModel):
     status: str
 
 
+class ToolItem(BaseModel):
+    name: str
+    description: str
+    requires_approval: bool = False
+    source: str = "local"
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+

@@ -47,6 +47,8 @@ class ToolSpec(BaseModel):
     name: str
     description: str
     requires_approval: bool = False
+    source: str = "local"
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 class ToolCall(BaseModel):
     name: str
@@ -55,7 +57,7 @@ class ToolCall(BaseModel):
 class ToolResult(BaseModel):
     tool_name: str
     success: bool
-    output: str | None = None
+    output: Any | None = None
     error: str | None = None
 
 class GuardrailDecision(BaseModel):

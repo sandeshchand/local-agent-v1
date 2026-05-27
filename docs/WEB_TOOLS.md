@@ -82,7 +82,7 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_feat
 
 Recommended order:
 
-1. Read-only MCP adapter layer.
+1. Wire a real read-only File MCP server through `app/mcp_adapter.py`.
 2. Web search with approval.
 3. GitHub or repository tools with approval.
-4. File-operation tools only after file guardrails are stronger.
+4. File-operation tools only after path guardrails are stronger.
