@@ -38,6 +38,7 @@ The right-side panel includes a feedback review section:
 - `Disliked` shows negative feedback,
 - selecting a feedback item opens the full trace.
 - disliked items include a `Create eval` action that writes a draft candidate.
+- disliked items can be tagged as wrong document, bad retrieval, weak answer, missing citation, tool issue, or other.
 
 Detailed feedback analytics notes:
 
@@ -95,6 +96,7 @@ Run:
 ```cmd
 venv\Scripts\python.exe -m py_compile app\web.py app\api_models.py storage\sqlite_store.py
 venv\Scripts\python.exe scripts\smoke_feedback_analytics.py
+venv\Scripts\python.exe scripts\smoke_feedback_issue_tags.py
 venv\Scripts\python.exe scripts\smoke_eval_candidates.py
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```

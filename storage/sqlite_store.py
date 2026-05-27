@@ -6,6 +6,25 @@ from pathlib import Path
 from typing import Any
 
 
+FEEDBACK_ISSUE_TYPES = {
+    "",
+    "wrong_document",
+    "bad_retrieval",
+    "weak_answer",
+    "missing_citation",
+    "tool_issue",
+    "other",
+}
+
+
+def normalize_feedback_issue_type(issue_type: str | None) -> str:
+    normalized = (issue_type or "").strip()
+    if normalized not in FEEDBACK_ISSUE_TYPES:
+        allowed = ", ".join(sorted(item or "none" for item in FEEDBACK_ISSUE_TYPES))
+        raise ValueError(f"issue_type must be one of: {allowed}")
+    return normalized
+
+
 class SQLiteStore:
     def __init__(self, db_path: str | Path) -> None:
         self.db_path = Path(db_path).expanduser().resolve()
@@ -143,6 +162,7 @@ class SQLiteStore:
                 feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 trace_id INTEGER NOT NULL UNIQUE,
                 rating TEXT NOT NULL CHECK (rating IN ('like', 'dislike')),
+                issue_type TEXT NOT NULL DEFAULT '',
                 source TEXT NOT NULL DEFAULT 'web',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -150,6 +170,17 @@ class SQLiteStore:
             )
             """
         )
+        feedback_columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(answer_feedback)").fetchall()
+        }
+        if "issue_type" not in feedback_columns:
+            conn.execute(
+                """
+                ALTER TABLE answer_feedback
+                ADD COLUMN issue_type TEXT NOT NULL DEFAULT ''
+                """
+            )
 
         conn.commit()
     def ensure_session(self, session_id: str) -> None:
@@ -427,11 +458,13 @@ class SQLiteStore:
         *,
         trace_id: int,
         rating: str,
+        issue_type: str | None = None,
         source: str = "web",
     ) -> dict[str, Any]:
         if rating not in {"like", "dislike"}:
             raise ValueError("rating must be 'like' or 'dislike'")
 
+        normalized_issue_type = normalize_feedback_issue_type(issue_type)
         conn = self.connect()
         trace = conn.execute(
             """
@@ -444,20 +477,36 @@ class SQLiteStore:
         if trace is None:
             raise ValueError(f"trace {trace_id} does not exist")
 
+        existing = conn.execute(
+            """
+            SELECT issue_type
+            FROM answer_feedback
+            WHERE trace_id = ?
+            """,
+            (trace_id,),
+        ).fetchone()
+        if rating == "like":
+            stored_issue_type = ""
+        elif issue_type is None and existing is not None:
+            stored_issue_type = existing["issue_type"] or ""
+        else:
+            stored_issue_type = normalized_issue_type
+
         conn.execute(
             """
-            INSERT INTO answer_feedback (trace_id, rating, source)
-            VALUES (?, ?, ?)
+            INSERT INTO answer_feedback (trace_id, rating, issue_type, source)
+            VALUES (?, ?, ?, ?)
             ON CONFLICT(trace_id) DO UPDATE SET
                 rating = excluded.rating,
+                issue_type = excluded.issue_type,
                 source = excluded.source,
                 updated_at = CURRENT_TIMESTAMP
             """,
-            (trace_id, rating, source),
+            (trace_id, rating, stored_issue_type, source),
         )
         row = conn.execute(
             """
-            SELECT feedback_id, trace_id, rating, source, created_at, updated_at
+            SELECT feedback_id, trace_id, rating, issue_type, source, created_at, updated_at
             FROM answer_feedback
             WHERE trace_id = ?
             """,
@@ -470,7 +519,7 @@ class SQLiteStore:
         conn = self.connect()
         row = conn.execute(
             """
-            SELECT feedback_id, trace_id, rating, source, created_at, updated_at
+            SELECT feedback_id, trace_id, rating, issue_type, source, created_at, updated_at
             FROM answer_feedback
             WHERE trace_id = ?
             """,
@@ -498,6 +547,7 @@ class SQLiteStore:
                     f.feedback_id,
                     f.trace_id,
                     f.rating,
+                    f.issue_type,
                     f.source,
                     f.created_at,
                     f.updated_at,
@@ -518,6 +568,7 @@ class SQLiteStore:
                     f.feedback_id,
                     f.trace_id,
                     f.rating,
+                    f.issue_type,
                     f.source,
                     f.created_at,
                     f.updated_at,
@@ -544,6 +595,16 @@ class SQLiteStore:
             FROM answer_feedback
             """
         ).fetchone()
+        issue_rows = conn.execute(
+            """
+            SELECT issue_type, COUNT(*) AS count
+            FROM answer_feedback
+            WHERE rating = 'dislike'
+              AND issue_type <> ''
+            GROUP BY issue_type
+            ORDER BY count DESC, issue_type ASC
+            """
+        ).fetchall()
         total_count = int(summary["total_count"] or 0)
         dislike_count = int(summary["dislike_count"] or 0)
         dislike_rate = (dislike_count / total_count) if total_count else 0.0
@@ -552,6 +613,10 @@ class SQLiteStore:
             "like_count": int(summary["like_count"] or 0),
             "dislike_count": dislike_count,
             "dislike_rate": dislike_rate,
+            "issue_counts": {
+                row["issue_type"]: int(row["count"] or 0)
+                for row in issue_rows
+            },
             "latest_feedback_at": summary["latest_feedback_at"] or "",
             "recent_dislikes": self.list_answer_feedback(
                 rating="dislike",

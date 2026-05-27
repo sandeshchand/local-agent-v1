@@ -12,6 +12,7 @@ It is intentionally general-purpose. It does not contain document-specific keywo
 - `POST /api/eval-candidates` converts a disliked trace into a draft eval candidate.
 - The web UI shows summary tiles above the feedback review list.
 - Disliked feedback items include a `Create eval` button.
+- Disliked feedback items can be tagged with a failure reason.
 
 ## Summary Fields
 
@@ -21,6 +22,7 @@ It is intentionally general-purpose. It does not contain document-specific keywo
 - `like_count`
 - `dislike_count`
 - `dislike_rate`
+- `issue_counts`
 - `latest_feedback_at`
 - `recent_dislikes`
 
@@ -41,6 +43,15 @@ It is intentionally general-purpose. It does not contain document-specific keywo
 5. Click a disliked item to inspect the trace.
 6. Decide whether the problem is retrieval, routing, evidence selection, answer generation, or verification.
 7. Click `Create eval` when the weak answer should become a repeatable test candidate.
+
+Supported failure tags:
+
+- `wrong_document`
+- `bad_retrieval`
+- `weak_answer`
+- `missing_citation`
+- `tool_issue`
+- `other`
 
 Draft candidates are written to:
 
@@ -68,6 +79,7 @@ The draft candidate stores:
 
 - original query,
 - predicted answer,
+- feedback failure tag,
 - suggested document title,
 - compact retrieved evidence,
 - verifier payload,
@@ -79,6 +91,7 @@ Run:
 
 ```cmd
 venv\Scripts\python.exe scripts\smoke_feedback_analytics.py
+venv\Scripts\python.exe scripts\smoke_feedback_issue_tags.py
 venv\Scripts\python.exe scripts\smoke_eval_candidates.py
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```

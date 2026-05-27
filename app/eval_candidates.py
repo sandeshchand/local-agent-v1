@@ -112,6 +112,7 @@ def _build_candidate(
         "trace_id": trace_id,
         "feedback_id": int(feedback["feedback_id"]),
         "feedback_rating": feedback["rating"],
+        "feedback_issue_type": feedback.get("issue_type") or "",
         "question": trace.get("query") or "",
         "doc": "",
         "expected_doc_title": _suggest_doc_title(retrieved_payload, steps),

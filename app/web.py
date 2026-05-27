@@ -158,10 +158,12 @@ def save_feedback(request_data: TraceFeedbackRequest):
         row = get_sqlite_store().upsert_answer_feedback(
             trace_id=request_data.trace_id,
             rating=request_data.rating,
+            issue_type=request_data.issue_type,
             source="web",
         )
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        status_code = 404 if "does not exist" in str(exc) else 400
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
     return TraceFeedbackResponse(**row)
 
 

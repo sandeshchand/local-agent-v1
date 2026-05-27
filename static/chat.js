@@ -94,6 +94,21 @@ function formatPercent(value) {
   return `${Math.round(number * 100)}%`;
 }
 
+const FEEDBACK_ISSUES = [
+  ["", "Tag issue"],
+  ["wrong_document", "Wrong doc"],
+  ["bad_retrieval", "Bad retrieval"],
+  ["weak_answer", "Weak answer"],
+  ["missing_citation", "Missing citation"],
+  ["tool_issue", "Tool issue"],
+  ["other", "Other"],
+];
+
+function feedbackIssueLabel(issueType) {
+  const match = FEEDBACK_ISSUES.find(([value]) => value === issueType);
+  return match ? match[1] : "Tag issue";
+}
+
 let currentFeedbackFilter = "all";
 
 function createIcon(paths) {
@@ -597,6 +612,22 @@ function renderFeedbackSummary(summary) {
     ? `${recentDislikes} recent disliked answer${recentDislikes === 1 ? "" : "s"} ready for review.`
     : "No disliked answers in the review queue.";
   container.appendChild(createElement("div", "feedback-summary-cue", cue));
+
+  const issueCounts = summary.issue_counts || {};
+  const issueEntries = Object.entries(issueCounts).filter(([, count]) => Number(count) > 0);
+  if (issueEntries.length) {
+    const issueRow = createElement("div", "feedback-issue-counts");
+    issueEntries.forEach(([issueType, count]) => {
+      issueRow.appendChild(
+        createElement(
+          "span",
+          "feedback-issue-chip",
+          `${feedbackIssueLabel(issueType)} ${count}`
+        )
+      );
+    });
+    container.appendChild(issueRow);
+  }
 }
 
 async function loadFeedbackSummary() {
@@ -646,6 +677,18 @@ function renderFeedbackItems(items) {
     actions.appendChild(openButton);
 
     if (record.rating === "dislike") {
+      const issueSelect = createElement("select", "feedback-issue-select");
+      issueSelect.setAttribute("aria-label", "Feedback issue type");
+      FEEDBACK_ISSUES.forEach(([value, label]) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        issueSelect.appendChild(option);
+      });
+      issueSelect.value = record.issue_type || "";
+      issueSelect.addEventListener("change", () => saveFeedbackIssue(record, issueSelect));
+      actions.appendChild(issueSelect);
+
       const evalButton = createElement("button", "feedback-action-btn", "Create eval");
       evalButton.type = "button";
       evalButton.addEventListener("click", () => createEvalCandidate(record.trace_id, evalButton));
@@ -668,6 +711,28 @@ async function loadFeedbackItems() {
       container.innerHTML = "";
       container.appendChild(createElement("div", "error-text", `Feedback error: ${error.message}`));
     }
+  }
+}
+
+async function saveFeedbackIssue(record, select) {
+  if (!record || !select) return;
+  select.disabled = true;
+  try {
+    const updated = await fetchJSON("/api/feedback", {
+      method: "POST",
+      body: JSON.stringify({
+        trace_id: record.trace_id,
+        rating: record.rating,
+        issue_type: select.value,
+      }),
+    });
+    record.issue_type = updated.issue_type || "";
+    select.title = "Saved";
+    loadFeedbackSummary();
+  } catch (error) {
+    select.title = error.message;
+  } finally {
+    select.disabled = false;
   }
 }
 

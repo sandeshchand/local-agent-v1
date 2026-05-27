@@ -54,12 +54,14 @@ class TraceDetail(BaseModel):
 class TraceFeedbackRequest(BaseModel):
     trace_id: int = Field(..., gt=0)
     rating: Literal["like", "dislike"]
+    issue_type: str | None = None
 
 
 class TraceFeedbackResponse(BaseModel):
     feedback_id: int
     trace_id: int
     rating: str
+    issue_type: str = ""
     source: str
     created_at: str
     updated_at: str
@@ -69,6 +71,7 @@ class TraceFeedbackItem(BaseModel):
     feedback_id: int
     trace_id: int
     rating: str
+    issue_type: str = ""
     source: str
     query: str
     final_answer: str
@@ -81,6 +84,7 @@ class FeedbackSummary(BaseModel):
     like_count: int
     dislike_count: int
     dislike_rate: float
+    issue_counts: dict[str, int] = Field(default_factory=dict)
     latest_feedback_at: str
     recent_dislikes: list[TraceFeedbackItem]
 

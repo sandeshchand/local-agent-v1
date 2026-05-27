@@ -46,7 +46,11 @@ def main() -> None:
             else:
                 raise AssertionError("Liked answers should not become eval candidates.")
 
-            store.upsert_answer_feedback(trace_id=trace_id, rating="dislike")
+            store.upsert_answer_feedback(
+                trace_id=trace_id,
+                rating="dislike",
+                issue_type="bad_retrieval",
+            )
             candidate_path = tmp_path / "feedback_eval_candidates.json"
             first = create_feedback_eval_candidate(store, trace_id, path=candidate_path)
             assert first["status"] == "created"
@@ -54,6 +58,7 @@ def main() -> None:
             assert first["candidate"]["question"] == "What needs improvement?"
             assert first["candidate"]["expected_doc_title"] == "General Test Document"
             assert first["candidate"]["predicted_answer"] == "This answer is weak."
+            assert first["candidate"]["feedback_issue_type"] == "bad_retrieval"
 
             second = create_feedback_eval_candidate(store, trace_id, path=candidate_path)
             assert second["status"] == "updated"
