@@ -159,6 +159,79 @@ button:disabled {
   word-break: break-word;
 }
 
+.tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tool-list-item {
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #0f172a;
+  padding: 11px;
+}
+
+.tool-list-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.tool-list-top strong {
+  color: #f8fafc;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.tool-list-item p {
+  margin: 0 0 8px;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.tool-source-pill,
+.tool-approval-pill {
+  flex: 0 0 auto;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #cbd5e1;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.tool-source-pill.mcp {
+  border-color: #38bdf8;
+  color: #bae6fd;
+}
+
+.tool-source-pill.local {
+  border-color: #94a3b8;
+}
+
+.tool-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tool-approval-pill.ok {
+  border-color: #14b8a6;
+  color: #99f6e4;
+}
+
+.tool-approval-pill.warn {
+  border-color: #f59e0b;
+  color: #fde68a;
+}
+
 .main-content {
   display: flex;
   flex-direction: column;
@@ -360,6 +433,67 @@ button:disabled {
   background: #0f766e;
   border-color: #14b8a6;
   color: #ecfeff;
+}
+
+.approval-panel {
+  border: 1px solid #92400e;
+  border-radius: 10px;
+  background: rgba(146, 64, 14, 0.18);
+  padding: 11px;
+  margin-bottom: 12px;
+  white-space: normal;
+}
+
+.approval-panel strong,
+.approval-panel span,
+.approval-panel p {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.approval-panel strong {
+  color: #fde68a;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.approval-panel span {
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.approval-panel p {
+  margin: 0 0 9px;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.approval-btn {
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  background: #92400e;
+  color: #fffbeb;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.approval-btn:hover {
+  background: #b45309;
+}
+
+.approval-btn.done {
+  border-color: #14b8a6;
+  background: #0f766e;
 }
 
 .trace-badge {

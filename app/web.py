@@ -122,6 +122,31 @@ def build_trace_summary(row: dict[str, Any]) -> TraceSummary:
     )
 
 
+def approval_payload(results: dict[str, Any]) -> dict[str, Any]:
+    steps = results.get("steps") or []
+    guardrail_steps = [step for step in steps if step.get("type") == "guardrail"]
+    if not guardrail_steps:
+        return {
+            "needs_approval": False,
+            "approval_tool_name": None,
+            "approval_reason": "",
+        }
+
+    latest = guardrail_steps[-1]
+    if latest.get("status") != "needs_approval":
+        return {
+            "needs_approval": False,
+            "approval_tool_name": None,
+            "approval_reason": "",
+        }
+
+    return {
+        "needs_approval": True,
+        "approval_tool_name": latest.get("tool_name"),
+        "approval_reason": latest.get("reason") or "This action requires approval before execution.",
+    }
+
+
 app = FastAPI(title="Local Agent V1")
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -293,6 +318,7 @@ def chat(request_data: ChatRequest):
         reason=results["reason"],
         retrieval_query=results.get("retrieval_query"),
         citations=build_citations(results["citations"]),
+        **approval_payload(results),
     )
 
 

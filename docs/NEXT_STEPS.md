@@ -65,13 +65,13 @@ Status:
 - A generic MCP adapter layer is implemented in `app/mcp_adapter.py`.
 - A read-only local File MCP connector is implemented in `app/file_mcp.py`.
 - Registered tools are visible through `GET /api/tools`.
+- Registered tools are visible in the UI.
+- The UI can approve approval-required tool calls for one request.
 - File MCP roots are allowlisted through `FILE_MCP_ROOTS`.
 
 What to implement:
 
 - A concrete MCP client wrapper for the chosen transport.
-- UI visibility for registered tools.
-- UI approval prompts for approval-required tool calls.
 - Stronger path policy before write/delete file tools.
 
 Important rule:

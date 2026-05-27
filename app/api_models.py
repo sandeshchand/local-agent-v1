@@ -26,6 +26,9 @@ class ChatResponse(BaseModel):
     reason: str =""
     retrieval_query: str | None = None
     citations: list[CitationItem]
+    needs_approval: bool = False
+    approval_tool_name: str | None = None
+    approval_reason: str = ""
 
 
 class TraceSummary(BaseModel):

@@ -123,5 +123,5 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_feat
 ## Next Improvements
 
 1. Add file-operation categories before write/delete tools are introduced.
-2. Add path allowlists before wiring writable File MCP tools.
-3. Show approval-required tool prompts in the UI.
+2. Strengthen path policy before wiring writable File MCP tools.
+3. Add audit views for approved tool executions.

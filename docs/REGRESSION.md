@@ -19,6 +19,7 @@ Default behavior:
 - Guardrails smoke test.
 - File MCP smoke test.
 - MCP adapter smoke test.
+- Tool approval UI smoke test.
 - Weather tool smoke test.
 - Focused RAG quality eval.
 

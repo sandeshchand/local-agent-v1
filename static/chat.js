@@ -301,7 +301,26 @@ function addMessage(role, content, extraClass = "") {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-function addAssistantResponse(answer, traceId, citations = []) {
+function addApprovalControls(container, query, approval) {
+  if (!container || !approval || !approval.needsApproval || !approval.toolName) return;
+
+  const panel = createElement("div", "approval-panel");
+  panel.appendChild(createElement("strong", "", "Approval required"));
+  panel.appendChild(createElement("span", "", approval.toolName));
+  if (approval.reason) {
+    panel.appendChild(createElement("p", "", approval.reason));
+  }
+
+  const actions = createElement("div", "approval-actions");
+  const approveButton = createElement("button", "approval-btn", "Approve and run");
+  approveButton.type = "button";
+  approveButton.addEventListener("click", () => approveAndRun(query, approval.toolName, approveButton));
+  actions.appendChild(approveButton);
+  panel.appendChild(actions);
+  container.appendChild(panel);
+}
+
+function addAssistantResponse(answer, traceId, citations = [], options = {}) {
   hideEmptyState();
 
   const chatWindow = document.getElementById("chat-window");
@@ -327,6 +346,8 @@ function addAssistantResponse(answer, traceId, citations = []) {
     body.appendChild(renderSourcesBox(citations));
   }
 
+  addApprovalControls(body, options.query || "", options.approval || {});
+
   body.appendChild(renderFeedbackControls(traceId));
 
   const traceRow = document.createElement("div");
@@ -346,6 +367,40 @@ function addAssistantResponse(answer, traceId, citations = []) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
   loadTrace(traceId);
   loadRecentTraces();
+}
+
+async function approveAndRun(query, toolName, button) {
+  if (!query || !toolName || !button) return;
+
+  button.disabled = true;
+  button.textContent = "Running...";
+  setSendButtonLoading(true);
+
+  try {
+    const data = await fetchJSON("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        query,
+        approved_tools: [toolName],
+      }),
+    });
+    button.textContent = "Approved";
+    button.classList.add("done");
+    addAssistantResponse(data.answer, data.trace_id, data.citations || [], {
+      query,
+      approval: {
+        needsApproval: data.needs_approval,
+        toolName: data.approval_tool_name,
+        reason: data.approval_reason,
+      },
+    });
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = "Approve and run";
+    addMessage("Assistant", `Approval failed: ${error.message}`, "error-message");
+  } finally {
+    setSendButtonLoading(false);
+  }
 }
 
 function metric(label, value, tone = "") {
@@ -1025,6 +1080,54 @@ async function loadEvalCandidates() {
   }
 }
 
+function renderTools(tools) {
+  const container = document.getElementById("tools-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!Array.isArray(tools) || !tools.length) {
+    container.appendChild(createElement("div", "muted", "No registered tools."));
+    return;
+  }
+
+  tools.forEach((tool) => {
+    const item = createElement("article", "tool-list-item");
+    const top = createElement("div", "tool-list-top");
+    top.appendChild(createElement("strong", "", tool.name || "unknown_tool"));
+    top.appendChild(createElement("span", `tool-source-pill ${tool.source || "local"}`, tool.source || "local"));
+    item.appendChild(top);
+    item.appendChild(createElement("p", "", shortText(tool.description, 130)));
+
+    const meta = createElement("div", "tool-meta-row");
+    meta.appendChild(
+      createElement(
+        "span",
+        tool.requires_approval ? "tool-approval-pill warn" : "tool-approval-pill ok",
+        tool.requires_approval ? "approval" : "read-only"
+      )
+    );
+    const serverName = tool.metadata && tool.metadata.server_name;
+    if (serverName) {
+      meta.appendChild(createElement("span", "tool-approval-pill", serverName));
+    }
+    item.appendChild(meta);
+    container.appendChild(item);
+  });
+}
+
+async function loadTools() {
+  try {
+    const tools = await fetchJSON("/api/tools");
+    renderTools(tools);
+  } catch (error) {
+    const container = document.getElementById("tools-list");
+    if (container) {
+      container.innerHTML = "";
+      container.appendChild(createElement("div", "error-text", `Tool error: ${error.message}`));
+    }
+  }
+}
+
 function renderDocuments(docs) {
   const container = document.getElementById("documents-list");
   if (!container) return;
@@ -1078,7 +1181,14 @@ async function sendChat() {
       body: JSON.stringify({ query }),
     });
 
-    addAssistantResponse(data.answer, data.trace_id, data.citations || []);
+    addAssistantResponse(data.answer, data.trace_id, data.citations || [], {
+      query,
+      approval: {
+        needsApproval: data.needs_approval,
+        toolName: data.approval_tool_name,
+        reason: data.approval_reason,
+      },
+    });
   } catch (error) {
     addMessage("Assistant", `Error: ${error.message}`, "error-message");
   } finally {
@@ -1132,6 +1242,7 @@ async function ingestPath() {
 document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("send-btn");
   const refreshDocsBtn = document.getElementById("refresh-docs-btn");
+  const refreshToolsBtn = document.getElementById("refresh-tools-btn");
   const refreshTracesBtn = document.getElementById("refresh-traces-btn");
   const refreshEvalCandidatesBtn = document.getElementById("refresh-eval-candidates-btn");
   const feedbackFilterBtns = document.querySelectorAll(".feedback-filter-btn");
@@ -1144,6 +1255,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (refreshDocsBtn) {
     refreshDocsBtn.addEventListener("click", loadDocuments);
+  }
+
+  if (refreshToolsBtn) {
+    refreshToolsBtn.addEventListener("click", loadTools);
   }
 
   if (refreshTracesBtn) {
@@ -1177,6 +1292,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   loadDocuments();
+  loadTools();
   loadRecentTraces();
   loadFeedbackSummary();
   loadFeedbackItems();

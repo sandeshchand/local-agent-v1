@@ -24,6 +24,14 @@ The answer card also keeps citations compact:
 - long file paths are shortened to the file name,
 - the full source path remains available as hover text.
 
+The left sidebar includes a Tools panel:
+
+- registered tools are loaded from `/api/tools`,
+- local and MCP tools are shown together,
+- read-only tools and approval-required tools are visibly labeled.
+
+If a tool action requires approval, the answer card shows an approval prompt. Clicking `Approve and run` repeats the same query with that tool approved for the current request only.
+
 Each answer has feedback controls:
 
 - the thumbs-up button stores positive feedback for the trace,
@@ -108,6 +116,7 @@ venv\Scripts\python.exe scripts\smoke_feedback_issue_tags.py
 venv\Scripts\python.exe scripts\smoke_eval_candidates.py
 venv\Scripts\python.exe scripts\smoke_eval_candidate_review.py
 venv\Scripts\python.exe scripts\smoke_eval_candidate_run.py
+venv\Scripts\python.exe scripts\smoke_tool_approval_ui.py
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```
 

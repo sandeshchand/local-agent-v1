@@ -67,6 +67,8 @@ Check registered tools:
 http://127.0.0.1:8000/api/tools
 ```
 
+The web UI also shows the same registered tools in the left sidebar Tools panel.
+
 Example CLI questions:
 
 ```cmd
@@ -163,6 +165,5 @@ venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ## Next MCP Work
 
 1. Add a concrete MCP client wrapper for a chosen transport.
-2. Add UI visibility for registered tools.
-3. Add UI approval prompts for approval-required tool calls.
-4. Add stronger path policy before enabling file write/delete tools.
+2. Add stronger path policy before enabling file write/delete tools.
+3. Add a real MCP transport client when an external MCP server is needed.

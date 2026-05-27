@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=12" />
+  <link rel="stylesheet" href="/static/style.css?v=13" />
 </head>
 <body>
   <div class="app-shell">
@@ -40,6 +40,15 @@
         </div>
 
         <div id="documents-list" class="documents-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Tools</h2>
+          <button id="refresh-tools-btn" type="button" class="secondary-btn">Refresh</button>
+        </div>
+
+        <div id="tools-list" class="tools-list"></div>
       </section>
     </aside>
 
@@ -155,6 +164,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=12"></script>
+  <script src="/static/chat.js?v=13"></script>
 </body>
 </html>

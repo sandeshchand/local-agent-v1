@@ -302,6 +302,8 @@ It shows:
 
 - compact answer sources,
 - like/dislike answer feedback,
+- registered tool visibility,
+- approval prompt for approval-required tool calls,
 - a feedback review panel,
 - feedback analytics summary,
 - draft eval candidate creation from disliked answers,
@@ -410,7 +412,7 @@ Run the standard local regression gate:
 venv\Scripts\python.exe scripts\run_regression.py
 ```
 
-This runs compile checks, memory smoke, guardrails smoke, File MCP smoke, MCP adapter smoke, weather-tool smoke, and focused RAG eval.
+This runs compile checks, memory smoke, guardrails smoke, File MCP smoke, MCP adapter smoke, tool approval UI smoke, weather-tool smoke, and focused RAG eval.
 It also runs SQLite, feedback analytics, feedback issue tag, feedback-to-eval, eval candidate review, and eval candidate run smoke checks.
 
 Run compile and smoke checks only:
@@ -545,7 +547,7 @@ Use the report fields:
 ## Next Engineering Steps
 
 1. Add memory-specific multi-turn eval tests.
-2. Add UI visibility for registered tools and approval-required tool prompts.
+2. Add audit views for approved tool executions.
 3. Add 3-5 gold QA questions for every new daily PDF.
 4. Improve citation formatting and remove duplicated citation text.
 5. Strengthen path allowlists before any file write/delete tools.
