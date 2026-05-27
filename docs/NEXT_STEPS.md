@@ -63,15 +63,16 @@ Status:
 
 - A narrow read-only current weather web tool is implemented.
 - A generic MCP adapter layer is implemented in `app/mcp_adapter.py`.
+- A read-only local File MCP connector is implemented in `app/file_mcp.py`.
 - Registered tools are visible through `GET /api/tools`.
-- A real File MCP server is not wired yet.
+- File MCP roots are allowlisted through `FILE_MCP_ROOTS`.
 
 What to implement:
 
 - A concrete MCP client wrapper for the chosen transport.
-- A read-only File MCP server first.
-- Tool allowlists and path allowlists.
+- UI visibility for registered tools.
 - UI approval prompts for approval-required tool calls.
+- Stronger path policy before write/delete file tools.
 
 Important rule:
 

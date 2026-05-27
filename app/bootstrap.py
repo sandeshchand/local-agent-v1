@@ -9,6 +9,8 @@ from agent.schemas import ToolSpec
 from agent.verifier import Verifier
 from app.config import load_config
 from app.dependencies import  AppDependencies
+from app.file_mcp import ReadOnlyFileMCPClient
+from app.mcp_adapter import MCPToolAdapter
 from app.ollama_client import OllamaChatClient, OllamaEmbeddingClient
 from app.tool_registry import ToolRegistry
 from app.weather_tool import CurrentWeatherTool
@@ -73,6 +75,15 @@ def bootstrap_app(env_file: str | Path = ".env") -> AppDependencies:
         ),
         CurrentWeatherTool(),
     )
+    if config.file_mcp_enabled:
+        file_mcp_client = ReadOnlyFileMCPClient(
+            allowed_roots=config.file_mcp_roots,
+            base_dir=Path(__file__).resolve().parents[1],
+        )
+        MCPToolAdapter(
+            server_name="local_files",
+            client=file_mcp_client,
+        ).register_tools(tool_registry)
 
     memory_manager = MemoryManager(sqlite_store=sqlite_store)
     verifier = Verifier()

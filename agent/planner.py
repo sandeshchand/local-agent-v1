@@ -62,6 +62,10 @@ class Planner:
                 tool_args={"location": location},
             )
 
+        file_tool_plan = self._file_tool_plan(query)
+        if file_tool_plan is not None:
+            return file_tool_plan
+
         return PlanDecision(
             mode="retrieve_only",
             reasoning="Defaulting to retrieval for non-casual queries.",
@@ -101,4 +105,74 @@ class Planner:
                     flags=re.IGNORECASE,
                 )
                 return re.sub(r"\s+", " ", location).strip()
+        return ""
+
+    def _file_tool_plan(self, query: str) -> PlanDecision | None:
+        q = query.strip()
+        q_lower = q.lower()
+        path = self._file_path_from_query(q)
+
+        if self._is_file_list_query(q_lower):
+            return PlanDecision(
+                mode="tool_only",
+                reasoning="Detected read-only file listing request.",
+                tool_name="mcp.local_files.list_directory",
+                tool_args={"path": path, "max_entries": 100},
+            )
+
+        if path and self._is_file_read_query(q_lower):
+            return PlanDecision(
+                mode="tool_only",
+                reasoning="Detected read-only file read request.",
+                tool_name="mcp.local_files.read_text_file",
+                tool_args={"path": path, "max_bytes": 20000},
+            )
+
+        if path and self._is_file_info_query(q_lower):
+            return PlanDecision(
+                mode="tool_only",
+                reasoning="Detected read-only file metadata request.",
+                tool_name="mcp.local_files.file_info",
+                tool_args={"path": path},
+            )
+
+        return None
+
+    def _is_file_list_query(self, query_lower: str) -> bool:
+        has_list_verb = any(term in query_lower for term in ["list", "show", "what files", "which files"])
+        has_file_target = any(term in query_lower for term in ["files", "directory", "folder"])
+        return has_list_verb and has_file_target
+
+    def _is_file_read_query(self, query_lower: str) -> bool:
+        has_read_verb = any(term in query_lower for term in ["read", "show", "open", "display"])
+        has_file_hint = any(term in query_lower for term in [" file", " mcp", " docs/", " data/", " test/"])
+        return has_read_verb and has_file_hint
+
+    def _is_file_info_query(self, query_lower: str) -> bool:
+        has_info_verb = any(term in query_lower for term in ["info", "metadata", "size", "details"])
+        return has_info_verb and any(term in query_lower for term in [" file", " directory", " folder", " mcp"])
+
+    def _file_path_from_query(self, query: str) -> str:
+        quoted = re.search(r"[`'\"]([^`'\"]+)[`'\"]", query)
+        if quoted:
+            return quoted.group(1).strip()
+
+        path_match = re.search(
+            r"((?:[\w.-]+[\\/])+[\w .()!\-]+|\b[\w.-]+\.(?:cfg|csv|ini|json|log|md|py|ps1|toml|txt|yaml|yml)\b)",
+            query,
+            flags=re.IGNORECASE,
+        )
+        if path_match:
+            return path_match.group(1).strip(" ?.!,:;")
+
+        folder_match = re.search(
+            r"\b(?:in|inside|under|from|of|directory|folder)\s+([A-Za-z0-9_.\\/\- ]+)",
+            query,
+            flags=re.IGNORECASE,
+        )
+        if folder_match:
+            path = folder_match.group(1)
+            path = re.sub(r"\b(?:please|now|using|with|through|via)\b.*$", "", path, flags=re.IGNORECASE)
+            return path.strip(" ?.!,:;")
+
         return ""

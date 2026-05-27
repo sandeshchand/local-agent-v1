@@ -26,6 +26,7 @@ Completed:
 - Answer repair after verifier failure
 - Tool-call guardrails with allow, deny, and needs-approval decisions
 - Generic MCP tool adapter with approval-required-by-default registration
+- Read-only File MCP connector for allowed local roots
 - Read-only current weather web tool
 - Web feedback analytics for answer review
 - Draft eval candidate creation from disliked answers
@@ -254,8 +255,16 @@ Current behavior:
 - MCP tools register as `mcp.<server>.<tool>`,
 - MCP tools require approval by default,
 - read-only MCP tools can be allowed when their metadata declares read-only behavior,
+- read-only File MCP tools are registered as `mcp.local_files.*`,
 - registered tools are visible through `GET /api/tools`,
 - MCP output is treated as tool context, not PDF citation evidence.
+
+Example File MCP questions:
+
+```cmd
+venv\Scripts\python.exe app\main.py ask --query "List files in docs"
+venv\Scripts\python.exe app\main.py ask --query "Read file docs/MCP.md"
+```
 
 Detailed implementation notes:
 
@@ -401,7 +410,7 @@ Run the standard local regression gate:
 venv\Scripts\python.exe scripts\run_regression.py
 ```
 
-This runs compile checks, memory smoke, guardrails smoke, MCP adapter smoke, weather-tool smoke, and focused RAG eval.
+This runs compile checks, memory smoke, guardrails smoke, File MCP smoke, MCP adapter smoke, weather-tool smoke, and focused RAG eval.
 It also runs SQLite, feedback analytics, feedback issue tag, feedback-to-eval, eval candidate review, and eval candidate run smoke checks.
 
 Run compile and smoke checks only:
@@ -536,8 +545,8 @@ Use the report fields:
 ## Next Engineering Steps
 
 1. Add memory-specific multi-turn eval tests.
-2. Wire a real read-only File MCP server through `app/mcp_adapter.py`.
+2. Add UI visibility for registered tools and approval-required tool prompts.
 3. Add 3-5 gold QA questions for every new daily PDF.
 4. Improve citation formatting and remove duplicated citation text.
-5. Add path allowlists before any file write/delete tools.
+5. Strengthen path allowlists before any file write/delete tools.
 6. Add a simple evaluation summary dashboard or HTML report.

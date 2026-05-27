@@ -2,7 +2,7 @@
 
 Use the regression runner before commits and before pushing risky changes.
 
-This is a local script. It does not require a File MCP server.
+This is a local script. It uses the in-process read-only File MCP smoke test and does not require an external MCP server.
 
 ## Default Check
 
@@ -17,6 +17,7 @@ Default behavior:
 - Python compile checks for core app, agent, retrieval, and smoke-test files.
 - Memory smoke test.
 - Guardrails smoke test.
+- File MCP smoke test.
 - MCP adapter smoke test.
 - Weather tool smoke test.
 - Focused RAG quality eval.

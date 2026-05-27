@@ -25,11 +25,14 @@ class AppConfig(BaseModel):
          alias="RERANKER_MODEL",
         )
     rerank_candidates: int = Field(8, alias="RERANK_CANDIDATES")
+    file_mcp_enabled: bool = Field(True, alias="FILE_MCP_ENABLED")
+    file_mcp_roots: list[Path] = Field(default_factory=list, alias="FILE_MCP_ROOTS")
 
 
 
 def load_config(env_file: str | Path = ".env") -> AppConfig:
     load_dotenv(dotenv_path=env_file, override=True)
+    base_dir = Path(env_file).resolve().parent
 
     data = {
         "OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL"),
@@ -47,6 +50,11 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
             "cross-encoder/ms-marco-MiniLM-L-6-v2",
             ),
         "RERANK_CANDIDATES": os.getenv("RERANK_CANDIDATES", "8"),
+        "FILE_MCP_ENABLED": os.getenv("FILE_MCP_ENABLED", "true"),
+        "FILE_MCP_ROOTS": _parse_path_list(
+            os.getenv("FILE_MCP_ROOTS", "data,docs,test,README.md,pyproject.toml"),
+            base_dir=base_dir,
+        ),
     }
 
     config = AppConfig.model_validate(data)
@@ -72,4 +80,19 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
         USE_RERANKER=config.use_reranker,
         RERANKER_MODEL=config.rerank_model,
         RERANK_CANDIDATES=config.rerank_candidates,
+        FILE_MCP_ENABLED=config.file_mcp_enabled,
+        FILE_MCP_ROOTS=config.file_mcp_roots,
     )
+
+
+def _parse_path_list(raw: str, base_dir: Path) -> list[Path]:
+    paths: list[Path] = []
+    for part in raw.split(","):
+        value = part.strip()
+        if not value:
+            continue
+        path = Path(value).expanduser()
+        if not path.is_absolute():
+            path = base_dir / path
+        paths.append(path.resolve())
+    return paths

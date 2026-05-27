@@ -473,6 +473,8 @@ Evidence facts:
 
         if payload.get("tool") == "get_current_weather":
             return self._format_weather_tool_answer(payload)
+        if payload.get("source") == "mcp":
+            return self._format_mcp_tool_answer(payload)
 
         return ""
 
@@ -500,6 +502,51 @@ Evidence facts:
                 answer += f" ({timezone})"
             answer += "."
         return answer
+
+    def _format_mcp_tool_answer(self, payload: dict) -> str:
+        result = payload.get("result")
+        if not isinstance(result, dict):
+            return ""
+
+        tool = result.get("tool") or payload.get("tool_name") or "mcp_tool"
+        if result.get("success") is False:
+            error = result.get("error") or "The tool could not complete the request."
+            return f"The MCP file tool could not complete the request: {error}"
+
+        if tool == "list_directory":
+            entries = result.get("entries") or []
+            if not entries:
+                return f"No entries were found in {result.get('path') or 'the requested location'}."
+            names = []
+            for entry in entries[:30]:
+                entry_type = entry.get("type") or "item"
+                entry_path = entry.get("path") or entry.get("name") or ""
+                names.append(f"- {entry_path} ({entry_type})")
+            answer = f"Files in {result.get('path') or 'the allowed File MCP roots'}:\n" + "\n".join(names)
+            if result.get("truncated"):
+                answer += "\nThe list was truncated."
+            return answer
+
+        if tool == "read_text_file":
+            path = result.get("path") or "the requested file"
+            content = str(result.get("content") or "")
+            if result.get("truncated"):
+                return f"Here is the beginning of {path}:\n\n{content}\n\nThe file was truncated."
+            return f"Here is the content of {path}:\n\n{content}"
+
+        if tool == "file_info":
+            path = result.get("path") or "the requested path"
+            kind = "directory" if result.get("is_dir") else "file"
+            size = result.get("size_bytes")
+            modified = result.get("modified_at")
+            answer = f"{path} is a {kind}."
+            if size is not None:
+                answer += f" Size: {size} bytes."
+            if modified:
+                answer += f" Modified: {modified}."
+            return answer
+
+        return ""
 
     def _single_source_results(self, query: str, results: list[dict]) -> list[dict]:
         if not results or self._is_multi_source_query(query):

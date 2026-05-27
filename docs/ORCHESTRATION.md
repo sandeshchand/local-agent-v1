@@ -150,6 +150,6 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file test\eval_multi_
 Good next orchestration improvements:
 
 1. Add multi-step `retrieve_then_tool` tests.
-2. Reuse the guardrail policy shape for MCP tools.
+2. Add UI approval prompts for approval-required tools.
 3. Add a route-confidence metric from document routing.
 4. Add UI trace inspection so users can see routing, evidence, retry, guardrail, and verifier decisions.
