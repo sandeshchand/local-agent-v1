@@ -13,6 +13,7 @@ It is intentionally general-purpose. It does not contain document-specific keywo
 - `GET /api/eval-candidates` lists draft candidates for review.
 - `PATCH /api/eval-candidates/{candidate_id}` updates reviewed fields.
 - `POST /api/eval-candidates/{candidate_id}/promote` writes the reviewed item into the gold QA file.
+- `POST /api/eval-candidates/{candidate_id}/run-eval` runs one promoted candidate and returns the score.
 - The web UI shows summary tiles above the feedback review list.
 - Disliked feedback items include a `Create eval` button.
 - Disliked feedback items can be tagged with a failure reason.
@@ -78,7 +79,7 @@ When a disliked answer reveals a repeatable issue:
 2. Open `data/evals/feedback_eval_candidates.json`.
 3. In the UI Eval Drafts panel, fill `expected_answer`, `must_have`, `should_have`, and `must_not_have`.
 4. Click `Promote` to write the reviewed item into `test/eval_multi_doc_rag.json`.
-5. Run a targeted eval for that item.
+5. Click `Run eval` to score that promoted item.
 6. Fix the general system behavior.
 7. Run regression before committing.
 
@@ -103,5 +104,6 @@ venv\Scripts\python.exe scripts\smoke_feedback_analytics.py
 venv\Scripts\python.exe scripts\smoke_feedback_issue_tags.py
 venv\Scripts\python.exe scripts\smoke_eval_candidates.py
 venv\Scripts\python.exe scripts\smoke_eval_candidate_review.py
+venv\Scripts\python.exe scripts\smoke_eval_candidate_run.py
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```

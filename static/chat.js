@@ -882,6 +882,11 @@ function renderEvalCandidateEditor(candidate) {
   promoteButton.addEventListener("click", () => promoteEvalCandidate(candidate.id, status));
   actions.appendChild(promoteButton);
 
+  const runEvalButton = createElement("button", "feedback-action-btn", "Run eval");
+  runEvalButton.type = "button";
+  runEvalButton.addEventListener("click", () => runEvalCandidate(candidate.id, status));
+  actions.appendChild(runEvalButton);
+
   if (candidate.trace_id) {
     const traceButton = createElement("button", "feedback-action-btn", "Open trace");
     traceButton.type = "button";
@@ -891,6 +896,7 @@ function renderEvalCandidateEditor(candidate) {
 
   editor.appendChild(actions);
   editor.appendChild(status);
+  editor.appendChild(createElement("div", "eval-result-panel hidden", ""));
 }
 
 function evalCandidatePayload(status = "reviewed") {
@@ -939,6 +945,70 @@ async function promoteEvalCandidate(candidateId, status) {
     renderEvalCandidateEditor(result.candidate);
   } catch (error) {
     if (status) status.textContent = `Promotion failed: ${error.message}`;
+  }
+}
+
+function renderEvalRunResult(payload) {
+  const panel = document.querySelector(".eval-result-panel");
+  if (!panel) return;
+  panel.innerHTML = "";
+  panel.classList.remove("hidden");
+
+  const result = payload.result || {};
+  const score = Number(payload.score || result.score || 0);
+  const tone = payload.passed ? "ok" : "bad";
+  const header = createElement("div", `eval-result-header ${tone}`);
+  header.appendChild(createElement("strong", "", `${score.toFixed(2)}/10`));
+  header.appendChild(createElement("span", "", payload.passed ? "Passed" : "Needs work"));
+  panel.appendChild(header);
+
+  const grid = createElement("div", "eval-result-grid");
+  [
+    ["Fact", result.fact_score],
+    ["Optional", result.optional_score],
+    ["Citation", result.citation_score],
+    ["Routing", result.routing_score],
+    ["Verifier", result.verifier_score],
+    ["Focus", result.focus_score],
+  ].forEach(([label, value]) => {
+    const item = createElement("div", "eval-result-metric");
+    item.appendChild(createElement("span", "", label));
+    item.appendChild(createElement("strong", "", formatValue(value)));
+    grid.appendChild(item);
+  });
+  panel.appendChild(grid);
+
+  const fields = [
+    ["Missing", result.missing_must_have],
+    ["Unwanted", result.triggered_must_not_have],
+    ["Expected Doc", result.expected_doc_title],
+    ["Top Routed Doc", result.top_routed_doc],
+  ];
+  fields.forEach(([label, value]) => {
+    const row = createElement("div", "eval-result-row");
+    row.appendChild(createElement("span", "", label));
+    row.appendChild(createElement("strong", "", Array.isArray(value) ? value.join("; ") || "-" : formatValue(value)));
+    panel.appendChild(row);
+  });
+
+  const answer = createElement("details", "eval-preview");
+  answer.appendChild(createElement("summary", "", "Evaluated answer"));
+  answer.appendChild(createElement("p", "", result.answer || ""));
+  panel.appendChild(answer);
+}
+
+async function runEvalCandidate(candidateId, status) {
+  if (!candidateId) return;
+  if (status) status.textContent = "Running targeted eval...";
+  try {
+    const result = await fetchJSON(`/api/eval-candidates/${encodeURIComponent(candidateId)}/run-eval`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    if (status) status.textContent = `Eval complete: ${Number(result.score || 0).toFixed(2)}/10`;
+    renderEvalRunResult(result);
+  } catch (error) {
+    if (status) status.textContent = `Eval failed: ${error.message}`;
   }
 }
 

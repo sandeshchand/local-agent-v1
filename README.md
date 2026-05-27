@@ -30,6 +30,7 @@ Completed:
 - Draft eval candidate creation from disliked answers
 - Failure reason tagging for disliked answers
 - UI review and promotion for feedback eval candidates
+- Targeted eval result view for promoted feedback candidates
 - Multi-document gold QA evaluation
 - Optional OCR path for scanned/image-only PDFs
 - CLI memory inspection and manual memory creation
@@ -276,6 +277,7 @@ It shows:
 - feedback analytics summary,
 - draft eval candidate creation from disliked answers,
 - eval draft review and promotion,
+- targeted eval result view,
 - failure reason tags for disliked answers,
 - plan mode,
 - retrieval attempts,
@@ -380,7 +382,7 @@ venv\Scripts\python.exe scripts\run_regression.py
 ```
 
 This runs compile checks, memory smoke, guardrails smoke, weather-tool smoke, and focused RAG eval.
-It also runs SQLite, feedback analytics, feedback issue tag, feedback-to-eval, and eval candidate review smoke checks.
+It also runs SQLite, feedback analytics, feedback issue tag, feedback-to-eval, eval candidate review, and eval candidate run smoke checks.
 
 Run compile and smoke checks only:
 

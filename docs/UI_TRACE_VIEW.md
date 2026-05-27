@@ -46,6 +46,7 @@ The Eval Drafts section supports:
 - editing expected answer and requirement fields,
 - saving reviewed drafts,
 - promoting reviewed drafts into `test/eval_multi_doc_rag.json`.
+- running a targeted eval for a promoted draft and viewing the score, missing facts, routing, verifier, and answer.
 
 Detailed feedback analytics notes:
 
@@ -106,6 +107,7 @@ venv\Scripts\python.exe scripts\smoke_feedback_analytics.py
 venv\Scripts\python.exe scripts\smoke_feedback_issue_tags.py
 venv\Scripts\python.exe scripts\smoke_eval_candidates.py
 venv\Scripts\python.exe scripts\smoke_eval_candidate_review.py
+venv\Scripts\python.exe scripts\smoke_eval_candidate_run.py
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```
 

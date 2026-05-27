@@ -142,6 +142,14 @@ class EvalCandidatePromoteResponse(BaseModel):
     candidate: dict[str, Any]
 
 
+class EvalCandidateRunResponse(BaseModel):
+    candidate_id: str
+    score: float
+    passed: bool
+    output_path: str
+    result: dict[str, Any]
+
+
 class IngestPathRequest(BaseModel):
     path: str = Field(..., min_length=1)
 

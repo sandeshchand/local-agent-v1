@@ -18,6 +18,7 @@ from app.api_models import (
     EvalCandidateCreateRequest,
     EvalCandidateItem,
     EvalCandidatePromoteResponse,
+    EvalCandidateRunResponse,
     EvalCandidateResponse,
     EvalCandidateUpdateRequest,
     FeedbackSummary,
@@ -40,6 +41,7 @@ from app.eval_candidates import (
     promote_feedback_eval_candidate,
     update_feedback_eval_candidate,
 )
+from app.eval_runner import load_gold_eval_item, run_candidate_eval
 from ingestion.file_loader import discover_pdf_files
 from ingestion.pipeline import IngestionPipeline
 from storage.sqlite_store import SQLiteStore
@@ -49,6 +51,7 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 EVAL_CANDIDATES_PATH = BASE_DIR / "data" / "evals" / "feedback_eval_candidates.json"
 GOLD_EVAL_PATH = BASE_DIR / "test" / "eval_multi_doc_rag.json"
+EVAL_OUTPUT_DIR = BASE_DIR / "eval"
 
 
 @lru_cache(maxsize=1)
@@ -250,6 +253,21 @@ def promote_eval_candidate(candidate_id: str):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return EvalCandidatePromoteResponse(**result)
+
+
+@app.post("/api/eval-candidates/{candidate_id}/run-eval", response_model=EvalCandidateRunResponse)
+def run_eval_candidate(candidate_id: str):
+    try:
+        load_gold_eval_item(candidate_id, GOLD_EVAL_PATH)
+        result = run_candidate_eval(
+            get_deps().orchestrator,
+            candidate_id,
+            gold_eval_path=GOLD_EVAL_PATH,
+            output_dir=EVAL_OUTPUT_DIR,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return EvalCandidateRunResponse(**result)
 
 
 @app.post("/api/chat", response_model=ChatResponse)
