@@ -195,7 +195,7 @@ button:disabled {
 
 .tool-list-item {
   border: 1px solid #334155;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #0f172a;
   padding: 11px;
 }
@@ -636,7 +636,7 @@ textarea {
 
 .workspace-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   border: 1px solid #26384f;
   border-radius: 8px;

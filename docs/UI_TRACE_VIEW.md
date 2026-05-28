@@ -32,7 +32,7 @@ The answer card keeps the main action area visible:
 - long file paths are shortened to the file name,
 - the full source path remains available as hover text.
 
-The left sidebar includes a Tools panel:
+The right-side workspace includes a visible Tools tab:
 
 - registered tools are loaded from `/api/tools`,
 - local and MCP tools are shown together,

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=15" />
+  <link rel="stylesheet" href="/static/style.css?v=16" />
 </head>
 <body>
   <div class="app-shell">
@@ -50,21 +50,6 @@
         <button id="load-docs-btn" type="button" class="secondary-btn load-more-btn hidden">Load more</button>
       </section>
 
-      <section class="panel tools-panel">
-        <div class="panel-header">
-          <h2>Tools</h2>
-          <button id="refresh-tools-btn" type="button" class="secondary-btn">Refresh</button>
-        </div>
-
-        <div id="tools-summary" class="tool-summary muted">Loading tools...</div>
-        <input
-          id="tool-search"
-          class="compact-input"
-          type="search"
-          placeholder="Search tools"
-        />
-        <div id="tools-list" class="tools-list"></div>
-      </section>
     </aside>
 
     <main class="main-content">
@@ -106,6 +91,7 @@
 
         <div class="workspace-tabs" role="tablist" aria-label="Workspace views">
           <button type="button" class="workspace-tab active" data-workspace-tab="trace" aria-selected="true">Trace</button>
+          <button type="button" class="workspace-tab" data-workspace-tab="tools" aria-selected="false">Tools</button>
           <button type="button" class="workspace-tab" data-workspace-tab="history" aria-selected="false">History</button>
           <button type="button" class="workspace-tab" data-workspace-tab="feedback" aria-selected="false">Feedback</button>
           <button type="button" class="workspace-tab" data-workspace-tab="evals" aria-selected="false">Evals</button>
@@ -155,6 +141,24 @@
           </section>
         </div>
 
+        <div class="workspace-tab-panel" data-workspace-panel="tools">
+          <section class="trace-shell tools-workspace-shell">
+            <div class="trace-panel-header compact">
+              <h2>Tools</h2>
+              <button id="refresh-tools-btn" type="button" class="secondary-btn">Refresh</button>
+            </div>
+
+            <div id="tools-summary" class="tool-summary muted">Loading tools...</div>
+            <input
+              id="tool-search"
+              class="compact-input"
+              type="search"
+              placeholder="Search tools"
+            />
+            <div id="tools-list" class="tools-list"></div>
+          </section>
+        </div>
+
         <div class="workspace-tab-panel" data-workspace-panel="history">
           <section class="trace-shell recent-traces-shell">
             <div class="trace-panel-header compact">
@@ -200,6 +204,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=15"></script>
+  <script src="/static/chat.js?v=16"></script>
 </body>
 </html>
