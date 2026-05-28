@@ -1,9 +1,25 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from functools import wraps
 import sqlite3
 import threading
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar, cast
+
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def _locked(method: F) -> F:
+    """Serialize access to the shared SQLite connection."""
+
+    @wraps(method)
+    def wrapper(self: "SQLiteStore", *args: Any, **kwargs: Any) -> Any:
+        with self._lock:
+            return method(self, *args, **kwargs)
+
+    return cast(F, wrapper)
 
 
 FEEDBACK_ISSUE_TYPES = {
@@ -44,6 +60,7 @@ class SQLiteStore:
                 self._connection.row_factory = sqlite3.Row
         return self._connection
 
+    @_locked
     def initialize(self) -> None:
         conn = self.connect()
 
@@ -183,6 +200,8 @@ class SQLiteStore:
             )
 
         conn.commit()
+
+    @_locked
     def ensure_session(self, session_id: str) -> None:
         conn = self.connect()
         conn.execute(
@@ -195,6 +214,7 @@ class SQLiteStore:
             (session_id,))
         conn.commit()
 
+    @_locked
     def insert_conversation_turn(self, session_id: str, role: str, content: str) -> None:
         conn = self.connect()
         self.ensure_session(session_id)
@@ -207,6 +227,7 @@ class SQLiteStore:
         )
         conn.commit()
 
+    @_locked
     def get_recent_conversations(self, session_id: str, limit: int = 6) -> list[dict[str, Any]]:
         conn = self.connect()
         rows = conn.execute(
@@ -228,6 +249,7 @@ class SQLiteStore:
             for row in reversed(rows)
         ]
 
+    @_locked
     def insert_memory_item(
         self,
         *,
@@ -271,6 +293,7 @@ class SQLiteStore:
         conn.commit()
         return int(row["memory_id"])
 
+    @_locked
     def list_memory_items(
         self,
         *,
@@ -306,6 +329,7 @@ class SQLiteStore:
             ).fetchall()
         return [self._memory_row_to_dict(row) for row in rows]
 
+    @_locked
     def touch_memory_items(self, memory_ids: list[int]) -> None:
         if not memory_ids:
             return
@@ -336,11 +360,13 @@ class SQLiteStore:
             "last_accessed_at": row["last_accessed_at"],
         }
 
+    @_locked
     def health_check(self) -> bool:
         conn = self.connect()
         row = conn.execute("SELECT 1 AS ok").fetchone()
         return row is not None and row["ok"] == 1
 
+    @_locked
     def upsert_document(self,
                         doc_id:str,
                         source_path:str,
@@ -364,11 +390,13 @@ class SQLiteStore:
         )
         conn.commit()
 
+    @_locked
     def delete_chunks_for_doc(self, doc_id: str) -> None:
         conn = self.connect()
         conn.execute("DELETE FROM chunks WHERE doc_id = ?",(doc_id,))
         conn.commit()
 
+    @_locked
     def insert_chunks(self, chunks: list[dict[str, Any]]) -> None:
         if not chunks:
             return
@@ -382,6 +410,7 @@ class SQLiteStore:
         )
         conn.commit()
 
+    @_locked
     def list_documents(self) -> list[dict[str, Any]]:
         conn= self.connect()
         rows= conn.execute(
@@ -404,6 +433,7 @@ class SQLiteStore:
             for row in rows
         ]
 
+    @_locked
     def insert_trace(self,
                      session_id: str,   
                      query:str,
@@ -425,6 +455,7 @@ class SQLiteStore:
         conn.commit()
         return int(cursor.lastrowid)
 
+    @_locked
     def get_trace(self, trace_id: int) -> dict[str, Any] | None:
         conn = self.connect()
         row = conn.execute(
@@ -440,6 +471,7 @@ class SQLiteStore:
             return None
         return dict(row)
 
+    @_locked
     def list_traces(self, limit: int = 20) -> list[dict[str, Any]]:
         conn = self.connect()
         rows = conn.execute(
@@ -453,6 +485,7 @@ class SQLiteStore:
         ).fetchall()
         return [dict(row) for row in rows]
 
+    @_locked
     def upsert_answer_feedback(
         self,
         *,
@@ -515,6 +548,7 @@ class SQLiteStore:
         conn.commit()
         return dict(row)
 
+    @_locked
     def get_answer_feedback_for_trace(self, trace_id: int) -> dict[str, Any] | None:
         conn = self.connect()
         row = conn.execute(
@@ -529,6 +563,7 @@ class SQLiteStore:
             return None
         return dict(row)
 
+    @_locked
     def list_answer_feedback(
         self,
         *,
@@ -583,6 +618,7 @@ class SQLiteStore:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    @_locked
     def get_answer_feedback_summary(self, *, recent_limit: int = 5) -> dict[str, Any]:
         conn = self.connect()
         summary = conn.execute(
@@ -624,6 +660,7 @@ class SQLiteStore:
             ),
         }
 
+    @_locked
     def list_chunks_for_retrieval(self,doc_id:str | None=None) -> list[dict]:
         conn = self.connect()
         if doc_id:
@@ -682,6 +719,7 @@ class SQLiteStore:
             for row in rows
         ]
 
+    @_locked
     def get_chunk_by_id(self, chunk_id: str) -> dict[str, Any] | None:
         conn = self.connect()
         row = conn.execute(
@@ -709,6 +747,7 @@ class SQLiteStore:
         
         return self._chunk_row_to_dict(row)
 
+    @_locked
     def get_neighbor_chunks(self, 
                             doc_id:str,
                             chunk_index:int,
@@ -766,6 +805,7 @@ class SQLiteStore:
         "source_path": row["source_path"],
     }
         
+    @_locked
     def list_documents_for_routing(self) -> list[dict[str, Any]]:
         conn=self.connect()
         rows=conn.execute(
@@ -796,6 +836,7 @@ class SQLiteStore:
             for row in rows
         ]
 
+    @_locked
     def close(self) -> None:
         if self._connection is not None:
             self._connection.close()

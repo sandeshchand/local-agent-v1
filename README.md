@@ -10,6 +10,7 @@ Completed:
 
 - Local Ollama chat and embedding integration
 - SQLite metadata, conversation memory, and trace storage
+- Serialized SQLite access for threaded web requests
 - Long-term project memory with relevance-ranked retrieval
 - Qdrant vector storage
 - PDF parsing, cleanup, chunking, and ingestion

@@ -22,13 +22,25 @@ def main() -> None:
 
             store.list_traces(limit=1)
 
-            def save_feedback(rating: str) -> str:
+            def exercise_store(index: int) -> str:
+                rating = "like" if index % 2 == 0 else "dislike"
                 row = store.upsert_answer_feedback(trace_id=trace_id, rating=rating)
+                store.insert_conversation_turn(
+                    session_id="threaded-session",
+                    role="user",
+                    content=f"turn {index}",
+                )
+                store.list_traces(limit=3)
+                store.get_answer_feedback_summary()
+                store.get_recent_conversations("threaded-session", limit=3)
+                assert store.health_check()
                 return row["rating"]
 
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                assert executor.submit(save_feedback, "like").result() == "like"
-                assert executor.submit(save_feedback, "dislike").result() == "dislike"
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                ratings = list(executor.map(exercise_store, range(32)))
+
+            assert set(ratings).issubset({"like", "dislike"})
+            store.upsert_answer_feedback(trace_id=trace_id, rating="dislike")
 
             feedback_items = store.list_answer_feedback(limit=5)
             assert len(feedback_items) == 1
