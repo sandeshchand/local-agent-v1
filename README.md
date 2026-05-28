@@ -28,6 +28,7 @@ Completed:
 - Tool-call guardrails with allow, deny, and needs-approval decisions
 - Generic MCP tool adapter with approval-required-by-default registration
 - Read-only File MCP connector for allowed local roots
+- Read-only SQLite MCP connector for local database inspection
 - Read-only current weather web tool
 - Web feedback analytics for answer review
 - Draft eval candidate creation from disliked answers
@@ -59,6 +60,7 @@ User query
 -> ToolRouter
    -> guardrails when a tool call is selected
    -> MCP-style tools through the guarded tool registry
+   -> read-only database inspection through SQLite MCP tools
    -> current weather web tool for weather/current-temperature questions
 -> DocumentRouter
 -> RetrievalService
@@ -257,6 +259,7 @@ Current behavior:
 - MCP tools require approval by default,
 - read-only MCP tools can be allowed when their metadata declares read-only behavior,
 - read-only File MCP tools are registered as `mcp.local_files.*`,
+- read-only SQLite MCP tools are registered as `mcp.sqlite.*`,
 - registered tools are visible through `GET /api/tools`,
 - MCP output is treated as tool context, not PDF citation evidence.
 
@@ -265,6 +268,15 @@ Example File MCP questions:
 ```cmd
 venv\Scripts\python.exe app\main.py ask --query "List files in docs"
 venv\Scripts\python.exe app\main.py ask --query "Read file docs/MCP.md"
+```
+
+Example SQLite MCP questions:
+
+```cmd
+venv\Scripts\python.exe app\main.py ask --query "List database tables"
+venv\Scripts\python.exe app\main.py ask --query "Preview table traces limit 5"
+venv\Scripts\python.exe app\main.py ask --query "Show recent traces from database"
+venv\Scripts\python.exe app\main.py ask --query "Show feedback summary"
 ```
 
 Detailed implementation notes:
@@ -413,7 +425,7 @@ Run the standard local regression gate:
 venv\Scripts\python.exe scripts\run_regression.py
 ```
 
-This runs compile checks, memory smoke, guardrails smoke, File MCP smoke, MCP adapter smoke, tool approval UI smoke, weather-tool smoke, and focused RAG eval.
+This runs compile checks, memory smoke, guardrails smoke, File MCP smoke, SQLite MCP smoke, MCP adapter smoke, tool approval UI smoke, weather-tool smoke, and focused RAG eval.
 It also runs SQLite, feedback analytics, feedback issue tag, feedback-to-eval, eval candidate review, and eval candidate run smoke checks.
 
 Run compile and smoke checks only:

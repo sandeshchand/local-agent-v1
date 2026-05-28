@@ -511,7 +511,75 @@ Evidence facts:
         tool = result.get("tool") or payload.get("tool_name") or "mcp_tool"
         if result.get("success") is False:
             error = result.get("error") or "The tool could not complete the request."
-            return f"The MCP file tool could not complete the request: {error}"
+            return f"The MCP tool could not complete the request: {error}"
+
+        if tool == "list_tables":
+            tables = result.get("tables") or []
+            if not tables:
+                return "No SQLite tables were found."
+            lines = [
+                f"- {table.get('name')} ({table.get('row_count', 0)} rows)"
+                for table in tables
+            ]
+            return "SQLite tables:\n" + "\n".join(lines)
+
+        if tool == "preview_table":
+            table = result.get("table") or "the requested table"
+            rows = result.get("rows") or []
+            columns = result.get("columns") or []
+            if not rows:
+                column_text = ", ".join(columns) if columns else "no columns"
+                return f"Table {table} has no rows. Columns: {column_text}."
+
+            lines = []
+            for index, row in enumerate(rows[:10], start=1):
+                if isinstance(row, dict):
+                    values = "; ".join(
+                        f"{key}={self._short_tool_value(value)}"
+                        for key, value in row.items()
+                    )
+                else:
+                    values = self._short_tool_value(row)
+                lines.append(f"{index}. {values}")
+            return f"Preview of SQLite table {table}:\n" + "\n".join(lines)
+
+        if tool == "recent_traces":
+            traces = result.get("traces") or []
+            if not traces:
+                return "No recent traces were found in SQLite."
+            lines = []
+            for trace in traces[:20]:
+                if not isinstance(trace, dict):
+                    continue
+                trace_id = trace.get("trace_id")
+                status = ""
+                verification = trace.get("verification_json")
+                if isinstance(verification, str) and verification:
+                    try:
+                        status = json.loads(verification).get("status") or ""
+                    except json.JSONDecodeError:
+                        status = ""
+                query = self._short_tool_value(trace.get("query") or "")
+                lines.append(f"- Trace {trace_id}: {status or 'no verifier'} - {query}")
+            return "Recent SQLite traces:\n" + "\n".join(lines)
+
+        if tool == "feedback_summary":
+            total = result.get("total_count", 0)
+            likes = result.get("like_count", 0)
+            dislikes = result.get("dislike_count", 0)
+            rate = float(result.get("dislike_rate") or 0.0)
+            answer = (
+                f"Feedback summary: {total} total, {likes} liked, "
+                f"{dislikes} disliked, dislike rate {rate:.0%}."
+            )
+            issue_counts = result.get("issue_counts") or {}
+            if issue_counts:
+                issue_text = ", ".join(
+                    f"{issue}: {count}"
+                    for issue, count in issue_counts.items()
+                )
+                answer += f" Issue counts: {issue_text}."
+            return answer
 
         if tool == "list_directory":
             entries = result.get("entries") or []
@@ -547,6 +615,12 @@ Evidence facts:
             return answer
 
         return ""
+
+    def _short_tool_value(self, value: object, max_length: int = 120) -> str:
+        text = str(value).replace("\n", " ").strip()
+        if len(text) <= max_length:
+            return text
+        return f"{text[: max_length - 3]}..."
 
     def _single_source_results(self, query: str, results: list[dict]) -> list[dict]:
         if not results or self._is_multi_source_query(query):

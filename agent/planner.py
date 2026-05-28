@@ -62,6 +62,10 @@ class Planner:
                 tool_args={"location": location},
             )
 
+        sqlite_tool_plan = self._sqlite_tool_plan(query)
+        if sqlite_tool_plan is not None:
+            return sqlite_tool_plan
+
         file_tool_plan = self._file_tool_plan(query)
         if file_tool_plan is not None:
             return file_tool_plan
@@ -106,6 +110,101 @@ class Planner:
                 )
                 return re.sub(r"\s+", " ", location).strip()
         return ""
+
+    def _sqlite_tool_plan(self, query: str) -> PlanDecision | None:
+        q = query.strip()
+        q_lower = q.lower()
+
+        if self._is_sqlite_table_list_query(q_lower):
+            return PlanDecision(
+                mode="tool_only",
+                reasoning="Detected read-only SQLite table listing request.",
+                tool_name="mcp.sqlite.list_tables",
+                tool_args={},
+            )
+
+        if self._is_sqlite_feedback_summary_query(q_lower):
+            return PlanDecision(
+                mode="tool_only",
+                reasoning="Detected read-only SQLite feedback summary request.",
+                tool_name="mcp.sqlite.feedback_summary",
+                tool_args={},
+            )
+
+        if self._is_sqlite_recent_traces_query(q_lower):
+            return PlanDecision(
+                mode="tool_only",
+                reasoning="Detected read-only SQLite recent traces request.",
+                tool_name="mcp.sqlite.recent_traces",
+                tool_args={"limit": self._limit_from_query(q, default=10)},
+            )
+
+        table = self._sqlite_table_from_query(q)
+        if table:
+            return PlanDecision(
+                mode="tool_only",
+                reasoning="Detected read-only SQLite table preview request.",
+                tool_name="mcp.sqlite.preview_table",
+                tool_args={
+                    "table": table,
+                    "limit": self._limit_from_query(q, default=5),
+                },
+            )
+
+        return None
+
+    def _is_sqlite_table_list_query(self, query_lower: str) -> bool:
+        has_db_target = any(term in query_lower for term in ["database", "sqlite", "db"])
+        explicit_table_list = any(term in query_lower for term in ["list tables", "show tables"])
+        return explicit_table_list or (has_db_target and "tables" in query_lower)
+
+    def _is_sqlite_feedback_summary_query(self, query_lower: str) -> bool:
+        if "feedback summary" in query_lower or "feedback analytics" in query_lower:
+            return True
+        has_feedback = "feedback" in query_lower
+        has_summary = any(term in query_lower for term in ["summary", "stats", "statistics", "counts"])
+        return has_feedback and has_summary
+
+    def _is_sqlite_recent_traces_query(self, query_lower: str) -> bool:
+        has_trace = any(term in query_lower for term in ["recent traces", "latest traces", "show traces"])
+        has_db_context = any(term in query_lower for term in ["database", "sqlite", "db", "trace"])
+        return has_trace and has_db_context
+
+    def _sqlite_table_from_query(self, query: str) -> str:
+        q_lower = query.lower()
+        if not any(term in q_lower for term in ["database", "sqlite", "db", "table"]):
+            return ""
+        if not any(term in q_lower for term in ["preview", "show", "inspect", "view"]):
+            return ""
+
+        match = re.search(
+            r"\b(?:table|from)\s+([A-Za-z_][A-Za-z0-9_]*)\b",
+            query,
+            flags=re.IGNORECASE,
+        )
+        if match:
+            return match.group(1)
+
+        known_tables = [
+            "answer_feedback",
+            "chunks",
+            "conversation_turns",
+            "documents",
+            "healthcheck",
+            "memory_items",
+            "sessions",
+            "traces",
+        ]
+        for table in known_tables:
+            if table in q_lower:
+                return table
+        return ""
+
+    def _limit_from_query(self, query: str, default: int) -> int:
+        match = re.search(r"\b(?:limit|top|last|recent)\s+(\d{1,2})\b", query, flags=re.IGNORECASE)
+        if not match:
+            return default
+        return max(1, min(int(match.group(1)), 50))
 
     def _file_tool_plan(self, query: str) -> PlanDecision | None:
         q = query.strip()

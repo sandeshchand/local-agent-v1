@@ -22,6 +22,7 @@ COMPILE_TARGETS = [
     "app/eval_runner.py",
     "app/file_mcp.py",
     "app/mcp_adapter.py",
+    "app/sqlite_mcp.py",
     "app/tool_registry.py",
     "app/weather_tool.py",
     "retrieval/answer_service.py",
@@ -36,6 +37,7 @@ COMPILE_TARGETS = [
     "scripts/smoke_guardrails.py",
     "scripts/smoke_file_mcp.py",
     "scripts/smoke_mcp_adapter.py",
+    "scripts/smoke_sqlite_mcp.py",
     "scripts/smoke_tool_approval_ui.py",
     "scripts/smoke_weather_tool.py",
     "scripts/eval_rag_quality.py",
@@ -106,6 +108,7 @@ def main() -> None:
     run_step("Guardrails smoke", [sys.executable, "scripts/smoke_guardrails.py"])
     run_step("File MCP smoke", [sys.executable, "scripts/smoke_file_mcp.py"])
     run_step("MCP adapter smoke", [sys.executable, "scripts/smoke_mcp_adapter.py"])
+    run_step("SQLite MCP smoke", [sys.executable, "scripts/smoke_sqlite_mcp.py"])
     run_step("Tool approval UI smoke", [sys.executable, "scripts/smoke_tool_approval_ui.py"])
     run_step("Weather tool smoke", [sys.executable, "scripts/smoke_weather_tool.py"])
 

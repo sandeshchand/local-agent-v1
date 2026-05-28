@@ -12,6 +12,7 @@ from app.dependencies import  AppDependencies
 from app.file_mcp import ReadOnlyFileMCPClient
 from app.mcp_adapter import MCPToolAdapter
 from app.ollama_client import OllamaChatClient, OllamaEmbeddingClient
+from app.sqlite_mcp import ReadOnlySQLiteMCPClient
 from app.tool_registry import ToolRegistry
 from app.weather_tool import CurrentWeatherTool
 from retrieval.answer_service import AnswerService
@@ -84,6 +85,10 @@ def bootstrap_app(env_file: str | Path = ".env") -> AppDependencies:
             server_name="local_files",
             client=file_mcp_client,
         ).register_tools(tool_registry)
+    MCPToolAdapter(
+        server_name="sqlite",
+        client=ReadOnlySQLiteMCPClient(sqlite_store),
+    ).register_tools(tool_registry)
 
     memory_manager = MemoryManager(sqlite_store=sqlite_store)
     verifier = Verifier()

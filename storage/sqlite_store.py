@@ -33,6 +33,18 @@ FEEDBACK_ISSUE_TYPES = {
 }
 
 
+def _quote_identifier(identifier: str) -> str:
+    return f'"{identifier.replace(chr(34), chr(34) + chr(34))}"'
+
+
+def _sqlite_value(value: Any) -> Any:
+    if isinstance(value, bytes):
+        return f"<{len(value)} bytes>"
+    if isinstance(value, str) and len(value) > 500:
+        return f"{value[:500]}..."
+    return value
+
+
 def normalize_feedback_issue_type(issue_type: str | None) -> str:
     normalized = (issue_type or "").strip()
     if normalized not in FEEDBACK_ISSUE_TYPES:
@@ -835,6 +847,60 @@ class SQLiteStore:
             }
             for row in rows
         ]
+
+    @_locked
+    def list_tables(self) -> list[dict[str, Any]]:
+        conn = self.connect()
+        rows = conn.execute(
+            """
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table'
+              AND name NOT LIKE 'sqlite_%'
+            ORDER BY name
+            """
+        ).fetchall()
+
+        tables: list[dict[str, Any]] = []
+        for row in rows:
+            table_name = row["name"]
+            count_row = conn.execute(
+                f"SELECT COUNT(*) AS row_count FROM {_quote_identifier(table_name)}"
+            ).fetchone()
+            tables.append(
+                {
+                    "name": table_name,
+                    "row_count": int(count_row["row_count"] or 0),
+                }
+            )
+        return tables
+
+    @_locked
+    def preview_table(self, table_name: str, limit: int = 5) -> dict[str, Any]:
+        normalized_table = (table_name or "").strip()
+        allowed_tables = {table["name"] for table in self.list_tables()}
+        if normalized_table not in allowed_tables:
+            raise ValueError(f"Unknown table: {table_name}")
+
+        bounded_limit = max(1, min(int(limit), 50))
+        conn = self.connect()
+        quoted_table = _quote_identifier(normalized_table)
+        column_rows = conn.execute(f"PRAGMA table_info({quoted_table})").fetchall()
+        columns = [row["name"] for row in column_rows]
+        rows = conn.execute(
+            f"SELECT * FROM {quoted_table} LIMIT ?",
+            (bounded_limit,),
+        ).fetchall()
+
+        return {
+            "table": normalized_table,
+            "columns": columns,
+            "limit": bounded_limit,
+            "rows": [
+                {key: _sqlite_value(row[key]) for key in row.keys()}
+                for row in rows
+            ],
+        }
 
     @_locked
     def close(self) -> None:

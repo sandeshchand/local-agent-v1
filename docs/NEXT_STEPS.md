@@ -64,6 +64,7 @@ Status:
 - A narrow read-only current weather web tool is implemented.
 - A generic MCP adapter layer is implemented in `app/mcp_adapter.py`.
 - A read-only local File MCP connector is implemented in `app/file_mcp.py`.
+- A read-only SQLite inspection connector is implemented in `app/sqlite_mcp.py`.
 - Registered tools are visible through `GET /api/tools`.
 - Registered tools are visible in the UI.
 - The UI can approve approval-required tool calls for one request.
@@ -72,6 +73,7 @@ Status:
 What to implement:
 
 - A concrete MCP client wrapper for the chosen transport.
+- Optional browser smoke coverage for MCP tool answers in the UI.
 - Stronger path policy before write/delete file tools.
 
 Important rule:
@@ -117,6 +119,7 @@ It runs:
 - Python compile checks,
 - memory smoke test,
 - guardrails smoke test,
+- File MCP and SQLite MCP smoke tests,
 - weather tool smoke test,
 - focused RAG eval,
 - optional full RAG eval.

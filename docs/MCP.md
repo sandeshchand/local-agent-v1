@@ -1,6 +1,6 @@
 # MCP Integration
 
-MCP V1 adds a generic adapter layer plus a read-only local File MCP-style connector. It does not grant file write/delete access.
+MCP V1 adds a generic adapter layer plus read-only local connectors for files and SQLite inspection. It does not grant file write/delete access or arbitrary SQL execution.
 
 ## Current Scope
 
@@ -14,14 +14,17 @@ Implemented:
 - approval-required-by-default behavior for MCP tools
 - read-only MCP tool support through `readOnlyHint` or `read_only`
 - read-only local file tools for allowed roots
+- read-only SQLite inspection tools for tables, traces, and feedback
 - `/api/tools` endpoint for registered tool visibility
 - MCP adapter smoke test
 - File MCP smoke test
+- SQLite MCP smoke test
 
 Not implemented yet:
 
 - actual stdio/SSE MCP server process management
 - write/delete file tools
+- arbitrary SQL execution
 - broad web search MCP tools
 
 ## Design
@@ -51,6 +54,15 @@ The local read-only file connector registers:
 mcp.local_files.list_directory
 mcp.local_files.read_text_file
 mcp.local_files.file_info
+```
+
+The local read-only SQLite connector registers:
+
+```text
+mcp.sqlite.list_tables
+mcp.sqlite.preview_table
+mcp.sqlite.recent_traces
+mcp.sqlite.feedback_summary
 ```
 
 ## How To Use File MCP Tools
@@ -108,6 +120,35 @@ Do not add broad roots like `.` or your home directory unless you are comfortabl
 
 Even inside an allowed root, File MCP blocks hidden files and common secret/key files such as `.env`, private key names, and `.pem`/`.key` files. Template files such as `.env.example` remain readable.
 
+## How To Use SQLite MCP Tools
+
+SQLite MCP tools inspect the local app database through narrow read-only methods on `SQLiteStore`.
+
+Example CLI questions:
+
+```cmd
+venv\Scripts\python.exe app\main.py ask --query "List database tables"
+venv\Scripts\python.exe app\main.py ask --query "Preview table traces limit 5"
+venv\Scripts\python.exe app\main.py ask --query "Show recent traces from database"
+venv\Scripts\python.exe app\main.py ask --query "Show feedback summary"
+```
+
+Example chat UI questions:
+
+```text
+List database tables
+Preview table traces limit 5
+Show recent traces from database
+Show feedback summary
+```
+
+SQLite MCP intentionally does not expose arbitrary SQL. Supported actions are:
+
+- list user tables and row counts,
+- preview an existing table with a small limit,
+- show recent saved traces,
+- summarize stored like/dislike feedback.
+
 ## Safety Rule
 
 MCP tools default to:
@@ -124,7 +165,7 @@ read_only = true
 readOnly = true
 ```
 
-All MCP tools still pass through the existing guardrail policy before execution. File MCP tools also enforce path allowlists.
+All MCP tools still pass through the existing guardrail policy before execution. File MCP tools also enforce path allowlists. SQLite MCP tools are read-only and use predefined store methods instead of raw SQL from the user.
 
 ## Evidence Boundary
 
@@ -153,9 +194,10 @@ Each item includes:
 Run:
 
 ```cmd
-venv\Scripts\python.exe -m py_compile app\mcp_adapter.py app\file_mcp.py agent\schemas.py agent\orchestrator.py app\web.py
+venv\Scripts\python.exe -m py_compile app\mcp_adapter.py app\file_mcp.py app\sqlite_mcp.py agent\schemas.py agent\orchestrator.py app\web.py
 venv\Scripts\python.exe scripts\smoke_mcp_adapter.py
 venv\Scripts\python.exe scripts\smoke_file_mcp.py
+venv\Scripts\python.exe scripts\smoke_sqlite_mcp.py
 ```
 
 Or run the local smoke suite:

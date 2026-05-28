@@ -2,7 +2,7 @@
 
 Use the regression runner before commits and before pushing risky changes.
 
-This is a local script. It uses the in-process read-only File MCP smoke test and does not require an external MCP server.
+This is a local script. It uses in-process read-only MCP smoke tests and does not require an external MCP server.
 
 ## Default Check
 
@@ -19,6 +19,7 @@ Default behavior:
 - SQLite threading smoke test for serialized store access.
 - Guardrails smoke test.
 - File MCP smoke test.
+- SQLite MCP smoke test.
 - MCP adapter smoke test.
 - Tool approval UI smoke test.
 - Weather tool smoke test.
