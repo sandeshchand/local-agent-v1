@@ -87,6 +87,10 @@ def main() -> None:
             assert tables_plan.mode == "tool_only"
             assert tables_plan.tool_name == list_tool
 
+            typo_tables_plan = planner.plan("List databse tables")
+            assert typo_tables_plan.mode == "tool_only"
+            assert typo_tables_plan.tool_name == list_tool
+
             feedback_plan = planner.plan("Show feedback summary")
             assert feedback_plan.mode == "tool_only"
             assert feedback_plan.tool_name == feedback_tool

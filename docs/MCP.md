@@ -142,6 +142,8 @@ Show recent traces from database
 Show feedback summary
 ```
 
+If a database question returns PDF content, the query probably routed to normal retrieval. Use an explicit database prompt such as `List database tables` or `Show recent traces from database`, then check the trace mode is `tool_only`.
+
 SQLite MCP intentionally does not expose arbitrary SQL. Supported actions are:
 
 - list user tables and row counts,

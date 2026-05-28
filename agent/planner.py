@@ -113,7 +113,7 @@ class Planner:
 
     def _sqlite_tool_plan(self, query: str) -> PlanDecision | None:
         q = query.strip()
-        q_lower = q.lower()
+        q_lower = self._normalize_sqlite_control_query(q.lower())
 
         if self._is_sqlite_table_list_query(q_lower):
             return PlanDecision(
@@ -171,7 +171,7 @@ class Planner:
         return has_trace and has_db_context
 
     def _sqlite_table_from_query(self, query: str) -> str:
-        q_lower = query.lower()
+        q_lower = self._normalize_sqlite_control_query(query.lower())
         if not any(term in q_lower for term in ["database", "sqlite", "db", "table"]):
             return ""
         if not any(term in q_lower for term in ["preview", "show", "inspect", "view"]):
@@ -199,6 +199,20 @@ class Planner:
             if table in q_lower:
                 return table
         return ""
+
+    def _normalize_sqlite_control_query(self, query_lower: str) -> str:
+        replacements = {
+            "data base": "database",
+            "data-base": "database",
+            "databse": "database",
+            "datbase": "database",
+            "sql lite": "sqlite",
+            "sqlite3": "sqlite",
+        }
+        normalized = query_lower
+        for source, target in replacements.items():
+            normalized = normalized.replace(source, target)
+        return re.sub(r"\s+", " ", normalized).strip()
 
     def _limit_from_query(self, query: str, default: int) -> int:
         match = re.search(r"\b(?:limit|top|last|recent)\s+(\d{1,2})\b", query, flags=re.IGNORECASE)
