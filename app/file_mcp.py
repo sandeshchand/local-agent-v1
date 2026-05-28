@@ -21,6 +21,24 @@ TEXT_SUFFIXES = {
     ".yml",
 }
 
+SENSITIVE_FILE_NAMES = {
+    ".env",
+    "credentials",
+    "credentials.json",
+    "id_dsa",
+    "id_ecdsa",
+    "id_ed25519",
+    "id_rsa",
+    "secrets.json",
+}
+
+SENSITIVE_SUFFIXES = {
+    ".key",
+    ".p12",
+    ".pem",
+    ".pfx",
+}
+
 
 class ReadOnlyFileMCPClient:
     """Small read-only file client that exposes MCP-style file tools."""
@@ -142,6 +160,8 @@ class ReadOnlyFileMCPClient:
             return self._failure("read_text_file", path, "Path does not exist.")
         if not target.is_file():
             return self._failure("read_text_file", path, "Path is not a file.")
+        if self._is_sensitive_path(target):
+            return self._failure("read_text_file", path, "Hidden or sensitive files are not readable.")
         if not self._is_text_file(target):
             return self._failure("read_text_file", path, "Only text-like files are readable through this tool.")
 
@@ -164,6 +184,8 @@ class ReadOnlyFileMCPClient:
         target = self._resolve_allowed(path)
         if not target.exists():
             return self._failure("file_info", path, "Path does not exist.")
+        if self._is_sensitive_path(target):
+            return self._failure("file_info", path, "Hidden or sensitive files are not accessible.")
 
         stat = target.stat()
         return {
@@ -200,6 +222,16 @@ class ReadOnlyFileMCPClient:
         if path.name.lower().endswith(".env.example"):
             return True
         return suffix == "" and path.stat().st_size <= self.max_read_bytes
+
+    def _is_sensitive_path(self, path: Path) -> bool:
+        lower_name = path.name.lower()
+        if lower_name.endswith(".env.example"):
+            return False
+        if any(part.startswith(".") for part in path.parts):
+            return True
+        if lower_name in SENSITIVE_FILE_NAMES:
+            return True
+        return path.suffix.lower() in SENSITIVE_SUFFIXES
 
     def _root_entry(self, root: Path) -> dict[str, Any]:
         return {

@@ -34,6 +34,9 @@ def main() -> None:
         data_dir.mkdir()
         (docs_dir / "MCP.md").write_text("# MCP\n\nRead-only file connector.", encoding="utf-8")
         (data_dir / "sample.json").write_text('{"ok": true}', encoding="utf-8")
+        (data_dir / ".env").write_text("TOKEN=hidden", encoding="utf-8")
+        (data_dir / ".env.example").write_text("TOKEN=example", encoding="utf-8")
+        (data_dir / "secret.pem").write_text("private key", encoding="utf-8")
         (base_dir / "secret.env").write_text("TOKEN=hidden", encoding="utf-8")
 
         client = ReadOnlyFileMCPClient(
@@ -66,11 +69,51 @@ def main() -> None:
         assert denied_payload["result"]["success"] is False
         assert "outside allowed" in denied_payload["result"]["error"]
 
+        hidden_result = registry.execute(read_tool, path="data/.env")
+        hidden_payload = json.loads(hidden_result.output or "{}")
+        assert hidden_payload["result"]["success"] is False
+        assert "sensitive" in hidden_payload["result"]["error"].lower()
+
+        hidden_info = registry.execute(info_tool, path="data/.env")
+        hidden_info_payload = json.loads(hidden_info.output or "{}")
+        assert hidden_info_payload["result"]["success"] is False
+        assert "sensitive" in hidden_info_payload["result"]["error"].lower()
+
+        key_result = registry.execute(read_tool, path="data/secret.pem")
+        key_payload = json.loads(key_result.output or "{}")
+        assert key_payload["result"]["success"] is False
+        assert "sensitive" in key_payload["result"]["error"].lower()
+
+        example_result = registry.execute(read_tool, path="data/.env.example")
+        example_payload = json.loads(example_result.output or "{}")
+        assert example_payload["result"]["success"] is True
+        assert "TOKEN=example" in example_payload["result"]["content"]
+
         planner = Planner(chat_client=ChatClientStub())
         read_plan = planner.plan("Read file docs/MCP.md")
         assert read_plan.mode == "tool_only"
         assert read_plan.tool_name == read_tool
         assert read_plan.tool_args["path"] == "docs/MCP.md"
+
+        trailing_read_plan = planner.plan("Read file docs/MCP.md please")
+        assert trailing_read_plan.mode == "tool_only"
+        assert trailing_read_plan.tool_name == read_tool
+        assert trailing_read_plan.tool_args["path"] == "docs/MCP.md"
+
+        metadata_plan = planner.plan("Show metadata for file docs/MCP.md")
+        assert metadata_plan.mode == "tool_only"
+        assert metadata_plan.tool_name == info_tool
+        assert metadata_plan.tool_args["path"] == "docs/MCP.md"
+
+        hidden_plan = planner.plan("Read file data/.env")
+        assert hidden_plan.mode == "tool_only"
+        assert hidden_plan.tool_name == read_tool
+        assert hidden_plan.tool_args["path"] == "data/.env"
+
+        key_plan = planner.plan("Read file data/secret.pem")
+        assert key_plan.mode == "tool_only"
+        assert key_plan.tool_name == read_tool
+        assert key_plan.tool_args["path"] == "data/secret.pem"
 
         list_plan = planner.plan("List files in docs")
         assert list_plan.mode == "tool_only"

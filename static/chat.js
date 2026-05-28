@@ -1135,21 +1135,27 @@ function renderDocuments(docs) {
   container.innerHTML = "";
 
   if (!docs.length) {
-    container.innerHTML = `<div class="muted">No indexed documents found.</div>`;
+    container.appendChild(createElement("div", "muted", "No indexed documents found."));
     return;
   }
 
   for (const doc of docs) {
     const item = document.createElement("div");
     item.className = "doc-item";
-    item.innerHTML = `
-      <div class="doc-title">${doc.title}</div>
-      <div class="doc-meta"><strong>Pages:</strong> ${doc.page_count}</div>
-      <div class="doc-meta"><strong>Path:</strong> ${doc.source_path}</div>
-      <div class="doc-meta"><strong>Indexed:</strong> ${doc.indexed_at}</div>
-    `;
+
+    item.appendChild(createElement("div", "doc-title", doc.title || "Untitled"));
+    item.appendChild(documentMetaRow("Pages", doc.page_count));
+    item.appendChild(documentMetaRow("Path", doc.source_path));
+    item.appendChild(documentMetaRow("Indexed", doc.indexed_at));
     container.appendChild(item);
   }
+}
+
+function documentMetaRow(label, value) {
+  const row = createElement("div", "doc-meta");
+  row.appendChild(createElement("strong", "", `${label}: `));
+  row.appendChild(document.createTextNode(formatValue(value)));
+  return row;
 }
 
 async function loadDocuments() {
@@ -1159,7 +1165,8 @@ async function loadDocuments() {
   } catch (error) {
     const container = document.getElementById("documents-list");
     if (container) {
-      container.innerHTML = `<div class="error-text">Error loading documents: ${error.message}</div>`;
+      container.innerHTML = "";
+      container.appendChild(createElement("div", "error-text", `Error loading documents: ${error.message}`));
     }
   }
 }

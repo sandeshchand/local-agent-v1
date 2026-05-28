@@ -106,6 +106,8 @@ FILE_MCP_ROOTS=data,docs,test,README.md,pyproject.toml
 
 Do not add broad roots like `.` or your home directory unless you are comfortable exposing all readable files under that path to the local agent.
 
+Even inside an allowed root, File MCP blocks hidden files and common secret/key files such as `.env`, private key names, and `.pem`/`.key` files. Template files such as `.env.example` remain readable.
+
 ## Safety Rule
 
 MCP tools default to:

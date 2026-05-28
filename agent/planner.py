@@ -120,20 +120,20 @@ class Planner:
                 tool_args={"path": path, "max_entries": 100},
             )
 
-        if path and self._is_file_read_query(q_lower):
-            return PlanDecision(
-                mode="tool_only",
-                reasoning="Detected read-only file read request.",
-                tool_name="mcp.local_files.read_text_file",
-                tool_args={"path": path, "max_bytes": 20000},
-            )
-
         if path and self._is_file_info_query(q_lower):
             return PlanDecision(
                 mode="tool_only",
                 reasoning="Detected read-only file metadata request.",
                 tool_name="mcp.local_files.file_info",
                 tool_args={"path": path},
+            )
+
+        if path and self._is_file_read_query(q_lower):
+            return PlanDecision(
+                mode="tool_only",
+                reasoning="Detected read-only file read request.",
+                tool_name="mcp.local_files.read_text_file",
+                tool_args={"path": path, "max_bytes": 20000},
             )
 
         return None
@@ -155,15 +155,18 @@ class Planner:
     def _file_path_from_query(self, query: str) -> str:
         quoted = re.search(r"[`'\"]([^`'\"]+)[`'\"]", query)
         if quoted:
-            return quoted.group(1).strip()
+            return self._clean_file_path(quoted.group(1))
 
-        path_match = re.search(
-            r"((?:[\w.-]+[\\/])+[\w .()!\-]+|\b[\w.-]+\.(?:cfg|csv|ini|json|log|md|py|ps1|toml|txt|yaml|yml)\b)",
-            query,
-            flags=re.IGNORECASE,
-        )
-        if path_match:
-            return path_match.group(1).strip(" ?.!,:;")
+        file_patterns = [
+            r"((?:[\w.-]+[\\/])+\.[\w.-]+)\b",
+            r"((?:[\w.-]+[\\/])+[^?*!:;\r\n]*?\.(?:key|pem|p12|pfx))\b",
+            r"((?:[\w.-]+[\\/])+[^?*!:;\r\n]*?\.(?:cfg|csv|ini|json|log|md|py|ps1|toml|txt|yaml|yml))\b",
+            r"\b([\w.-]+\.(?:cfg|csv|ini|json|log|md|py|ps1|toml|txt|yaml|yml))\b",
+        ]
+        for pattern in file_patterns:
+            path_match = re.search(pattern, query, flags=re.IGNORECASE)
+            if path_match:
+                return self._clean_file_path(path_match.group(1))
 
         folder_match = re.search(
             r"\b(?:in|inside|under|from|of|directory|folder)\s+([A-Za-z0-9_.\\/\- ]+)",
@@ -171,8 +174,18 @@ class Planner:
             flags=re.IGNORECASE,
         )
         if folder_match:
-            path = folder_match.group(1)
-            path = re.sub(r"\b(?:please|now|using|with|through|via)\b.*$", "", path, flags=re.IGNORECASE)
-            return path.strip(" ?.!,:;")
+            return self._clean_file_path(folder_match.group(1))
 
         return ""
+
+    def _clean_file_path(self, path: str) -> str:
+        cleaned = path.strip().strip("`'\" ?.!,:;")
+        cleaned = re.sub(r"^(?:file|folder|directory)\s+", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(
+            r"\s+\b(?:please|now|today|kindly|using|with|through|via)\b.*$",
+            "",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(r"\s+\bfor\s+me\b.*$", "", cleaned, flags=re.IGNORECASE)
+        return cleaned.strip("`'\" ?.!,:;")
