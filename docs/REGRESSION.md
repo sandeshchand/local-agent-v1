@@ -17,6 +17,7 @@ Default behavior:
 - Python compile checks for core app, agent, retrieval, and smoke-test files.
 - Memory smoke test.
 - SQLite threading smoke test for serialized store access.
+- Document library pagination/search smoke test.
 - Guardrails smoke test.
 - File MCP smoke test.
 - SQLite MCP smoke test.

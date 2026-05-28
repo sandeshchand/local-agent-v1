@@ -15,6 +15,7 @@ from app.api_models import (
     ChatResponse,
     CitationItem,
     DocumentItem,
+    DocumentLibraryResponse,
     EvalCandidateCreateRequest,
     EvalCandidateItem,
     EvalCandidatePromoteResponse,
@@ -177,6 +178,31 @@ def list_tools():
 def list_documents():
     docs = get_sqlite_store().list_documents()
     return [DocumentItem(**doc) for doc in docs]
+
+
+@app.get("/api/library/documents", response_model=DocumentLibraryResponse)
+def list_library_documents(
+    q: str = "",
+    limit: int = 12,
+    offset: int = 0,
+):
+    bounded_limit = min(max(limit, 1), 100)
+    bounded_offset = max(offset, 0)
+    query = q.strip()
+    store = get_sqlite_store()
+    total = store.count_documents(search=query)
+    docs = store.list_documents(
+        search=query,
+        limit=bounded_limit,
+        offset=bounded_offset,
+    )
+    return DocumentLibraryResponse(
+        total=total,
+        limit=bounded_limit,
+        offset=bounded_offset,
+        query=query,
+        items=[DocumentItem(**doc) for doc in docs],
+    )
 
 
 @app.get("/api/traces", response_model=list[TraceSummary])

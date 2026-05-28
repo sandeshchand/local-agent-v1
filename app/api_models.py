@@ -180,6 +180,14 @@ class DocumentItem(BaseModel):
     indexed_at: str
 
 
+class DocumentLibraryResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    query: str = ""
+    items: list[DocumentItem]
+
+
 class HealthResponse(BaseModel):
     status: str
 

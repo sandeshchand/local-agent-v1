@@ -423,14 +423,42 @@ class SQLiteStore:
         conn.commit()
 
     @_locked
-    def list_documents(self) -> list[dict[str, Any]]:
+    def list_documents(
+        self,
+        *,
+        search: str = "",
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
         conn= self.connect()
-        rows= conn.execute(
+        normalized_search = search.strip()
+        where_sql = ""
+        params: list[Any] = []
+        if normalized_search:
+            where_sql = """
+            WHERE title LIKE ?
+               OR source_path LIKE ?
+               OR doc_id LIKE ?
             """
+            pattern = f"%{normalized_search}%"
+            params.extend([pattern, pattern, pattern])
+
+        limit_sql = ""
+        if limit is not None:
+            bounded_limit = max(1, min(int(limit), 100))
+            bounded_offset = max(0, int(offset))
+            limit_sql = "LIMIT ? OFFSET ?"
+            params.extend([bounded_limit, bounded_offset])
+
+        rows= conn.execute(
+            f"""
             SELECT doc_id, source_path, title, page_count, checksum, indexed_at
             FROM documents
+            {where_sql}
             ORDER BY indexed_at DESC
-            """
+            {limit_sql}
+            """,
+            params,
         ).fetchall()
 
         return [
@@ -847,6 +875,27 @@ class SQLiteStore:
             }
             for row in rows
         ]
+
+    @_locked
+    def count_documents(self, *, search: str = "") -> int:
+        conn = self.connect()
+        normalized_search = search.strip()
+        if not normalized_search:
+            row = conn.execute("SELECT COUNT(*) AS total FROM documents").fetchone()
+            return int(row["total"] or 0)
+
+        pattern = f"%{normalized_search}%"
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM documents
+            WHERE title LIKE ?
+               OR source_path LIKE ?
+               OR doc_id LIKE ?
+            """,
+            (pattern, pattern, pattern),
+        ).fetchone()
+        return int(row["total"] or 0)
 
     @_locked
     def list_tables(self) -> list[dict[str, Any]]:

@@ -132,6 +132,11 @@ function textToRequirements(text) {
 }
 
 let currentFeedbackFilter = "all";
+let currentTools = [];
+let currentToolFilter = "";
+let documentQuery = "";
+let documentOffset = 0;
+const DOCUMENT_PAGE_SIZE = 12;
 
 function createIcon(paths) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -1104,15 +1109,36 @@ async function loadEvalCandidates() {
 
 function renderTools(tools) {
   const container = document.getElementById("tools-list");
+  const summary = document.getElementById("tools-summary");
   if (!container) return;
   container.innerHTML = "";
 
-  if (!Array.isArray(tools) || !tools.length) {
+  const allTools = Array.isArray(tools) ? tools : [];
+  const filter = currentToolFilter.toLowerCase();
+  const visibleTools = filter
+    ? allTools.filter((tool) => {
+        const haystack = [
+          tool.name,
+          tool.description,
+          tool.source,
+          tool.metadata && tool.metadata.server_name,
+        ].join(" ").toLowerCase();
+        return haystack.includes(filter);
+      })
+    : allTools;
+
+  if (summary) {
+    summary.textContent = filter
+      ? `${visibleTools.length} of ${allTools.length} tools matched`
+      : `${allTools.length} registered tools`;
+  }
+
+  if (!visibleTools.length) {
     container.appendChild(createElement("div", "muted", "No registered tools."));
     return;
   }
 
-  tools.forEach((tool) => {
+  visibleTools.forEach((tool) => {
     const item = createElement("article", "tool-list-item");
     const top = createElement("div", "tool-list-top");
     top.appendChild(createElement("strong", "", tool.name || "unknown_tool"));
@@ -1140,7 +1166,8 @@ function renderTools(tools) {
 async function loadTools() {
   try {
     const tools = await fetchJSON("/api/tools");
-    renderTools(tools);
+    currentTools = Array.isArray(tools) ? tools : [];
+    renderTools(currentTools);
   } catch (error) {
     const container = document.getElementById("tools-list");
     if (container) {
@@ -1150,15 +1177,37 @@ async function loadTools() {
   }
 }
 
-function renderDocuments(docs) {
+function renderDocuments(payload, append = false) {
   const container = document.getElementById("documents-list");
+  const summary = document.getElementById("document-summary");
+  const loadMore = document.getElementById("load-docs-btn");
   if (!container) return;
 
-  container.innerHTML = "";
+  const docs = Array.isArray(payload?.items) ? payload.items : [];
+  const total = Number(payload?.total || 0);
+  const offset = Number(payload?.offset || 0);
 
-  if (!docs.length) {
-    container.appendChild(createElement("div", "muted", "No indexed documents found."));
-    return;
+  if (!append) {
+    container.innerHTML = "";
+  }
+
+  if (summary) {
+    const shown = Math.min(offset + docs.length, total);
+    summary.textContent = documentQuery
+      ? `${shown} of ${total} matching documents`
+      : `${total} indexed documents`;
+  }
+
+  if (!docs.length && !append) {
+    container.appendChild(createElement("div", "muted", "No matching documents found."));
+  }
+
+  if (loadMore) {
+    const nextOffset = offset + docs.length;
+    const hasMore = nextOffset < total;
+    loadMore.classList.toggle("hidden", !hasMore);
+    loadMore.textContent = hasMore ? `Load more (${nextOffset}/${total})` : "Load more";
+    loadMore.disabled = !hasMore;
   }
 
   for (const doc of docs) {
@@ -1167,10 +1216,13 @@ function renderDocuments(docs) {
 
     item.appendChild(createElement("div", "doc-title", doc.title || "Untitled"));
     item.appendChild(documentMetaRow("Pages", doc.page_count));
-    item.appendChild(documentMetaRow("Path", doc.source_path));
+    item.appendChild(documentMetaRow("Path", sourceFileName(doc.source_path)));
     item.appendChild(documentMetaRow("Indexed", doc.indexed_at));
+    item.title = doc.source_path || "";
     container.appendChild(item);
   }
+
+  documentOffset = offset + docs.length;
 }
 
 function documentMetaRow(label, value) {
@@ -1180,17 +1232,47 @@ function documentMetaRow(label, value) {
   return row;
 }
 
-async function loadDocuments() {
+async function loadDocuments(options = {}) {
+  const append = Boolean(options.append);
+  const offset = append ? documentOffset : 0;
+  const params = new URLSearchParams({
+    limit: String(DOCUMENT_PAGE_SIZE),
+    offset: String(offset),
+  });
+  if (documentQuery) {
+    params.set("q", documentQuery);
+  }
+
   try {
-    const docs = await fetchJSON("/api/documents");
-    renderDocuments(docs);
+    const payload = await fetchJSON(`/api/library/documents?${params.toString()}`);
+    renderDocuments(payload, append);
   } catch (error) {
     const container = document.getElementById("documents-list");
+    const summary = document.getElementById("document-summary");
+    if (summary) {
+      summary.textContent = "Could not load library.";
+    }
     if (container) {
       container.innerHTML = "";
       container.appendChild(createElement("div", "error-text", `Error loading documents: ${error.message}`));
     }
   }
+}
+
+function scheduleDocumentSearch() {
+  window.clearTimeout(scheduleDocumentSearch.timer);
+  scheduleDocumentSearch.timer = window.setTimeout(() => {
+    const input = document.getElementById("document-search");
+    documentQuery = input ? input.value.trim() : "";
+    documentOffset = 0;
+    loadDocuments();
+  }, 220);
+}
+
+function applyToolSearch() {
+  const input = document.getElementById("tool-search");
+  currentToolFilter = input ? input.value.trim() : "";
+  renderTools(currentTools);
 }
 
 async function sendChat() {
@@ -1276,6 +1358,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const refreshEvalCandidatesBtn = document.getElementById("refresh-eval-candidates-btn");
   const feedbackFilterBtns = document.querySelectorAll(".feedback-filter-btn");
   const workspaceTabs = document.querySelectorAll(".workspace-tab");
+  const documentSearch = document.getElementById("document-search");
+  const loadDocsBtn = document.getElementById("load-docs-btn");
+  const toolSearch = document.getElementById("tool-search");
   const ingestBtn = document.getElementById("ingest-btn");
   const chatInput = document.getElementById("chat-input");
 
@@ -1284,7 +1369,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (refreshDocsBtn) {
-    refreshDocsBtn.addEventListener("click", loadDocuments);
+    refreshDocsBtn.addEventListener("click", () => loadDocuments());
   }
 
   if (refreshToolsBtn) {
@@ -1311,6 +1396,18 @@ document.addEventListener("DOMContentLoaded", () => {
   workspaceTabs.forEach((button) => {
     button.addEventListener("click", () => setWorkspaceTab(button.dataset.workspaceTab || "trace"));
   });
+
+  if (documentSearch) {
+    documentSearch.addEventListener("input", scheduleDocumentSearch);
+  }
+
+  if (loadDocsBtn) {
+    loadDocsBtn.addEventListener("click", () => loadDocuments({ append: true }));
+  }
+
+  if (toolSearch) {
+    toolSearch.addEventListener("input", applyToolSearch);
+  }
 
   if (ingestBtn) {
     ingestBtn.addEventListener("click", ingestPath);

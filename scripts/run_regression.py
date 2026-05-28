@@ -29,6 +29,7 @@ COMPILE_TARGETS = [
     "storage/sqlite_store.py",
     "scripts/smoke_memory.py",
     "scripts/smoke_sqlite_threading.py",
+    "scripts/smoke_document_library.py",
     "scripts/smoke_feedback_analytics.py",
     "scripts/smoke_eval_candidates.py",
     "scripts/smoke_eval_candidate_review.py",
@@ -100,6 +101,7 @@ def main() -> None:
     )
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])
     run_step("SQLite threading smoke", [sys.executable, "scripts/smoke_sqlite_threading.py"])
+    run_step("Document library smoke", [sys.executable, "scripts/smoke_document_library.py"])
     run_step("Feedback analytics smoke", [sys.executable, "scripts/smoke_feedback_analytics.py"])
     run_step("Feedback eval candidate smoke", [sys.executable, "scripts/smoke_eval_candidates.py"])
     run_step("Eval candidate review smoke", [sys.executable, "scripts/smoke_eval_candidate_review.py"])

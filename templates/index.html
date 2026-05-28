@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=14" />
+  <link rel="stylesheet" href="/static/style.css?v=15" />
 </head>
 <body>
   <div class="app-shell">
@@ -35,11 +35,19 @@
 
       <section class="panel documents-panel">
         <div class="panel-header">
-          <h2>Indexed Documents</h2>
+          <h2>Library</h2>
           <button id="refresh-docs-btn" type="button" class="secondary-btn">Refresh</button>
         </div>
 
+        <div id="document-summary" class="library-summary muted">Loading library...</div>
+        <input
+          id="document-search"
+          class="compact-input"
+          type="search"
+          placeholder="Search title or path"
+        />
         <div id="documents-list" class="documents-list"></div>
+        <button id="load-docs-btn" type="button" class="secondary-btn load-more-btn hidden">Load more</button>
       </section>
 
       <section class="panel tools-panel">
@@ -48,6 +56,13 @@
           <button id="refresh-tools-btn" type="button" class="secondary-btn">Refresh</button>
         </div>
 
+        <div id="tools-summary" class="tool-summary muted">Loading tools...</div>
+        <input
+          id="tool-search"
+          class="compact-input"
+          type="search"
+          placeholder="Search tools"
+        />
         <div id="tools-list" class="tools-list"></div>
       </section>
     </aside>
@@ -185,6 +200,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=14"></script>
+  <script src="/static/chat.js?v=15"></script>
 </body>
 </html>

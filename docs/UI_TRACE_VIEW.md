@@ -36,7 +36,15 @@ The left sidebar includes a Tools panel:
 
 - registered tools are loaded from `/api/tools`,
 - local and MCP tools are shown together,
+- the tool list can be searched,
 - read-only tools and approval-required tools are visibly labeled.
+
+The left sidebar also includes a scalable Library panel:
+
+- the UI loads a small page of indexed documents instead of every PDF,
+- the document count is shown above the list,
+- title/path search is handled through the backend,
+- `Load more` fetches the next page when the library is large.
 
 If a tool action requires approval, the answer card shows an approval prompt. Clicking `Approve and run` repeats the same query with that tool approved for the current request only.
 
