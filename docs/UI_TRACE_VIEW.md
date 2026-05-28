@@ -1,12 +1,19 @@
 # UI Trace View
 
-The web UI includes a trace inspector on the right side of the chat screen.
+The web UI includes a right-side workspace for trace inspection, recent runs, feedback review, and eval drafts.
 
 It helps debug answer quality without opening JSON reports manually.
 
 ## What It Shows
 
-For each chat response, the trace view shows:
+The workspace uses tabs so the important panels do not stack below the fold:
+
+- `Trace` shows the selected answer trace,
+- `History` shows recent traces,
+- `Feedback` shows feedback analytics and review actions,
+- `Evals` shows feedback-derived eval drafts.
+
+For each chat response, the trace tab shows:
 
 - query and trace id,
 - plan mode,
@@ -18,9 +25,10 @@ For each chat response, the trace view shows:
 - tool results,
 - raw trace JSON.
 
-The answer card also keeps citations compact:
+The answer card keeps the main action area visible:
 
-- all answer sources are shown in one source box,
+- thumbs-up/thumbs-down feedback and the trace button are directly below the answer,
+- all answer sources are shown in one collapsible source box,
 - long file paths are shortened to the file name,
 - the full source path remains available as hover text.
 
@@ -38,7 +46,7 @@ Each answer has feedback controls:
 - the thumbs-down button stores negative feedback for the trace,
 - changing the selection updates the same trace feedback row.
 
-The right-side panel includes a feedback review section:
+The `Feedback` workspace tab includes a feedback review section:
 
 - summary tiles show total feedback, likes, dislikes, and dislike rate,
 - `All` shows recent feedback,
@@ -48,7 +56,7 @@ The right-side panel includes a feedback review section:
 - disliked items include a `Create eval` action that writes a draft candidate.
 - disliked items can be tagged as wrong document, bad retrieval, weak answer, missing citation, tool issue, or other.
 
-The Eval Drafts section supports:
+The `Evals` workspace tab supports:
 
 - reviewing candidates created from disliked answers,
 - editing expected answer and requirement fields,
@@ -87,9 +95,9 @@ Open:
 http://127.0.0.1:8000
 ```
 
-Ask a question. The assistant response includes a trace button. Click it to load the full trace in the right-side panel.
+Ask a question. The assistant response includes feedback buttons and a trace button directly below the answer. Click the trace button to load the full trace in the right-side workspace.
 
-The Recent section also shows recent traces from SQLite.
+The `History` tab shows recent traces from SQLite.
 
 ## Important Fix
 

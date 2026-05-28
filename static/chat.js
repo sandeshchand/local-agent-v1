@@ -170,8 +170,10 @@ function sourceFileName(path) {
 }
 
 function renderSourcesBox(citations) {
-  const box = createElement("section", "sources-box");
-  const header = createElement("div", "sources-header");
+  const box = createElement("details", "sources-box");
+  box.open = citations.length <= 1;
+
+  const header = createElement("summary", "sources-header");
   header.appendChild(createElement("strong", "", "Sources"));
   header.appendChild(createElement("span", "", `${citations.length} cited chunk${citations.length === 1 ? "" : "s"}`));
   box.appendChild(header);
@@ -194,6 +196,20 @@ function renderSourcesBox(citations) {
 
   box.appendChild(list);
   return box;
+}
+
+function setWorkspaceTab(tabName) {
+  const selected = tabName || "trace";
+
+  document.querySelectorAll(".workspace-tab").forEach((button) => {
+    const isActive = button.dataset.workspaceTab === selected;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+
+  document.querySelectorAll(".workspace-tab-panel").forEach((panel) => {
+    panel.classList.toggle("active", panel.dataset.workspacePanel === selected);
+  });
 }
 
 function setFeedbackState(container, selectedRating, statusText) {
@@ -342,13 +358,11 @@ function addAssistantResponse(answer, traceId, citations = [], options = {}) {
 
   body.appendChild(answerBox);
 
-  if (Array.isArray(citations) && citations.length > 0) {
-    body.appendChild(renderSourcesBox(citations));
-  }
-
   addApprovalControls(body, options.query || "", options.approval || {});
 
-  body.appendChild(renderFeedbackControls(traceId));
+  const answerActions = document.createElement("div");
+  answerActions.className = "answer-actions";
+  answerActions.appendChild(renderFeedbackControls(traceId));
 
   const traceRow = document.createElement("div");
   traceRow.className = "trace-action-row";
@@ -359,7 +373,12 @@ function addAssistantResponse(answer, traceId, citations = [], options = {}) {
   trace.textContent = `Trace ${traceId}`;
   trace.addEventListener("click", () => loadTrace(traceId));
   traceRow.appendChild(trace);
-  body.appendChild(traceRow);
+  answerActions.appendChild(traceRow);
+  body.appendChild(answerActions);
+
+  if (Array.isArray(citations) && citations.length > 0) {
+    body.appendChild(renderSourcesBox(citations));
+  }
 
   wrapper.appendChild(role);
   wrapper.appendChild(body);
@@ -600,6 +619,7 @@ function renderTrace(trace) {
 
 async function loadTrace(traceId) {
   if (!traceId) return;
+  setWorkspaceTab("trace");
   setTraceStatus(`Loading trace ${traceId}...`);
   try {
     const trace = await fetchJSON(`/api/traces/${traceId}`);
@@ -828,6 +848,7 @@ async function createEvalCandidate(traceId, button) {
     button.textContent = result.status === "created" ? "Eval draft created" : "Eval draft updated";
     button.title = result.path || "";
     button.classList.add("done");
+    setWorkspaceTab("evals");
     loadEvalCandidates();
   } catch (error) {
     button.disabled = false;
@@ -875,6 +896,7 @@ function fieldRow(label, element) {
 }
 
 function renderEvalCandidateEditor(candidate) {
+  setWorkspaceTab("evals");
   const editor = document.getElementById("eval-candidate-editor");
   if (!editor) return;
   editor.innerHTML = "";
@@ -1253,6 +1275,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const refreshTracesBtn = document.getElementById("refresh-traces-btn");
   const refreshEvalCandidatesBtn = document.getElementById("refresh-eval-candidates-btn");
   const feedbackFilterBtns = document.querySelectorAll(".feedback-filter-btn");
+  const workspaceTabs = document.querySelectorAll(".workspace-tab");
   const ingestBtn = document.getElementById("ingest-btn");
   const chatInput = document.getElementById("chat-input");
 
@@ -1283,6 +1306,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   feedbackFilterBtns.forEach((button) => {
     button.addEventListener("click", () => setFeedbackFilter(button.dataset.feedbackFilter || "all"));
+  });
+
+  workspaceTabs.forEach((button) => {
+    button.addEventListener("click", () => setWorkspaceTab(button.dataset.workspaceTab || "trace"));
   });
 
   if (ingestBtn) {
