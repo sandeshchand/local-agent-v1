@@ -1,0 +1,193 @@
+# Chunking Strategy
+
+Chunking converts parsed PDF pages into clean, searchable text units for SQLite and Qdrant.
+
+The implementation is in:
+
+```text
+ingestion/parsers/pdf_parser.py
+ingestion/chunking.py
+ingestion/pipeline.py
+```
+
+## High-Level Flow
+
+```text
+PDF file
+-> parse pages
+-> extract or infer page section title
+-> clean page text
+-> split into chunks
+-> remove low-value chunks
+-> embed chunks
+-> store metadata in SQLite
+-> store vectors and payloads in Qdrant
+```
+
+## PDF Parsing
+
+`parse_pdf()` uses `pypdf.PdfReader`.
+
+For each PDF:
+
+- `doc_id` is the first 16 characters of the SHA-256 checksum.
+- `checksum` is the full SHA-256 file hash.
+- `title` comes from PDF metadata, falling back to the file stem.
+- `source_path`, `page_count`, and parsed pages are stored.
+
+For each page:
+
+- text is extracted with `page.extract_text()`,
+- if the page has too little searchable text, optional OCR is attempted,
+- a page section title is inferred from heading-like lines,
+- the previous section title can be reused as fallback.
+
+If no page has searchable text and OCR is unavailable, ingestion raises a scanned-PDF error.
+
+## Section Title Detection
+
+Section titles are inferred from early page lines.
+
+The parser rejects obvious boilerplate such as:
+
+- URLs,
+- Medium navigation text,
+- dates and reading-time lines,
+- author/profile/footer lines,
+- recommendation blocks.
+
+It accepts heading-like lines when they are short, title-like, not boilerplate, and often numbered or capitalized.
+
+The section title is stored on each chunk as:
+
+```text
+section_title
+```
+
+This helps routing, retrieval boosts, evidence selection, trace inspection, and citations.
+
+## Text Cleanup
+
+Before splitting, `normalize_page_text()`:
+
+- normalizes newlines,
+- removes null and non-breaking spaces,
+- trims repeated blank lines,
+- removes known boilerplate lines,
+- stops when terminal boilerplate is reached,
+- repairs simple hyphenation such as `exam- ple` into `example`.
+
+Terminal boilerplate can stop chunking for the remaining page flow. This is useful for Medium-style PDFs where the end of the article contains recommendations and response sections.
+
+## Split Strategy
+
+The splitter is recursive and conservative:
+
+1. If text is already within `chunk_size`, keep it as one chunk.
+2. Try paragraph splitting first.
+3. If a paragraph is too large, split by sentence.
+4. If a sentence is still too large, split by character window with safe boundaries.
+
+Large-text splitting tries to end near:
+
+- sentence punctuation,
+- whitespace,
+- comma/semicolon/colon/closing parenthesis.
+
+It also tries to start the next chunk at a safe boundary.
+
+## Chunk Size And Overlap
+
+The ingestion pipeline accepts:
+
+```text
+CHUNK_SIZE
+CHUNK_OVERLAP
+```
+
+Current defaults from config loading:
+
+```text
+CHUNK_SIZE=900
+CHUNK_OVERLAP=120
+```
+
+`chunk_size` is character-based, not a tokenizer count. The stored `token_estimate` is:
+
+```text
+max(1, len(chunk_text) // 4)
+```
+
+Overlap is used only when splitting very large continuous text. Paragraph and sentence splits avoid unnecessary overlap to keep chunks cleaner.
+
+## Low-Value Chunk Filtering
+
+Short chunks are dropped when they look low-value.
+
+A chunk shorter than 80 characters is considered low-value when it has:
+
+- no sentence punctuation,
+- no code-like marker.
+
+This keeps navigation fragments, headings without context, and boilerplate from polluting retrieval.
+
+## Chunk Metadata
+
+Each chunk has:
+
+```text
+chunk_id
+doc_id
+chunk_index
+page_number
+text
+token_estimate
+section_title
+```
+
+Chunk ids use:
+
+```text
+{doc_id}-p{page_number}-c{chunk_index}
+```
+
+`chunk_index` is sequential inside the document.
+
+## Storage
+
+SQLite stores:
+
+- document metadata in `documents`,
+- chunk metadata and text in `chunks`.
+
+Qdrant stores:
+
+- embedding vector,
+- payload with document title, source path, page number, section title, chunk id, and text.
+
+The Qdrant point id is a deterministic numeric hash of `chunk_id`.
+
+## When To Reingest
+
+Reingest documents when changing:
+
+- parser cleanup,
+- OCR behavior,
+- section-title detection,
+- chunk size,
+- chunk overlap,
+- low-value filtering,
+- embedding model.
+
+For a local reset, follow the reset instructions in `README.md`.
+
+## Design Goal
+
+The goal is not to create document-specific chunks. The strategy is general-purpose:
+
+- preserve semantic paragraphs when possible,
+- keep enough local context for answer generation,
+- avoid noisy Medium/PDF boilerplate,
+- retain page and section metadata for citations and debugging,
+- support unseen PDFs without hardcoded document keywords.
+

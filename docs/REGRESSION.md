@@ -53,6 +53,12 @@ venv\Scripts\python.exe scripts\run_regression.py --full --output eval\rag_quali
 
 Use this before bigger pushes, retrieval changes, answer-service changes, or ingestion/chunking changes.
 
+Detailed scoring notes are in:
+
+```text
+docs/EVALUATION.md
+```
+
 ## Custom Focused Eval
 
 Run selected gold QA items:

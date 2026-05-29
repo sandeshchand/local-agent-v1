@@ -417,6 +417,12 @@ Latest recorded baseline:
 - Gate result: passed `--fail-under-average 8 --fail-under-item 7`
 - Remaining weak areas: exact optional details in a few answers, citation polish, and memory-specific multi-turn evaluation.
 
+Detailed evaluation notes:
+
+```text
+docs/EVALUATION.md
+```
+
 ## Regression Command
 
 Run the standard local regression gate:
@@ -487,6 +493,7 @@ Detailed implementation notes:
 
 ```text
 docs/ORCHESTRATION.md
+docs/ANSWER_VERIFICATION.md
 ```
 
 Current implementation roadmap:
@@ -514,6 +521,12 @@ Expected behavior:
 ## Reset Local Index
 
 Only reset when chunking/parsing changes or the DB/index is inconsistent.
+
+Chunking strategy notes:
+
+```text
+docs/CHUNKING.md
+```
 
 Command Prompt:
 
