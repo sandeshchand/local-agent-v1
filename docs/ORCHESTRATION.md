@@ -25,6 +25,15 @@ User query
 -> return answer, citations, steps, and verification
 ```
 
+Detailed companion docs:
+
+```text
+docs/PLANNER.md
+docs/DOCUMENT_ROUTER.md
+docs/ANSWER_REPAIR.md
+docs/ANSWER_VERIFICATION.md
+```
+
 ## Retrieval Flow
 
 Document questions use this sequence:

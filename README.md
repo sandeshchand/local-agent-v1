@@ -493,7 +493,10 @@ Detailed implementation notes:
 
 ```text
 docs/ORCHESTRATION.md
+docs/PLANNER.md
+docs/DOCUMENT_ROUTER.md
 docs/ANSWER_VERIFICATION.md
+docs/ANSWER_REPAIR.md
 ```
 
 Current implementation roadmap:
