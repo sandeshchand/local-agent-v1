@@ -67,6 +67,51 @@ This means routing can match:
 - section headings,
 - distinctive terms in the document body.
 
+## Document Routing Vs Chunk Retrieval
+
+The system uses two levels of search.
+
+First, the document router chooses likely PDFs:
+
+```text
+User query
+-> BM25 over document-level text
+-> title/path/section/content boosts
+-> top document candidates
+```
+
+This is mostly keyword/BM25 style ranking with extra boosts for strong document signals.
+
+Then chunk retrieval searches inside the selected documents:
+
+```text
+selected doc_ids
+-> dense semantic search with Qdrant embeddings
+-> BM25 keyword search over chunks
+-> RRF fusion
+-> cross-encoder reranking
+-> neighbor and section context expansion
+-> evidence selection
+```
+
+So the accurate mental model is:
+
+```text
+Document level:
+BM25 + routing boosts selects likely PDFs.
+
+Chunk level:
+Hybrid semantic + keyword retrieval searches inside those PDFs.
+```
+
+Example:
+
+```text
+Question: What are the key features of WatchTower?
+```
+
+The router may rank the Docker PDF highest because the title, section titles, or document text mention Docker/WatchTower. Then chunk retrieval searches inside that selected Docker PDF to find the exact WatchTower feature chunks.
+
 ## Scoring
 
 The router uses BM25 plus custom boosts.
@@ -198,4 +243,3 @@ Use eval report fields:
 - Use title, path, section, and chunk content generically.
 - Keep full-corpus retry available as a safety net.
 - Use eval to validate routing changes across multiple PDFs.
-
