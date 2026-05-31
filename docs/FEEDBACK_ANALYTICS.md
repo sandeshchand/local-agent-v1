@@ -68,7 +68,7 @@ This file is local generated data. It is not the gold benchmark.
 Reviewed candidates can be promoted into:
 
 ```text
-test/eval_multi_doc_rag.json
+benchmarks/gold_qa/eval_multi_doc_rag.json
 ```
 
 ## Evaluation Workflow
@@ -78,7 +78,7 @@ When a disliked answer reveals a repeatable issue:
 1. Click `Create eval` in the Feedback panel.
 2. Open `data/evals/feedback_eval_candidates.json`.
 3. In the UI Eval Drafts panel, fill `expected_answer`, `must_have`, `should_have`, and `must_not_have`.
-4. Click `Promote` to write the reviewed item into `test/eval_multi_doc_rag.json`.
+4. Click `Promote` to write the reviewed item into `benchmarks/gold_qa/eval_multi_doc_rag.json`.
 5. Click `Run eval` to score that promoted item.
 6. Fix the general system behavior.
 7. Run regression before committing.

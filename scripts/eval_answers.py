@@ -102,7 +102,7 @@ def run_eval(eval_path: Path, output_path: Path) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate full RAG answer quality.")
-    parser.add_argument("--eval-file", default="test/eval_sora_answers.json")
+    parser.add_argument("--eval-file", default="benchmarks/gold_qa/eval_sora_answers.json")
     parser.add_argument("--output", default="eval/answer_report.json")
     args = parser.parse_args()
 

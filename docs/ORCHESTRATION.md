@@ -151,7 +151,7 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_feat
 Run the full benchmark before a push:
 
 ```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file test\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
 ## Next Improvements

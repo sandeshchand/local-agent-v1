@@ -333,7 +333,7 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --ids smoldocling_doctags,in
 Before commit, run the full benchmark:
 
 ```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file test\eval_multi_doc_rag.json --output eval\rag_quality_report.json
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json
 ```
 
 Or run it in batches if the full command is slow.

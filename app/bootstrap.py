@@ -12,6 +12,7 @@ from app.dependencies import  AppDependencies
 from app.file_mcp import ReadOnlyFileMCPClient
 from app.mcp_adapter import MCPToolAdapter
 from app.ollama_client import OllamaChatClient, OllamaEmbeddingClient
+from app.paths import PROJECT_ROOT
 from app.sqlite_mcp import ReadOnlySQLiteMCPClient
 from app.tool_registry import ToolRegistry
 from app.weather_tool import CurrentWeatherTool
@@ -79,7 +80,7 @@ def bootstrap_app(env_file: str | Path = ".env") -> AppDependencies:
     if config.file_mcp_enabled:
         file_mcp_client = ReadOnlyFileMCPClient(
             allowed_roots=config.file_mcp_roots,
-            base_dir=Path(__file__).resolve().parents[1],
+            base_dir=PROJECT_ROOT,
         )
         MCPToolAdapter(
             server_name="local_files",

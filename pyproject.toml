@@ -21,6 +21,9 @@ dependencies =[
     "sentence-transformers>=3.0.1",
 ]
 
+[project.scripts]
+local-agent = "app.main:main"
+
 [project.optional-dependencies]
 ocr = [
     "pdf2image>=1.17.0",

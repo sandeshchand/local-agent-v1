@@ -45,18 +45,21 @@ htmlcov/
 *.log
 logs/
 data/logs/
+var/logs/
 
 # Local databases and indexes
 app.db
 *.db
 *.sqlite
 *.sqlite3
+var/sqlite/
 
 # Vector store / local storage
 qdrant_data/
 qdrant_data_old/
 data/qdrant/
 data/sqlite/
+var/qdrant/
 
 # Processed / generated app data
 data/processed/

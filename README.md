@@ -1,583 +1,242 @@
 # Local Agentic RAG System
 
-A local-first Agentic Retrieval-Augmented Generation system for asking grounded questions over multiple PDF documents.
+Local-first agentic RAG for grounded question answering over many PDF documents.
 
-The project now supports multi-PDF ingestion, document routing, hybrid retrieval, answer generation, verification, answer repair, short-term and long-term memory, trace logging, and repeatable RAG quality evaluation.
+The system is designed for multi-document retrieval quality, visible traces, repeatable evaluation, and safe local tool use. It currently supports PDF ingestion, hybrid retrieval, document routing, answer verification, answer repair, memory, guarded tools, MCP-style local connectors, feedback analytics, and a web UI for trace inspection.
 
-## Current Status
+This repo is not treated as a toy demo. The engineering target is a production-ready local RAG application with measurable quality gates and clear operational controls.
 
-Completed:
+## Core Capabilities
 
-- Local Ollama chat and embedding integration
-- SQLite metadata, conversation memory, and trace storage
-- Serialized SQLite access for threaded web requests
-- Long-term project memory with relevance-ranked retrieval
-- Qdrant vector storage
-- PDF parsing, cleanup, chunking, and ingestion
-- Multi-document indexing
-- Planner and stronger orchestration layer with verification-aware retrieval retry
-- Document router for multi-PDF questions
-- Hybrid retrieval: dense search plus BM25
-- Cross-encoder reranking
-- Neighbor and parent-context expansion
-- Evidence selection
-- Grounded answer generation
-- Generic source-window extraction for feature, setup, formula, example, and reason questions
-- Generic verifier
-- Answer repair after verifier failure
-- Tool-call guardrails with allow, deny, and needs-approval decisions
-- Generic MCP tool adapter with approval-required-by-default registration
-- Read-only File MCP connector for allowed local roots
-- Read-only SQLite MCP connector for local database inspection
-- Read-only current weather web tool
-- Web feedback analytics for answer review
-- Draft eval candidate creation from disliked answers
-- Failure reason tagging for disliked answers
-- UI review and promotion for feedback eval candidates
-- Targeted eval result view for promoted feedback candidates
-- Multi-document gold QA evaluation
-- Optional OCR path for scanned/image-only PDFs
-- CLI memory inspection and manual memory creation
+- Multi-PDF ingestion with cleaned, metadata-rich chunks.
+- Hybrid retrieval with dense search, BM25, fusion, reranking, and context expansion.
+- Document routing to reduce wrong-document answers in large collections.
+- Evidence-grounded answer generation with citations.
+- Answer verification, repair, and retrieval retry when quality fails.
+- Short-term conversation memory and long-term project/user memory.
+- Tool-call guardrails with `allow`, `deny`, and `needs_approval`.
+- MCP-style read-only File and SQLite connectors.
+- Read-only weather tool for current weather questions.
+- Web UI with trace view, source inspection, feedback, eval drafts, and tool visibility.
+- Gold QA evaluation and regression commands for quality control.
 
-Still in progress:
-
-- Memory-specific multi-turn evaluation
-- Optional semantic/vector memory retrieval
-- Better citation polish
-- Larger benchmark coverage across new daily PDFs
-- Stronger regression gates before every code change
-- Optional dashboard for evaluation reports
-
-## Architecture Flow
+## Architecture
 
 ```text
-User query
--> MemoryManager
-   -> save user turn
-   -> capture explicit long-term memory
-   -> load relevant project/session memory
--> Planner
--> ToolRouter
-   -> guardrails when a tool call is selected
-   -> MCP-style tools through the guarded tool registry
-   -> read-only database inspection through SQLite MCP tools
-   -> current weather web tool for weather/current-temperature questions
--> DocumentRouter
--> RetrievalService
-   -> dense vector search
-   -> BM25 sparse search
-   -> RRF fusion
-   -> cross-encoder reranking
-   -> context expansion
--> EvidenceJudge
--> AnswerService
--> Verifier
--> optional Answer Repair
--> optional full-corpus retrieval retry
--> Trace saved to SQLite
--> Final answer with citations
+PDFs / files
+-> ingestion and chunking
+-> vector + metadata storage
+-> document routing
+-> hybrid retrieval
+-> evidence selection
+-> answer generation
+-> verification
+-> answer repair or retrieval retry
+-> trace and feedback storage
+-> UI / API / CLI
 ```
 
-## Repository Structure
+Tool requests follow a separate guarded path:
 
 ```text
-app/          FastAPI, CLI, config, dependency wiring
-agent/        planner, tool router, orchestrator, verifier, memory
-ingestion/    PDF parsing, cleanup, chunking, indexing
-retrieval/    search, reranking, routing, evidence, answer generation
-storage/      SQLite and Qdrant adapters
-scripts/      ingestion/evaluation helper scripts
-test/         gold QA and evaluation datasets
-eval/         generated evaluation reports
-data/         local source PDFs
+planner
+-> tool registry
+-> guardrails
+-> approved read-only tool or MCP-style connector
+-> tool answer
+-> trace
 ```
 
-## Setup
+Memory is used only as project/user guidance. It is not PDF evidence. PDF answers must still come from retrieved document chunks and citations.
+
+## Quick Start
 
 Create and activate the virtual environment.
-
-Command Prompt:
-
-```cmd
-python -m venv venv
-venv\Scripts\activate
-```
-
-PowerShell:
 
 ```powershell
 python -m venv venv
 venv\Scripts\Activate.ps1
 ```
 
-Install the project:
+Install the project.
 
-```cmd
+```powershell
 pip install -e .
 ```
 
 Optional OCR support for scanned PDFs:
 
-```cmd
+```powershell
 pip install -e .[ocr]
 ```
 
-OCR also requires Tesseract OCR and Poppler installed on the machine.
+Pull local Ollama models.
 
-Pull local Ollama models:
-
-```cmd
+```powershell
 ollama pull qwen2.5:7b-instruct
 ollama pull nomic-embed-text
 ```
 
-Create `.env`:
+Create local config.
 
-```cmd
+```powershell
 copy .env.example .env
 ```
 
-Example `.env`:
+Common `.env` values:
 
 ```env
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 CHAT_MODEL=qwen2.5:7b-instruct
 EMBED_MODEL=nomic-embed-text
-QDRANT_PATH=./qdrant_data
-SQLITE_PATH=./app.db
+QDRANT_PATH=./var/qdrant
+SQLITE_PATH=./var/sqlite/app.db
 TOP_K=3
-CHUNK_SIZE=800
-CHUNK_OVERLAP=120
 DEBUG=true
 ```
 
-## Ingest PDFs
+## Ingest And Ask
 
-Place PDFs under:
+Put PDFs under:
 
 ```text
 data/raw/documents/
 ```
 
-Ingest all documents:
+Ingest all PDFs:
 
-```cmd
-venv\Scripts\python.exe app\main.py ingest --path data\raw\documents
+```powershell
+local-agent ingest --path data\raw\documents
+```
+
+Ask from the CLI:
+
+```powershell
+local-agent ask --query "What are the key features of WatchTower?"
 ```
 
 List indexed documents:
 
-```cmd
-venv\Scripts\python.exe app\main.py list-docs
+```powershell
+local-agent list-docs
 ```
 
-Ask from command line:
+## Run The Web UI
 
-```cmd
-venv\Scripts\python.exe app\main.py ask --query "What are the key features of WatchTower?"
-```
-
-## Memory
-
-The memory layer has two parts:
-
-- Short-term memory: recent conversation turns for the active session.
-- Long-term memory: durable project rules, user preferences, task status, evaluation results, and known issues.
-
-Memory is used as project/user guidance. It is not treated as PDF evidence. RAG answers must still use retrieved document context and citations.
-
-Manually add a memory:
-
-```cmd
-venv\Scripts\python.exe app\main.py remember --content "Do not use document-specific hardcoded keywords." --kind project_decision --importance 3
-```
-
-List stored memory:
-
-```cmd
-venv\Scripts\python.exe app\main.py list-memory
-```
-
-Run the memory smoke test:
-
-```cmd
-venv\Scripts\python.exe scripts\smoke_memory.py
-```
-
-Detailed implementation notes:
-
-```text
-docs/MEMORY.md
-```
-
-## Answer Service
-
-The grounded answer layer is implemented in:
-
-```text
-retrieval/answer_service.py
-```
-
-It combines LLM answer generation with generic deterministic extractors for feature, limitation, definition, pipeline, command, example, why, and list-style questions. It also handles citation cleanup and verifier repair fallbacks.
-
-Detailed implementation notes:
-
-```text
-docs/ANSWER_SERVICE.md
-```
-
-## Guardrails
-
-Tool-call guardrails protect actions before any registered tool executes.
-
-Current behavior:
-
-- registered tools with `requires_approval=False` are allowed,
-- unknown or missing tool calls are denied,
-- registered tools with `requires_approval=True` return `needs_approval` unless explicitly approved for the current request,
-- every decision is recorded as a `guardrail` trace step.
-
-Approve a tool for one CLI request:
-
-```cmd
-venv\Scripts\python.exe app\main.py ask --query "Run the approved tool" --approve-tool tool_name
-```
-
-Detailed implementation notes:
-
-```text
-docs/GUARDRAILS.md
-```
-
-## MCP Integration
-
-MCP V1 provides a generic adapter for MCP-style tool discovery and execution through the existing guarded tool registry.
-
-Current behavior:
-
-- MCP tools register as `mcp.<server>.<tool>`,
-- MCP tools require approval by default,
-- read-only MCP tools can be allowed when their metadata declares read-only behavior,
-- read-only File MCP tools are registered as `mcp.local_files.*`,
-- read-only SQLite MCP tools are registered as `mcp.sqlite.*`,
-- registered tools are visible through `GET /api/tools`,
-- MCP output is treated as tool context, not PDF citation evidence.
-
-Example File MCP questions:
-
-```cmd
-venv\Scripts\python.exe app\main.py ask --query "List files in docs"
-venv\Scripts\python.exe app\main.py ask --query "Read file docs/MCP.md"
-```
-
-Example SQLite MCP questions:
-
-```cmd
-venv\Scripts\python.exe app\main.py ask --query "List database tables"
-venv\Scripts\python.exe app\main.py ask --query "Preview table traces limit 5"
-venv\Scripts\python.exe app\main.py ask --query "Show recent traces from database"
-venv\Scripts\python.exe app\main.py ask --query "Show feedback summary"
-```
-
-Detailed implementation notes:
-
-```text
-docs/MCP.md
-```
-
-## Web Tools
-
-The first web-based tool is:
-
-```text
-get_current_weather
-```
-
-It answers current weather questions for a named location using a read-only weather API. It is tool context, not PDF citation evidence.
-
-Example:
-
-```cmd
-venv\Scripts\python.exe app\main.py ask --query "What is the current weather in Berlin?"
-```
-
-Detailed implementation notes:
-
-```text
-docs/WEB_TOOLS.md
-```
-
-## UI Trace View
-
-The web UI includes a right-side trace inspector for debugging answer quality.
-
-It shows:
-
-- compact answer sources,
-- like/dislike answer feedback,
-- registered tool visibility,
-- approval prompt for approval-required tool calls,
-- a feedback review panel,
-- feedback analytics summary,
-- draft eval candidate creation from disliked answers,
-- eval draft review and promotion,
-- targeted eval result view,
-- failure reason tags for disliked answers,
-- plan mode,
-- retrieval attempts,
-- routed evidence,
-- guardrail decisions,
-- tool results,
-- verifier status,
-- raw trace JSON.
-
-Detailed notes:
-
-```text
-docs/UI_TRACE_VIEW.md
-docs/FEEDBACK_ANALYTICS.md
-```
-
-Run the web app:
+Use the helper script so only one local server owns the app and Qdrant path.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\start_web.ps1
 ```
 
-Then open:
+Open:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-Use the helper script instead of running `uvicorn` from another Python installation.
-The app uses local Qdrant storage, so only one `app.web:app` server should run at a time.
-The helper stops stale `uvicorn app.web:app` processes, starts the server from `venv`, and writes logs to:
+Do not run a second `uvicorn app.web:app` process from another Python installation. The helper starts the server from `venv` and writes logs to:
 
 ```text
-logs/web.out.log
-logs/web.err.log
+var/logs/web.out.log
+var/logs/web.err.log
 ```
 
-## Gold QA Evaluation
+## Quality Gates
 
-The current multi-document gold QA file is:
+Run the standard regression gate before committing important changes:
 
-```text
-test/eval_multi_doc_rag.json
-```
-
-It currently contains 45 questions across Sora, Docker, machine-learning, Python, AI coding, Pydantic, SmolDocling/OCR, introduction, and AI side-hustle PDFs. Each item contains:
-
-- `question`
-- `expected_doc_title`
-- `expected_answer`
-- `must_have`
-- `should_have`
-- `must_not_have`
-
-Run the full benchmark:
-
-```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file test\eval_multi_doc_rag.json --output eval\rag_quality_report.json
-```
-
-Run selected questions while debugging:
-
-```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_watchtower_features,ml_crfs
-```
-
-Use as a quality gate:
-
-```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --fail-under-average 8 --fail-under-item 7
-```
-
-Scoring combines:
-
-- required fact coverage
-- optional detail coverage
-- citation presence
-- correct document routing
-- verifier status
-- unwanted drift
-
-Target:
-
-- Average score should stay above `8/10`.
-- Each important item should stay above `7/10`.
-- New PDFs should add at least 3-5 gold questions.
-
-Latest recorded baseline:
-
-- Date: 2026-05-20
-- Average score: `9.45/10`
-- Passed: `45/45` items at `>= 8/10`
-- Gate result: passed `--fail-under-average 8 --fail-under-item 7`
-- Remaining weak areas: exact optional details in a few answers, citation polish, and memory-specific multi-turn evaluation.
-
-Detailed evaluation notes:
-
-```text
-docs/EVALUATION.md
-```
-
-## Regression Command
-
-Run the standard local regression gate:
-
-```cmd
+```powershell
 venv\Scripts\python.exe scripts\run_regression.py
 ```
 
-This runs compile checks, memory smoke, guardrails smoke, File MCP smoke, SQLite MCP smoke, MCP adapter smoke, tool approval UI smoke, weather-tool smoke, and focused RAG eval.
-It also runs SQLite, feedback analytics, feedback issue tag, feedback-to-eval, eval candidate review, and eval candidate run smoke checks.
-
 Run compile and smoke checks only:
 
-```cmd
+```powershell
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```
 
 Run the full RAG benchmark:
 
-```cmd
-venv\Scripts\python.exe scripts\run_regression.py --full --output eval\rag_quality_report.json
+```powershell
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
-Detailed notes:
+Quality rules:
 
-```text
-docs/REGRESSION.md
-```
+- Add 3 to 5 gold QA items for every important new PDF.
+- Keep average eval score above `8/10`.
+- Keep important individual questions above `7/10`.
+- Inspect failed items by `missing_must_have`, `triggered_must_not_have`, `top_routed_doc`, `verification`, and `answer`.
 
-## How To Add Gold QA For A New PDF
+## Operations
 
-For each new document, add questions to `test/eval_multi_doc_rag.json`:
-
-1. Definition question: what is the main concept/tool/model?
-2. Feature question: what are the key features/components?
-3. How/why question: mechanism or reason.
-4. Limitation question: risks, constraints, weaknesses.
-5. Comparison/application question if the paper supports it.
-
-Use `must_have` for facts that must appear in a good answer. Use `should_have` for helpful but optional facts. Use `must_not_have` for likely drift from other PDFs.
-
-## Orchestration Layer
-
-The orchestration layer is implemented in:
-
-```text
-agent/orchestrator.py
-```
-
-It currently performs:
-
-- session memory save/load
-- long-term memory capture and relevance-ranked memory loading
-- planning
-- direct-answer routing for casual messages
-- retrieval routing for document questions
-- document routing across multiple PDFs
-- retrieval and evidence selection
-- answer generation
-- verification
-- answer repair when verification fails
-- one generic full-corpus retrieval retry when the first answer has no citations or still fails verification
-- tool-call guardrail decisions before tool execution
-- MCP-style tool metadata in tool traces
-- trace saving to SQLite
-
-Detailed implementation notes:
-
-```text
-docs/ORCHESTRATION.md
-docs/PLANNER.md
-docs/DOCUMENT_ROUTER.md
-docs/ANSWER_VERIFICATION.md
-docs/ANSWER_REPAIR.md
-```
-
-Current implementation roadmap:
-
-```text
-docs/NEXT_STEPS.md
-```
-
-Smoke checks:
-
-```cmd
-venv\Scripts\python.exe app\main.py ask --query "hi"
-venv\Scripts\python.exe app\main.py ask --query "What are the key features of WatchTower?"
-venv\Scripts\python.exe app\main.py ask --query "What are Conditional Random Fields used for?"
-```
-
-Expected behavior:
-
-- `hi` should use `direct_answer`.
-- PDF questions should use `retrieve_only`.
-- Retrieved answers should include citations.
-- `verification.status` should normally be `verified`.
-- Trace steps should include a `memory` step with captured and loaded memory counts.
-
-## Reset Local Index
-
-Only reset when chunking/parsing changes or the DB/index is inconsistent.
-
-Chunking strategy notes:
-
-```text
-docs/CHUNKING.md
-```
-
-Command Prompt:
-
-```cmd
-ren app.db app.old.db
-ren qdrant_data qdrant_data_old
-mkdir qdrant_data
-venv\Scripts\python.exe app\main.py ingest --path data\raw\documents
-```
-
-PowerShell:
+Useful CLI commands:
 
 ```powershell
-Rename-Item app.db app.old.db
-Rename-Item qdrant_data qdrant_data_old
-New-Item -ItemType Directory qdrant_data
-.\venv\Scripts\python.exe app\main.py ingest --path data\raw\documents
+local-agent ask --query "hi"
+local-agent ask --query "List database tables"
+local-agent ask --query "Read file docs/MCP.md"
+local-agent ask --query "What is the current weather in Berlin?"
+local-agent list-memory
 ```
 
-## Evaluation Process We Follow
+Reset the local index only when parsing, chunking, or storage is inconsistent. See [docs/CHUNKING.md](docs/CHUNKING.md) and [docs/REGRESSION.md](docs/REGRESSION.md) before resetting.
 
-1. Add/update gold QA first.
-2. Run targeted eval for failing cases with `--ids`.
-3. Fix retrieval, evidence selection, answer generation, or verifier depending on the failure.
-4. Run full benchmark.
-5. Accept the change only if quality stays above the gate.
+## Production Readiness
 
-Use the report fields:
+Already implemented:
 
-- `missing_must_have`: answer missed required facts.
-- `triggered_must_not_have`: answer drifted into wrong content.
-- `top_routed_doc`: document router selected the wrong PDF.
-- `verification`: verifier/grounding issues.
-- `answer`: inspect the actual generated answer.
+- repeatable local regression command,
+- gold QA benchmark,
+- trace storage,
+- feedback collection,
+- answer verification and repair,
+- guarded tool execution,
+- read-only local file/database connectors,
+- documented architecture and subsystem behavior.
 
-## Known Limitations
+Required before real production use:
 
-- Scanned PDFs require optional OCR dependencies plus local Tesseract/Poppler installs.
-- Medium-style PDFs can still contain noisy boilerplate.
-- Local LLM output can vary between runs.
-- Some answer polish and citation formatting still need work.
-- Evaluation is only as good as the gold QA coverage.
+- authentication and user/session isolation,
+- secrets management outside `.env` for deployed environments,
+- backup and restore plan for SQLite and Qdrant data,
+- deployment/container strategy,
+- monitoring and alerting,
+- stronger permission model for any future write/delete tools,
+- larger benchmark coverage for unseen document families,
+- explicit data retention and privacy policy.
 
-## Next Engineering Steps
+Detailed checklist: [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md)
 
-1. Add memory-specific multi-turn eval tests.
-2. Add audit views for approved tool executions.
-3. Add 3-5 gold QA questions for every new daily PDF.
-4. Improve citation formatting and remove duplicated citation text.
-5. Strengthen path allowlists before any file write/delete tools.
-6. Add a simple evaluation summary dashboard or HTML report.
+## Documentation Map
+
+Architecture and orchestration:
+
+- [docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)
+- [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)
+- [docs/PLANNER.md](docs/PLANNER.md)
+- [docs/DOCUMENT_ROUTER.md](docs/DOCUMENT_ROUTER.md)
+
+Retrieval and answers:
+
+- [docs/CHUNKING.md](docs/CHUNKING.md)
+- [docs/ANSWER_SERVICE.md](docs/ANSWER_SERVICE.md)
+- [docs/ANSWER_VERIFICATION.md](docs/ANSWER_VERIFICATION.md)
+- [docs/ANSWER_REPAIR.md](docs/ANSWER_REPAIR.md)
+
+Tools, guardrails, and memory:
+
+- [docs/GUARDRAILS.md](docs/GUARDRAILS.md)
+- [docs/MCP.md](docs/MCP.md)
+- [docs/WEB_TOOLS.md](docs/WEB_TOOLS.md)
+- [docs/MEMORY.md](docs/MEMORY.md)
+
+Evaluation, UI, and roadmap:
+
+- [docs/EVALUATION.md](docs/EVALUATION.md)
+- [docs/REGRESSION.md](docs/REGRESSION.md)
+- [docs/UI_TRACE_VIEW.md](docs/UI_TRACE_VIEW.md)
+- [docs/FEEDBACK_ANALYTICS.md](docs/FEEDBACK_ANALYTICS.md)
+- [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
+- [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md)

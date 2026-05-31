@@ -116,7 +116,7 @@ def run_eval(eval_path: Path, output_path: Path) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate retrieval quality against expected pages and keywords.")
-    parser.add_argument("--eval-file", default="test/eval_sora.json")
+    parser.add_argument("--eval-file", default="benchmarks/gold_qa/eval_sora.json")
     parser.add_argument("--output", default="eval/retrieval_report.json")
     args = parser.parse_args()
 

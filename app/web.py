@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
@@ -44,16 +43,10 @@ from app.eval_candidates import (
     update_feedback_eval_candidate,
 )
 from app.eval_runner import load_gold_eval_item, run_candidate_eval
+from app.paths import EVAL_CANDIDATES_PATH, EVAL_OUTPUT_DIR, GOLD_EVAL_PATH, STATIC_DIR, TEMPLATES_DIR
 from ingestion.file_loader import discover_pdf_files
 from ingestion.pipeline import IngestionPipeline
 from storage.sqlite_store import SQLiteStore
-
-BASE_DIR = Path(__file__).resolve().parents[1]
-TEMPLATES_DIR = BASE_DIR / "templates"
-STATIC_DIR = BASE_DIR / "static"
-EVAL_CANDIDATES_PATH = BASE_DIR / "data" / "evals" / "feedback_eval_candidates.json"
-GOLD_EVAL_PATH = BASE_DIR / "test" / "eval_multi_doc_rag.json"
-EVAL_OUTPUT_DIR = BASE_DIR / "eval"
 
 
 @lru_cache(maxsize=1)

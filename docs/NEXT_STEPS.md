@@ -25,7 +25,7 @@ venv\Scripts\python.exe scripts\smoke_memory.py
 The full RAG benchmark was already run after the orchestration change. Run it again before major releases or before pushing a risky change:
 
 ```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file test\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
 ## 2. Add Guardrails

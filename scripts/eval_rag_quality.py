@@ -202,7 +202,7 @@ def run_eval(eval_path: Path, output_path: Path) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate multi-document RAG answer quality.")
-    parser.add_argument("--eval-file", default="test/eval_multi_doc_rag.json")
+    parser.add_argument("--eval-file", default="benchmarks/gold_qa/eval_multi_doc_rag.json")
     parser.add_argument("--output", default="eval/rag_quality_report.json")
     parser.add_argument(
         "--ids",

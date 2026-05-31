@@ -52,7 +52,7 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
         "RERANK_CANDIDATES": os.getenv("RERANK_CANDIDATES", "8"),
         "FILE_MCP_ENABLED": os.getenv("FILE_MCP_ENABLED", "true"),
         "FILE_MCP_ROOTS": _parse_path_list(
-            os.getenv("FILE_MCP_ROOTS", "data,docs,test,README.md,pyproject.toml"),
+            os.getenv("FILE_MCP_ROOTS", "data,docs,benchmarks,tests,README.md,pyproject.toml"),
             base_dir=base_dir,
         ),
     }

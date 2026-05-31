@@ -258,7 +258,10 @@ class Planner:
 
     def _is_file_read_query(self, query_lower: str) -> bool:
         has_read_verb = any(term in query_lower for term in ["read", "show", "open", "display"])
-        has_file_hint = any(term in query_lower for term in [" file", " mcp", " docs/", " data/", " test/"])
+        has_file_hint = any(
+            term in query_lower
+            for term in [" file", " mcp", " docs/", " data/", " tests/", " benchmarks/"]
+        )
         return has_read_verb and has_file_hint
 
     def _is_file_info_query(self, query_lower: str) -> bool:

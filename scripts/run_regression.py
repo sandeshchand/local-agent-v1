@@ -41,7 +41,9 @@ COMPILE_TARGETS = [
     "scripts/smoke_sqlite_mcp.py",
     "scripts/smoke_tool_approval_ui.py",
     "scripts/smoke_weather_tool.py",
+    "scripts/query_visual_world.py",
     "scripts/eval_rag_quality.py",
+    "tests/test_paths.py",
 ]
 
 DEFAULT_FOCUSED_IDS = ",".join(
@@ -129,7 +131,7 @@ def main() -> None:
         "7",
     ]
     if args.full:
-        rag_command.extend(["--eval-file", "test/eval_multi_doc_rag.json"])
+        rag_command.extend(["--eval-file", "benchmarks/gold_qa/eval_multi_doc_rag.json"])
     else:
         rag_command.extend(["--ids", args.ids])
 

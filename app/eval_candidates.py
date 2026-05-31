@@ -6,11 +6,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.paths import EVAL_CANDIDATES_PATH, GOLD_EVAL_PATH
 from storage.sqlite_store import SQLiteStore
 
 
-DEFAULT_CANDIDATES_PATH = Path("data/evals/feedback_eval_candidates.json")
-DEFAULT_GOLD_EVAL_PATH = Path("test/eval_multi_doc_rag.json")
+DEFAULT_CANDIDATES_PATH = EVAL_CANDIDATES_PATH
+DEFAULT_GOLD_EVAL_PATH = GOLD_EVAL_PATH
 _WRITE_LOCK = threading.RLock()
 
 

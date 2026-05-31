@@ -15,7 +15,7 @@ There are three useful evaluation layers:
 The main gold QA dataset is:
 
 ```text
-test/eval_multi_doc_rag.json
+benchmarks/gold_qa/eval_multi_doc_rag.json
 ```
 
 Each item contains:
@@ -66,7 +66,7 @@ planner -> document router -> retrieval -> evidence judge -> answer service -> v
 Run the full eval:
 
 ```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file test\eval_multi_doc_rag.json --output eval\rag_quality_report.json
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json
 ```
 
 Run selected items:
@@ -201,4 +201,3 @@ Use this process for quality work:
 6. Run the full benchmark before large pushes.
 
 Do not optimize using hardcoded document keywords. The goal is behavior that works for unseen PDFs.
-

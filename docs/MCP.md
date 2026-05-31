@@ -113,7 +113,7 @@ Override this in `.env`:
 
 ```text
 FILE_MCP_ENABLED=true
-FILE_MCP_ROOTS=data,docs,test,README.md,pyproject.toml
+FILE_MCP_ROOTS=data,docs,benchmarks,tests,README.md,pyproject.toml
 ```
 
 Do not add broad roots like `.` or your home directory unless you are comfortable exposing all readable files under that path to the local agent.

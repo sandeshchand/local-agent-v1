@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Root = Resolve-Path (Join-Path $ScriptDir "..")
 $VenvPython = Join-Path $Root "venv\Scripts\python.exe"
-$LogDir = Join-Path $Root "logs"
+$LogDir = Join-Path $Root "var\logs"
 $OutLog = Join-Path $LogDir "web.out.log"
 $ErrLog = Join-Path $LogDir "web.err.log"
 

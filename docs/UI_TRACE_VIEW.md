@@ -69,7 +69,7 @@ The `Evals` workspace tab supports:
 - reviewing candidates created from disliked answers,
 - editing expected answer and requirement fields,
 - saving reviewed drafts,
-- promoting reviewed drafts into `test/eval_multi_doc_rag.json`.
+- promoting reviewed drafts into `benchmarks/gold_qa/eval_multi_doc_rag.json`.
 - running a targeted eval for a promoted draft and viewing the score, missing facts, routing, verifier, and answer.
 
 Detailed feedback analytics notes:
