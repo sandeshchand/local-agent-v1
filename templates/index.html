@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=3" />
+  <link rel="stylesheet" href="/static/style.css?v=16" />
 </head>
 <body>
   <div class="app-shell">
@@ -14,7 +14,7 @@
         <p class="subtitle">Local PDF assistant with RAG</p>
       </div>
 
-      <section class="panel">
+      <section class="panel ingest-panel">
         <div class="panel-header">
           <h2>Ingest PDFs</h2>
         </div>
@@ -33,21 +33,30 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel documents-panel">
         <div class="panel-header">
-          <h2>Indexed Documents</h2>
+          <h2>Library</h2>
           <button id="refresh-docs-btn" type="button" class="secondary-btn">Refresh</button>
         </div>
 
+        <div id="document-summary" class="library-summary muted">Loading library...</div>
+        <input
+          id="document-search"
+          class="compact-input"
+          type="search"
+          placeholder="Search title or path"
+        />
         <div id="documents-list" class="documents-list"></div>
+        <button id="load-docs-btn" type="button" class="secondary-btn load-more-btn hidden">Load more</button>
       </section>
+
     </aside>
 
     <main class="main-content">
       <section class="chat-header">
         <div>
           <h2>Chat</h2>
-          <p>Ask questions about your indexed PDFs.</p>
+          <p>Ask about PDFs, current weather, or tool-supported tasks.</p>
         </div>
         <div id="chat-status" class="chat-status">Ready</div>
       </section>
@@ -69,6 +78,123 @@
         <button id="send-btn" type="button">Send</button>
       </section>
     </main>
+
+    <aside class="trace-panel workspace-panel">
+      <section class="workspace-shell">
+        <div class="workspace-header">
+          <div>
+            <h2>Workspace</h2>
+            <p>Inspect and improve the latest answer.</p>
+          </div>
+          <button id="refresh-traces-btn" type="button" class="secondary-btn">Refresh</button>
+        </div>
+
+        <div class="workspace-tabs" role="tablist" aria-label="Workspace views">
+          <button type="button" class="workspace-tab active" data-workspace-tab="trace" aria-selected="true">Trace</button>
+          <button type="button" class="workspace-tab" data-workspace-tab="tools" aria-selected="false">Tools</button>
+          <button type="button" class="workspace-tab" data-workspace-tab="history" aria-selected="false">History</button>
+          <button type="button" class="workspace-tab" data-workspace-tab="feedback" aria-selected="false">Feedback</button>
+          <button type="button" class="workspace-tab" data-workspace-tab="evals" aria-selected="false">Evals</button>
+        </div>
+
+        <div class="workspace-tab-panel active" data-workspace-panel="trace">
+          <section class="trace-shell trace-main-shell">
+            <div class="trace-panel-header compact">
+              <h2>Trace</h2>
+            </div>
+
+            <div id="trace-empty" class="trace-empty">
+              Select a trace from an answer or recent run.
+            </div>
+
+            <div id="trace-detail" class="trace-detail hidden">
+              <div class="trace-title-row">
+                <div>
+                  <div id="trace-id-label" class="trace-id-label"></div>
+                  <h3 id="trace-query"></h3>
+                </div>
+                <div id="trace-status-pill" class="trace-status-pill"></div>
+              </div>
+
+              <div id="trace-metrics" class="trace-metrics"></div>
+
+              <section class="trace-block">
+                <h4>Timeline</h4>
+                <div id="trace-steps" class="trace-steps"></div>
+              </section>
+
+              <section class="trace-block">
+                <h4>Evidence</h4>
+                <div id="trace-evidence" class="trace-evidence"></div>
+              </section>
+
+              <section class="trace-block">
+                <h4>Tool Results</h4>
+                <div id="trace-tools" class="trace-tools"></div>
+              </section>
+
+              <details class="trace-raw">
+                <summary>Raw trace JSON</summary>
+                <pre id="trace-raw-json"></pre>
+              </details>
+            </div>
+          </section>
+        </div>
+
+        <div class="workspace-tab-panel" data-workspace-panel="tools">
+          <section class="trace-shell tools-workspace-shell">
+            <div class="trace-panel-header compact">
+              <h2>Tools</h2>
+              <button id="refresh-tools-btn" type="button" class="secondary-btn">Refresh</button>
+            </div>
+
+            <div id="tools-summary" class="tool-summary muted">Loading tools...</div>
+            <input
+              id="tool-search"
+              class="compact-input"
+              type="search"
+              placeholder="Search tools"
+            />
+            <div id="tools-list" class="tools-list"></div>
+          </section>
+        </div>
+
+        <div class="workspace-tab-panel" data-workspace-panel="history">
+          <section class="trace-shell recent-traces-shell">
+            <div class="trace-panel-header compact">
+              <h2>Recent</h2>
+            </div>
+            <div id="recent-traces" class="recent-traces"></div>
+          </section>
+        </div>
+
+        <div class="workspace-tab-panel" data-workspace-panel="feedback">
+          <section class="trace-shell feedback-review-shell">
+            <div class="trace-panel-header compact">
+              <h2>Feedback</h2>
+            </div>
+            <div id="feedback-summary" class="feedback-summary"></div>
+            <div class="feedback-filter-row" aria-label="Feedback filters">
+              <button type="button" class="feedback-filter-btn active" data-feedback-filter="all">All</button>
+              <button type="button" class="feedback-filter-btn" data-feedback-filter="like">Liked</button>
+              <button type="button" class="feedback-filter-btn" data-feedback-filter="dislike">Disliked</button>
+            </div>
+            <div id="feedback-review-list" class="feedback-review-list"></div>
+          </section>
+        </div>
+
+        <div class="workspace-tab-panel" data-workspace-panel="evals">
+          <section class="trace-shell eval-candidate-shell">
+            <div class="trace-panel-header compact">
+              <h2>Eval Drafts</h2>
+              <button id="refresh-eval-candidates-btn" type="button" class="secondary-btn">Refresh</button>
+            </div>
+            <div id="eval-candidate-list" class="eval-candidate-list"></div>
+            <div id="eval-candidate-editor" class="eval-candidate-editor hidden"></div>
+          </section>
+        </div>
+      </section>
+    </aside>
   </div>
 
   <template id="message-template">
@@ -78,6 +204,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=3"></script>
+  <script src="/static/chat.js?v=16"></script>
 </body>
 </html>

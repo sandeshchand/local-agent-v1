@@ -1,0 +1,2961 @@
+{
+  "average_score": 10.0,
+  "items": [
+    {
+      "id": "sora_01",
+      "question": "What is Sora?",
+      "score": 10.0,
+      "page_score": 1.0,
+      "keyword_score": 1.0,
+      "matched_pages": [
+        1,
+        3,
+        4,
+        22
+      ],
+      "missing_pages": [],
+      "matched_keywords": [
+        "text-to-video",
+        "OpenAI",
+        "February 2024",
+        "one minute",
+        "physical world"
+      ],
+      "missing_keywords": [],
+      "retrieved": [
+        {
+          "rank": 1,
+          "chunk_id": "58617e8e36236d01-parent-0-3",
+          "page": 1,
+          "section": "Sora: A Review on Background, Technology, Limitations, and",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03007688828584351,
+          "reranker_score": 7.847146511077881,
+          "preview": "[child chunk 0 | page 1 | section Sora: A Review on Background, Technology, Limitations, and]\nSora: A Review on Background, Technology, Limitations, and\nOpportunities of Large Vision Models\nYixin Liu1* Kai Zhang1* Yuan Li1* Zhiling Yan1* Ch"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-0-4",
+          "page": 1,
+          "section": "Sora: A Review on Background, Technology, Limitations, and",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03007688828584351,
+          "reranker_score": null,
+          "preview": "[child chunk 0 | page 1 | section Sora: A Review on Background, Technology, Limitations, and]\nSora: A Review on Background, Technology, Limitations, and\nOpportunities of Large Vision Models\nYixin Liu1* Kai Zhang1* Yuan Li1* Zhiling Yan1* Ch"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-0-5",
+          "page": 1,
+          "section": "Contents",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03007688828584351,
+          "reranker_score": null,
+          "preview": "[child chunk 0 | page 1 | section Sora: A Review on Background, Technology, Limitations, and]\nSora: A Review on Background, Technology, Limitations, and\nOpportunities of Large Vision Models\nYixin Liu1* Kai Zhang1* Yuan Li1* Zhiling Yan1* Ch"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-81-87",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02470238095238095,
+          "reranker_score": 7.0232319831848145,
+          "preview": "[child chunk 81 | page 21 | section 4.2 Education]\nThese models unlock new capabilities in robots, enabling them to interact with their environment\nand execute tasks with unprecedented complexity and precision. The introduction of web-scale"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-79-85",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02470238095238095,
+          "reranker_score": null,
+          "preview": "[child chunk 79 | page 21 | section 4.2 Education]\nThis could include\ngenerating changing weather conditions, transforming landscapes, or even creating entirely new settings on\nthe fly, making game worlds more immersive and responsive. Some"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-80-86",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02470238095238095,
+          "reranker_score": null,
+          "preview": "[child chunk 80 | page 21 | section 4.2 Education]\nAdditionally, models like MedSegDiff-\nV2 [150] and [151] leverage the power of transformers to segment medical images with unprecedented\nprecision, enabling clinicians to pinpoint areas of "
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-82-88",
+          "page": 22,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02470238095238095,
+          "reranker_score": null,
+          "preview": "[child chunk 82 | page 22 | section 5 Discussion]\nallowing robots to understand and execute tasks by predicting the outcome of actions in video format. Furthermore, the reliance on simulated environments for robotics research has been innov"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-83-89",
+          "page": 22,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02470238095238095,
+          "reranker_score": null,
+          "preview": "[child chunk 83 | page 22 | section 5 Discussion]\nA particularly impressive attribute of Sora is its ability to produce videos up to one\nminute in length while ensuring consistent and engaging storytelling. This marks a significant improvem"
+        },
+        {
+          "rank": 9,
+          "chunk_id": "58617e8e36236d01-parent-78-84",
+          "page": 21,
+          "section": "4.2 Education",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028814262023217248,
+          "reranker_score": null,
+          "preview": "[child chunk 78 | page 21 | section 4.2 Education]\nBy integrating these models into edu-\ncational content creation, educators can produce videos on a myriad of subjects, making complex concepts\nmore accessible and captivating for students. "
+        },
+        {
+          "rank": 10,
+          "chunk_id": "58617e8e36236d01-parent-8-14",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024336928009326728,
+          "reranker_score": 5.606210708618164,
+          "preview": "[child chunk 8 | page 3 | section 1 Introduction]\nUnlike earlier models that can\nonly generate short video clips, Sora’s minute-long video creation possesses a sense of progression and a\nvisually consistent journey from its first frame to t"
+        },
+        {
+          "rank": 11,
+          "chunk_id": "58617e8e36236d01-parent-6-12",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024336928009326728,
+          "reranker_score": null,
+          "preview": "[child chunk 6 | page 3 | section 1 Introduction]\n1 Introduction\nSince the release of ChatGPT in November 2022, the advent of AI technologies has marked a significant\ntransformation, reshaping interactions and integrating deeply into variou"
+        },
+        {
+          "rank": 12,
+          "chunk_id": "58617e8e36236d01-parent-7-13",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024336928009326728,
+          "reranker_score": null,
+          "preview": "[child chunk 7 | page 3 | section 1 Introduction]\nThis involves devel-\noping AI models that are capable of not only interpreting complex user instructions but also applying this\nunderstanding to solve real-world problems through dynamic and"
+        },
+        {
+          "rank": 13,
+          "chunk_id": "58617e8e36236d01-parent-9-15",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024336928009326728,
+          "reranker_score": null,
+          "preview": "[child chunk 9 | page 3 | section 1 Introduction]\nSimilar to powerful large language models\n(LLMs) such as GPT-4, Sora can parse text and comprehend complex user instructions. To make video\ngeneration computationally efficient,Sora employs "
+        },
+        {
+          "rank": 14,
+          "chunk_id": "58617e8e36236d01-parent-10-16",
+          "page": 4,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024336928009326728,
+          "reranker_score": null,
+          "preview": "[child chunk 10 | page 4 | section 1 Introduction]\ngenerated video emerges through a multi-step refinement process, with each step refining the video to be\nmore aligned with the desired content and quality. Highlights of Sora. Sora’s capabi"
+        },
+        {
+          "rank": 15,
+          "chunk_id": "58617e8e36236d01-parent-4-10",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023000660938532716,
+          "reranker_score": 5.5872907638549805,
+          "preview": "[child chunk 4 | page 2 | section Contents]\n. . . . . . . . . 16\n3.5.1 Text Prompt . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16\n3.5.2 Image Prompt . . . . . . . . . . . . . . . . . . . . . . . ."
+        },
+        {
+          "rank": 16,
+          "chunk_id": "58617e8e36236d01-parent-2-8",
+          "page": 2,
+          "section": "Contents",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023000660938532716,
+          "reranker_score": null,
+          "preview": "[child chunk 2 | page 2 | section Contents]\nContents\n1 Introduction 3\n2 Background 4\n2.1 History . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4\n2.2 Advanced Concepts . . . . . . . . . ."
+        },
+        {
+          "rank": 17,
+          "chunk_id": "58617e8e36236d01-parent-3-9",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023000660938532716,
+          "reranker_score": null,
+          "preview": "[child chunk 3 | page 2 | section Contents]\n. . . . . . . . . . . . . . . . 10\n3.2.6 Diffusion Transformer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11\n3.3 Modeling . . . . . . . . . . . . . . . . . . . . ."
+        },
+        {
+          "rank": 18,
+          "chunk_id": "58617e8e36236d01-parent-5-11",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023000660938532716,
+          "reranker_score": null,
+          "preview": "[child chunk 5 | page 2 | section Contents]\n19\n4 Applications 20\n4.1 Movie . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20\n4.2 Education . . . . . . . . . . . . . . . . . . . . . . . "
+        },
+        {
+          "rank": 19,
+          "chunk_id": "58617e8e36236d01-parent-84-90",
+          "page": 22,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.012987012987012988,
+          "reranker_score": null,
+          "preview": "[child chunk 84 | page 22 | section 5 Discussion]\nSora, as a simulation platform, exhibits a range of limitations that under-\nmine its effectiveness in accurately depicting complex scenarios. Most important is its inconsistent handling\nof p"
+        },
+        {
+          "rank": 20,
+          "chunk_id": "58617e8e36236d01-parent-71-77",
+          "page": 19,
+          "section": "4 Applications",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027146130794993832,
+          "reranker_score": 4.60518741607666,
+          "preview": "[child chunk 71 | page 19 | section 3.6.1 Safety Concern]\nThis concerns the development of\ntechnology, its moral responsibilities, and social values. In the domain of LLMs, the method of Reinforce-\nment Learning with Human Feedback (RLHF) ["
+        },
+        {
+          "rank": 21,
+          "chunk_id": "58617e8e36236d01-parent-69-75",
+          "page": 19,
+          "section": "3.6.1 Safety Concern",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027146130794993832,
+          "reranker_score": null,
+          "preview": "[child chunk 69 | page 19 | section 3.6.1 Safety Concern]\nthat do not perpetuate or exacerbate societal biases is a paramount concern. This priority stems from the\nrecognition that biases encoded within these models can reinforce existing s"
+        },
+        {
+          "rank": 22,
+          "chunk_id": "58617e8e36236d01-parent-70-76",
+          "page": 19,
+          "section": "3.6.1 Safety Concern",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027146130794993832,
+          "reranker_score": null,
+          "preview": "[child chunk 70 | page 19 | section 3.6.1 Safety Concern]\nIn an era\nwhere data privacy concerns are escalating, the emphasis on protecting user data has never been more crit-\nical. The increasing public awareness and concern over how person"
+        },
+        {
+          "rank": 23,
+          "chunk_id": "58617e8e36236d01-parent-72-78",
+          "page": 19,
+          "section": "4 Applications",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027146130794993832,
+          "reranker_score": null,
+          "preview": "[child chunk 72 | page 19 | section 3.6.1 Safety Concern]\nThis includes content filtering and review mechanisms,\nusage permissions and access control, data privacy protection, as well as enhancements in transparency and\nexplainability. For "
+        },
+        {
+          "rank": 24,
+          "chunk_id": "58617e8e36236d01-parent-73-79",
+          "page": 19,
+          "section": "4 Applications",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027146130794993832,
+          "reranker_score": null,
+          "preview": "[child chunk 73 | page 19 | section 3.6.1 Safety Concern]\nThis requires the development of new technologies and methods to identify and filter harmful\ncontent generated by these models, increasing the difficulty of regulation and management"
+        }
+      ],
+      "retrieval_query": "What is Sora? sora",
+      "routed_docs": [
+        {
+          "doc_id": "58617e8e36236d01",
+          "title": "SORA",
+          "routing_score": 6.450693855665945
+        }
+      ]
+    },
+    {
+      "id": "sora_02",
+      "question": "What core model architecture does Sora use?",
+      "score": 10.0,
+      "page_score": 1.0,
+      "keyword_score": 1.0,
+      "matched_pages": [
+        6,
+        7,
+        10,
+        11
+      ],
+      "missing_pages": [],
+      "matched_keywords": [
+        "diffusion transformer",
+        "time-space compressor",
+        "ViT",
+        "CLIP",
+        "latent"
+      ],
+      "missing_keywords": [],
+      "retrieved": [
+        {
+          "rank": 1,
+          "chunk_id": "58617e8e36236d01-parent-46-52",
+          "page": 13,
+          "section": "3.3.1 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031009615384615385,
+          "reranker_score": 4.161761283874512,
+          "preview": "[child chunk 46 | page 13 | section 3.2.6 Diffusion Transformer]\nCombining these methods and techniques allows Imagen Video to generate videos with not only\nhigh fidelity but also remarkable controllability, as demonstrated by its ability t"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-44-50",
+          "page": 12,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031009615384615385,
+          "reranker_score": null,
+          "preview": "[child chunk 44 | page 12 | section 3.2.6 Diffusion Transformer]\nImagen Video [29], a text-to-video generation system developed by Google Research, utilizes a cascade\nof diffusion models, which consists of 7 sub-models that perform text-con"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-45-51",
+          "page": 13,
+          "section": "3.3.1 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031009615384615385,
+          "reranker_score": null,
+          "preview": "[child chunk 45 | page 13 | section 3.2.6 Diffusion Transformer]\nFigure 13: The overall framework of Imagen Video. Source: Imagen Video [29]. the base model for low-resolution video generation, which is then refined by cascaded diffusion mo"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-47-53",
+          "page": 13,
+          "section": "3.3.1 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031009615384615385,
+          "reranker_score": null,
+          "preview": "[child chunk 47 | page 13 | section 3.2.6 Diffusion Transformer]\nVideo LDM first generates sparse key\nframes and then temporally interpolates twice with the same\nlatent diffusion models to achieve a high frame rate. Finally, the\nlatent vide"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-48-54",
+          "page": 14,
+          "section": "3.3.1 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031009615384615385,
+          "reranker_score": null,
+          "preview": "[child chunk 48 | page 14 | section 3.3.1 Discussion]\nvery long videos, models are trained to predict a future frame given a number of context frames, allowing\nfor classifier-free guidance during sampling. To achieve high temporal resolutio"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-6-12",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031054405392392875,
+          "reranker_score": 3.3051161766052246,
+          "preview": "[child chunk 6 | page 3 | section 1 Introduction]\n1 Introduction\nSince the release of ChatGPT in November 2022, the advent of AI technologies has marked a significant\ntransformation, reshaping interactions and integrating deeply into variou"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-4-10",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031054405392392875,
+          "reranker_score": null,
+          "preview": "[child chunk 4 | page 2 | section Contents]\n. . . . . . . . . 16\n3.5.1 Text Prompt . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16\n3.5.2 Image Prompt . . . . . . . . . . . . . . . . . . . . . . . ."
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-5-11",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031054405392392875,
+          "reranker_score": null,
+          "preview": "[child chunk 5 | page 2 | section Contents]\n19\n4 Applications 20\n4.1 Movie . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20\n4.2 Education . . . . . . . . . . . . . . . . . . . . . . . "
+        },
+        {
+          "rank": 9,
+          "chunk_id": "58617e8e36236d01-parent-7-13",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031054405392392875,
+          "reranker_score": null,
+          "preview": "[child chunk 7 | page 3 | section 1 Introduction]\nThis involves devel-\noping AI models that are capable of not only interpreting complex user instructions but also applying this\nunderstanding to solve real-world problems through dynamic and"
+        },
+        {
+          "rank": 10,
+          "chunk_id": "58617e8e36236d01-parent-8-14",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031054405392392875,
+          "reranker_score": null,
+          "preview": "[child chunk 8 | page 3 | section 1 Introduction]\nUnlike earlier models that can\nonly generate short video clips, Sora’s minute-long video creation possesses a sense of progression and a\nvisually consistent journey from its first frame to t"
+        },
+        {
+          "rank": 11,
+          "chunk_id": "58617e8e36236d01-parent-18-24",
+          "page": 5,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": 2.9828238487243652,
+          "preview": "[child chunk 18 | page 5 | section 1 Introduction]\nDespite numerous efforts in industry and academia,\nmost existing video generation tools, such as Pika [22] and Gen-2 [23], are limited to producing only short\nvideo clips of a few seconds. "
+        },
+        {
+          "rank": 12,
+          "chunk_id": "58617e8e36236d01-parent-16-22",
+          "page": 5,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": null,
+          "preview": "[child chunk 16 | page 5 | section 1 Introduction]\nIn CV , researchers take this concept\neven further by combining the transformer architecture with visual components, allowing it to be applied to\ndownstream CV tasks, such as Vision Transfo"
+        },
+        {
+          "rank": 13,
+          "chunk_id": "58617e8e36236d01-parent-17-23",
+          "page": 5,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": null,
+          "preview": "[child chunk 17 | page 5 | section 1 Introduction]\nBy integrating visual and linguistic knowledge from the outset, CLIP can\nfunction as an image encoder within multimodal generation frameworks. Another notable example is Stable\nDiffusion [1"
+        },
+        {
+          "rank": 14,
+          "chunk_id": "58617e8e36236d01-parent-19-25",
+          "page": 6,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": null,
+          "preview": "[child chunk 19 | page 6 | section 2.2 Advanced Concepts]\n2.2 Advanced Concepts\nScaling Laws for Vision Models. With scaling laws for LLMs, it is natural to ask whether the devel-\nopment of vision models follows similar scaling laws. Recent"
+        },
+        {
+          "rank": 15,
+          "chunk_id": "58617e8e36236d01-parent-20-26",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": null,
+          "preview": "[child chunk 20 | page 6 | section 2.2 Advanced Concepts]\nEmergent abilities in LLMs are sophisticated behaviors or functions that manifest at\ncertain scales—often linked to the size of the model’s parameters—that were not explicitly progra"
+        },
+        {
+          "rank": 16,
+          "chunk_id": "58617e8e36236d01-parent-21-27",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.022347066167290888,
+          "reranker_score": 2.5615410804748535,
+          "preview": "[child chunk 21 | page 6 | section 2.2 Advanced Concepts]\nAccording to Sora’s technical report, it is the first vision model to exhibit\nconfirmed emergent abilities, marking a significant milestone in the field of computer vision. In additi"
+        },
+        {
+          "rank": 17,
+          "chunk_id": "58617e8e36236d01-parent-22-28",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.022347066167290888,
+          "reranker_score": null,
+          "preview": "[child chunk 22 | page 6 | section 2.2 Advanced Concepts]\n(3) A CLIP-like [26] conditioning mechanism receives LLM-augmented user instructions and potentially\nvisual prompts to guide the diffusion model to generate styled or themed videos. "
+        },
+        {
+          "rank": 18,
+          "chunk_id": "58617e8e36236d01-parent-23-29",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.022347066167290888,
+          "reranker_score": null,
+          "preview": "[child chunk 23 | page 7 | section 3.2 Data Pre-processing]\nsteps, the latent representation of the generated video is obtained and then mapped back to pixel space with\nthe corresponding decoder. In this section, we aim to reverse engineer "
+        },
+        {
+          "rank": 19,
+          "chunk_id": "58617e8e36236d01-parent-35-41",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.025694893341952164,
+          "reranker_score": 0.9072268009185791,
+          "preview": "[child chunk 35 | page 10 | section 3.2.4 Spacetime Latent Patches]\nHere the patchification and token embedding\nsteps need to be completed in the compression network, but Sora may further patchify the latent for trans-\nformer token as Diffu"
+        },
+        {
+          "rank": 20,
+          "chunk_id": "58617e8e36236d01-parent-33-39",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.025694893341952164,
+          "reranker_score": null,
+          "preview": "[child chunk 33 | page 9 | section 3.2.2 Unified Visual Representation]\n(Right) Spatial-temporal patchification extracts and linearly embeds non-overlapping or overlapping\ntubelets that span the spatiotemporal input volume. In summary, we r"
+        },
+        {
+          "rank": 21,
+          "chunk_id": "58617e8e36236d01-parent-34-40",
+          "page": 10,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.025694893341952164,
+          "reranker_score": null,
+          "preview": "[child chunk 34 | page 10 | section 3.2.4 Spacetime Latent Patches]\nFigure 10: Patch packing enables variable resolution images or videos with preserved aspect ratio.6 Token\ndropping somehow could be treated as data augmentation. Source: Na"
+        },
+        {
+          "rank": 22,
+          "chunk_id": "58617e8e36236d01-parent-36-42",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.025694893341952164,
+          "reranker_score": null,
+          "preview": "[child chunk 36 | page 10 | section 3.2.4 Spacetime Latent Patches]\nFor the second concern, an intuitive approach is to drop the similar\ntokens [42, 43, 33, 44] or, like PNP, apply dropping rate schedulers. However, it is worth noting that "
+        },
+        {
+          "rank": 23,
+          "chunk_id": "58617e8e36236d01-parent-37-43",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.025694893341952164,
+          "reranker_score": null,
+          "preview": "[child chunk 37 | page 10 | section 3.2.4 Spacetime Latent Patches]\nDifferent from previous\napproaches where videos are resized, cropped, or trimmed to a standard size,Sora trains on data at its native\nsize. Although there are several benef"
+        },
+        {
+          "rank": 24,
+          "chunk_id": "58617e8e36236d01-parent-24-30",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02782608695652174,
+          "reranker_score": null,
+          "preview": "[child chunk 24 | page 7 | section 3.2 Data Pre-processing]\nUtilizing the diffusion transformer architecture [4] (see Section 3.2.4),Sora is the first model to embrace the\ndiversity of visual data and can sample in a wide array of video and"
+        }
+      ],
+      "retrieval_query": "What core model architecture does Sora use? core model architecture sora use diffusion transformer time-space compressor spacetime latent patches ViT CLIP conditioning tokenized latent",
+      "routed_docs": [
+        {
+          "doc_id": "58617e8e36236d01",
+          "title": "SORA",
+          "routing_score": 11.802775422663782
+        }
+      ]
+    },
+    {
+      "id": "sora_03",
+      "question": "Why does Sora train on videos and images at their native sizes?",
+      "score": 10.0,
+      "page_score": 1.0,
+      "keyword_score": 1.0,
+      "matched_pages": [
+        7,
+        8,
+        10
+      ],
+      "missing_pages": [],
+      "matched_keywords": [
+        "native",
+        "durations",
+        "resolutions",
+        "aspect ratios",
+        "composition",
+        "framing"
+      ],
+      "missing_keywords": [],
+      "retrieved": [
+        {
+          "rank": 1,
+          "chunk_id": "58617e8e36236d01-parent-34-40",
+          "page": 10,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030776515151515152,
+          "reranker_score": 6.0021185874938965,
+          "preview": "[child chunk 34 | page 10 | section 3.2.4 Spacetime Latent Patches]\nFigure 10: Patch packing enables variable resolution images or videos with preserved aspect ratio.6 Token\ndropping somehow could be treated as data augmentation. Source: Na"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-32-38",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030776515151515152,
+          "reranker_score": null,
+          "preview": "[child chunk 32 | page 9 | section 3.2.2 Unified Visual Representation]\nThe graphical illustration and the comparison against\npure spatial-pachifying are depicted in Figure 9. Similar to spatial-patch compression, employing spatial-\ntempora"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-33-39",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030776515151515152,
+          "reranker_score": null,
+          "preview": "[child chunk 33 | page 9 | section 3.2.2 Unified Visual Representation]\n(Right) Spatial-temporal patchification extracts and linearly embeds non-overlapping or overlapping\ntubelets that span the spatiotemporal input volume. In summary, we r"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-35-41",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030776515151515152,
+          "reranker_score": null,
+          "preview": "[child chunk 35 | page 10 | section 3.2.4 Spacetime Latent Patches]\nHere the patchification and token embedding\nsteps need to be completed in the compression network, but Sora may further patchify the latent for trans-\nformer token as Diffu"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-36-42",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030776515151515152,
+          "reranker_score": null,
+          "preview": "[child chunk 36 | page 10 | section 3.2.4 Spacetime Latent Patches]\nFor the second concern, an intuitive approach is to drop the similar\ntokens [42, 43, 33, 44] or, like PNP, apply dropping rate schedulers. However, it is worth noting that "
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-21-27",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": 5.67495059967041,
+          "preview": "[child chunk 21 | page 6 | section 2.2 Advanced Concepts]\nAccording to Sora’s technical report, it is the first vision model to exhibit\nconfirmed emergent abilities, marking a significant milestone in the field of computer vision. In additi"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-19-25",
+          "page": 6,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 19 | page 6 | section 2.2 Advanced Concepts]\n2.2 Advanced Concepts\nScaling Laws for Vision Models. With scaling laws for LLMs, it is natural to ask whether the devel-\nopment of vision models follows similar scaling laws. Recent"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-20-26",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 20 | page 6 | section 2.2 Advanced Concepts]\nEmergent abilities in LLMs are sophisticated behaviors or functions that manifest at\ncertain scales—often linked to the size of the model’s parameters—that were not explicitly progra"
+        },
+        {
+          "rank": 9,
+          "chunk_id": "58617e8e36236d01-parent-22-28",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 22 | page 6 | section 2.2 Advanced Concepts]\n(3) A CLIP-like [26] conditioning mechanism receives LLM-augmented user instructions and potentially\nvisual prompts to guide the diffusion model to generate styled or themed videos. "
+        },
+        {
+          "rank": 10,
+          "chunk_id": "58617e8e36236d01-parent-23-29",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 23 | page 7 | section 3.2 Data Pre-processing]\nsteps, the latent representation of the generated video is obtained and then mapped back to pixel space with\nthe corresponding decoder. In this section, we aim to reverse engineer "
+        },
+        {
+          "rank": 11,
+          "chunk_id": "58617e8e36236d01-parent-18-24",
+          "page": 5,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03131881575727918,
+          "reranker_score": null,
+          "preview": "[child chunk 18 | page 5 | section 1 Introduction]\nDespite numerous efforts in industry and academia,\nmost existing video generation tools, such as Pika [22] and Gen-2 [23], are limited to producing only short\nvideo clips of a few seconds. "
+        },
+        {
+          "rank": 12,
+          "chunk_id": "58617e8e36236d01-parent-24-30",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030158730158730156,
+          "reranker_score": null,
+          "preview": "[child chunk 24 | page 7 | section 3.2 Data Pre-processing]\nUtilizing the diffusion transformer architecture [4] (see Section 3.2.4),Sora is the first model to embrace the\ndiversity of visual data and can sample in a wide array of video and"
+        },
+        {
+          "rank": 13,
+          "chunk_id": "58617e8e36236d01-parent-25-31",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030158730158730156,
+          "reranker_score": null,
+          "preview": "[child chunk 25 | page 7 | section 3.2 Data Pre-processing]\nThe comparison between Sora and a model\ntrained on uniformly cropped square videos demon-\nstrates a clear advantage as shown in Figure 6. Videos produced by Sora exhibit better fra"
+        },
+        {
+          "rank": 14,
+          "chunk_id": "58617e8e36236d01-parent-85-91",
+          "page": 22,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.012987012987012988,
+          "reranker_score": 1.6701359748840332,
+          "preview": "[child chunk 85 | page 22 | section 5 Discussion]\nSora occasionally misunderstands instructions related to the place-\nment or arrangement of objects and characters within a given prompt, leading to confusion about directions\n(e.g., confusin"
+        },
+        {
+          "rank": 15,
+          "chunk_id": "58617e8e36236d01-parent-83-89",
+          "page": 22,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.012987012987012988,
+          "reranker_score": null,
+          "preview": "[child chunk 83 | page 22 | section 5 Discussion]\nA particularly impressive attribute of Sora is its ability to produce videos up to one\nminute in length while ensuring consistent and engaging storytelling. This marks a significant improvem"
+        },
+        {
+          "rank": 16,
+          "chunk_id": "58617e8e36236d01-parent-84-90",
+          "page": 22,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.012987012987012988,
+          "reranker_score": null,
+          "preview": "[child chunk 84 | page 22 | section 5 Discussion]\nSora, as a simulation platform, exhibits a range of limitations that under-\nmine its effectiveness in accurately depicting complex scenarios. Most important is its inconsistent handling\nof p"
+        },
+        {
+          "rank": 17,
+          "chunk_id": "58617e8e36236d01-parent-86-92",
+          "page": 22,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.012987012987012988,
+          "reranker_score": null,
+          "preview": "[child chunk 86 | page 22 | section 5 Discussion]\nLimitations in Human-computer Interaction (HCI). Sora, while showing potential in the video gener-\nation domain, faces significant limitations in HCI. These limitations are primarily evident"
+        },
+        {
+          "rank": 18,
+          "chunk_id": "58617e8e36236d01-parent-87-93",
+          "page": 23,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.012987012987012988,
+          "reranker_score": null,
+          "preview": "[child chunk 87 | page 23 | section 5.2 Opportunities]\nin video content that does not fully meet user expectations or needs. These shortcomings restrict Sora’s\npotential in video editing and enhancement, also impacting the overall satisfact"
+        },
+        {
+          "rank": 19,
+          "chunk_id": "58617e8e36236d01-parent-80-86",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023392612859097127,
+          "reranker_score": 0.8849061727523804,
+          "preview": "[child chunk 80 | page 21 | section 4.2 Education]\nAdditionally, models like MedSegDiff-\nV2 [150] and [151] leverage the power of transformers to segment medical images with unprecedented\nprecision, enabling clinicians to pinpoint areas of "
+        },
+        {
+          "rank": 20,
+          "chunk_id": "58617e8e36236d01-parent-78-84",
+          "page": 21,
+          "section": "4.2 Education",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023392612859097127,
+          "reranker_score": null,
+          "preview": "[child chunk 78 | page 21 | section 4.2 Education]\nBy integrating these models into edu-\ncational content creation, educators can produce videos on a myriad of subjects, making complex concepts\nmore accessible and captivating for students. "
+        },
+        {
+          "rank": 21,
+          "chunk_id": "58617e8e36236d01-parent-79-85",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023392612859097127,
+          "reranker_score": null,
+          "preview": "[child chunk 79 | page 21 | section 4.2 Education]\nThis could include\ngenerating changing weather conditions, transforming landscapes, or even creating entirely new settings on\nthe fly, making game worlds more immersive and responsive. Some"
+        },
+        {
+          "rank": 22,
+          "chunk_id": "58617e8e36236d01-parent-81-87",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023392612859097127,
+          "reranker_score": null,
+          "preview": "[child chunk 81 | page 21 | section 4.2 Education]\nThese models unlock new capabilities in robots, enabling them to interact with their environment\nand execute tasks with unprecedented complexity and precision. The introduction of web-scale"
+        },
+        {
+          "rank": 23,
+          "chunk_id": "58617e8e36236d01-parent-82-88",
+          "page": 22,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023392612859097127,
+          "reranker_score": null,
+          "preview": "[child chunk 82 | page 22 | section 5 Discussion]\nallowing robots to understand and execute tasks by predicting the outcome of actions in video format. Furthermore, the reliance on simulated environments for robotics research has been innov"
+        },
+        {
+          "rank": 24,
+          "chunk_id": "58617e8e36236d01-parent-7-13",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.014084507042253521,
+          "reranker_score": 0.6818373203277588,
+          "preview": "[child chunk 7 | page 3 | section 1 Introduction]\nThis involves devel-\noping AI models that are capable of not only interpreting complex user instructions but also applying this\nunderstanding to solve real-world problems through dynamic and"
+        }
+      ],
+      "retrieval_query": "Why does Sora train on videos and images at their native sizes? sora train videos images their native sizes variable durations resolutions aspect ratios flexible sizes composition framing square crop",
+      "routed_docs": [
+        {
+          "doc_id": "58617e8e36236d01",
+          "title": "SORA",
+          "routing_score": 8.40138771133189
+        }
+      ]
+    },
+    {
+      "id": "sora_04",
+      "question": "How does Sora turn visual data into model input?",
+      "score": 10.0,
+      "page_score": 1.0,
+      "keyword_score": 1.0,
+      "matched_pages": [
+        3,
+        8,
+        10,
+        11
+      ],
+      "missing_pages": [],
+      "matched_keywords": [
+        "latent",
+        "spacetime patches",
+        "compressed video",
+        "diffusion transformer"
+      ],
+      "missing_keywords": [],
+      "retrieved": [
+        {
+          "rank": 1,
+          "chunk_id": "58617e8e36236d01-parent-6-12",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": 4.363320350646973,
+          "preview": "[child chunk 6 | page 3 | section 1 Introduction]\n1 Introduction\nSince the release of ChatGPT in November 2022, the advent of AI technologies has marked a significant\ntransformation, reshaping interactions and integrating deeply into variou"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-4-10",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 4 | page 2 | section Contents]\n. . . . . . . . . 16\n3.5.1 Text Prompt . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16\n3.5.2 Image Prompt . . . . . . . . . . . . . . . . . . . . . . . ."
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-5-11",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 5 | page 2 | section Contents]\n19\n4 Applications 20\n4.1 Movie . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20\n4.2 Education . . . . . . . . . . . . . . . . . . . . . . . "
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-7-13",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 7 | page 3 | section 1 Introduction]\nThis involves devel-\noping AI models that are capable of not only interpreting complex user instructions but also applying this\nunderstanding to solve real-world problems through dynamic and"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-8-14",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 8 | page 3 | section 1 Introduction]\nUnlike earlier models that can\nonly generate short video clips, Sora’s minute-long video creation possesses a sense of progression and a\nvisually consistent journey from its first frame to t"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-25-31",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030679156908665108,
+          "reranker_score": 3.742185115814209,
+          "preview": "[child chunk 25 | page 7 | section 3.2 Data Pre-processing]\nThe comparison between Sora and a model\ntrained on uniformly cropped square videos demon-\nstrates a clear advantage as shown in Figure 6. Videos produced by Sora exhibit better fra"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-23-29",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030679156908665108,
+          "reranker_score": null,
+          "preview": "[child chunk 23 | page 7 | section 3.2 Data Pre-processing]\nsteps, the latent representation of the generated video is obtained and then mapped back to pixel space with\nthe corresponding decoder. In this section, we aim to reverse engineer "
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-24-30",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030679156908665108,
+          "reranker_score": null,
+          "preview": "[child chunk 24 | page 7 | section 3.2 Data Pre-processing]\nUtilizing the diffusion transformer architecture [4] (see Section 3.2.4),Sora is the first model to embrace the\ndiversity of visual data and can sample in a wide array of video and"
+        },
+        {
+          "rank": 9,
+          "chunk_id": "58617e8e36236d01-parent-26-32",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030679156908665108,
+          "reranker_score": null,
+          "preview": "[child chunk 26 | page 8 | section 3.2.2 Unified Visual Representation]\nthe core tenet of Richard Sutton’s T HE BITTER LESSON [30], which states that leveraging computation\nover human-designed features leads to more effective and flexible A"
+        },
+        {
+          "rank": 10,
+          "chunk_id": "58617e8e36236d01-parent-27-33",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030679156908665108,
+          "reranker_score": null,
+          "preview": "[child chunk 27 | page 8 | section 3.2.2 Unified Visual Representation]\nSpecifically, Sora patchifies videos\nby initially compressing videos into a lower-dimensional latent space, followed by decomposing the repre-\nsentation into spacetime "
+        },
+        {
+          "rank": 11,
+          "chunk_id": "58617e8e36236d01-parent-22-28",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03149801587301587,
+          "reranker_score": null,
+          "preview": "[child chunk 22 | page 6 | section 2.2 Advanced Concepts]\n(3) A CLIP-like [26] conditioning mechanism receives LLM-augmented user instructions and potentially\nvisual prompts to guide the diffusion model to generate styled or themed videos. "
+        },
+        {
+          "rank": 12,
+          "chunk_id": "58617e8e36236d01-parent-34-40",
+          "page": 10,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028205128205128206,
+          "reranker_score": 1.8037593364715576,
+          "preview": "[child chunk 34 | page 10 | section 3.2.4 Spacetime Latent Patches]\nFigure 10: Patch packing enables variable resolution images or videos with preserved aspect ratio.6 Token\ndropping somehow could be treated as data augmentation. Source: Na"
+        },
+        {
+          "rank": 13,
+          "chunk_id": "58617e8e36236d01-parent-32-38",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028205128205128206,
+          "reranker_score": null,
+          "preview": "[child chunk 32 | page 9 | section 3.2.2 Unified Visual Representation]\nThe graphical illustration and the comparison against\npure spatial-pachifying are depicted in Figure 9. Similar to spatial-patch compression, employing spatial-\ntempora"
+        },
+        {
+          "rank": 14,
+          "chunk_id": "58617e8e36236d01-parent-33-39",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028205128205128206,
+          "reranker_score": null,
+          "preview": "[child chunk 33 | page 9 | section 3.2.2 Unified Visual Representation]\n(Right) Spatial-temporal patchification extracts and linearly embeds non-overlapping or overlapping\ntubelets that span the spatiotemporal input volume. In summary, we r"
+        },
+        {
+          "rank": 15,
+          "chunk_id": "58617e8e36236d01-parent-35-41",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028205128205128206,
+          "reranker_score": null,
+          "preview": "[child chunk 35 | page 10 | section 3.2.4 Spacetime Latent Patches]\nHere the patchification and token embedding\nsteps need to be completed in the compression network, but Sora may further patchify the latent for trans-\nformer token as Diffu"
+        },
+        {
+          "rank": 16,
+          "chunk_id": "58617e8e36236d01-parent-36-42",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028205128205128206,
+          "reranker_score": null,
+          "preview": "[child chunk 36 | page 10 | section 3.2.4 Spacetime Latent Patches]\nFor the second concern, an intuitive approach is to drop the similar\ntokens [42, 43, 33, 44] or, like PNP, apply dropping rate schedulers. However, it is worth noting that "
+        },
+        {
+          "rank": 17,
+          "chunk_id": "58617e8e36236d01-parent-21-27",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028693528693528692,
+          "reranker_score": 1.5392447710037231,
+          "preview": "[child chunk 21 | page 6 | section 2.2 Advanced Concepts]\nAccording to Sora’s technical report, it is the first vision model to exhibit\nconfirmed emergent abilities, marking a significant milestone in the field of computer vision. In additi"
+        },
+        {
+          "rank": 18,
+          "chunk_id": "58617e8e36236d01-parent-19-25",
+          "page": 6,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028693528693528692,
+          "reranker_score": null,
+          "preview": "[child chunk 19 | page 6 | section 2.2 Advanced Concepts]\n2.2 Advanced Concepts\nScaling Laws for Vision Models. With scaling laws for LLMs, it is natural to ask whether the devel-\nopment of vision models follows similar scaling laws. Recent"
+        },
+        {
+          "rank": 19,
+          "chunk_id": "58617e8e36236d01-parent-20-26",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028693528693528692,
+          "reranker_score": null,
+          "preview": "[child chunk 20 | page 6 | section 2.2 Advanced Concepts]\nEmergent abilities in LLMs are sophisticated behaviors or functions that manifest at\ncertain scales—often linked to the size of the model’s parameters—that were not explicitly progra"
+        },
+        {
+          "rank": 20,
+          "chunk_id": "58617e8e36236d01-parent-18-24",
+          "page": 5,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03047794966520434,
+          "reranker_score": 1.1559667587280273,
+          "preview": "[child chunk 18 | page 5 | section 1 Introduction]\nDespite numerous efforts in industry and academia,\nmost existing video generation tools, such as Pika [22] and Gen-2 [23], are limited to producing only short\nvideo clips of a few seconds. "
+        },
+        {
+          "rank": 21,
+          "chunk_id": "58617e8e36236d01-parent-16-22",
+          "page": 5,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03047794966520434,
+          "reranker_score": null,
+          "preview": "[child chunk 16 | page 5 | section 1 Introduction]\nIn CV , researchers take this concept\neven further by combining the transformer architecture with visual components, allowing it to be applied to\ndownstream CV tasks, such as Vision Transfo"
+        },
+        {
+          "rank": 22,
+          "chunk_id": "58617e8e36236d01-parent-17-23",
+          "page": 5,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03047794966520434,
+          "reranker_score": null,
+          "preview": "[child chunk 17 | page 5 | section 1 Introduction]\nBy integrating visual and linguistic knowledge from the outset, CLIP can\nfunction as an image encoder within multimodal generation frameworks. Another notable example is Stable\nDiffusion [1"
+        },
+        {
+          "rank": 23,
+          "chunk_id": "58617e8e36236d01-parent-37-43",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027031963470319637,
+          "reranker_score": null,
+          "preview": "[child chunk 37 | page 10 | section 3.2.4 Spacetime Latent Patches]\nDifferent from previous\napproaches where videos are resized, cropped, or trimmed to a standard size,Sora trains on data at its native\nsize. Although there are several benef"
+        },
+        {
+          "rank": 24,
+          "chunk_id": "58617e8e36236d01-parent-14-20",
+          "page": 4,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 14 | page 4 | section 1 Introduction]\nBased on published technical reports and our reverse engineering, this paper presents\nthe first comprehensive review of Sora’s background, related technologies, emerging applications, curre"
+        }
+      ],
+      "retrieval_query": "How does Sora turn visual data into model input? sora turn visual data model input unified visual representation lower-dimensional latent space spacetime patches compressed video diffusion transformer",
+      "routed_docs": [
+        {
+          "doc_id": "58617e8e36236d01",
+          "title": "SORA",
+          "routing_score": 16.88020391749459
+        }
+      ]
+    },
+    {
+      "id": "sora_05",
+      "question": "What video compression approaches does the review discuss for Sora?",
+      "score": 10.0,
+      "page_score": 1.0,
+      "keyword_score": 1.0,
+      "matched_pages": [
+        8,
+        9
+      ],
+      "missing_pages": [],
+      "matched_keywords": [
+        "spatial-patch compression",
+        "spatial-temporal-patch compression",
+        "patch-level compression",
+        "VAE",
+        "VQ-VAE"
+      ],
+      "missing_keywords": [],
+      "retrieved": [
+        {
+          "rank": 1,
+          "chunk_id": "58617e8e36236d01-parent-25-31",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": 3.2523865699768066,
+          "preview": "[child chunk 25 | page 7 | section 3.2 Data Pre-processing]\nThe comparison between Sora and a model\ntrained on uniformly cropped square videos demon-\nstrates a clear advantage as shown in Figure 6. Videos produced by Sora exhibit better fra"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-23-29",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 23 | page 7 | section 3.2 Data Pre-processing]\nsteps, the latent representation of the generated video is obtained and then mapped back to pixel space with\nthe corresponding decoder. In this section, we aim to reverse engineer "
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-24-30",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 24 | page 7 | section 3.2 Data Pre-processing]\nUtilizing the diffusion transformer architecture [4] (see Section 3.2.4),Sora is the first model to embrace the\ndiversity of visual data and can sample in a wide array of video and"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-26-32",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 26 | page 8 | section 3.2.2 Unified Visual Representation]\nthe core tenet of Richard Sutton’s T HE BITTER LESSON [30], which states that leveraging computation\nover human-designed features leads to more effective and flexible A"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-27-33",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03225806451612903,
+          "reranker_score": null,
+          "preview": "[child chunk 27 | page 8 | section 3.2.2 Unified Visual Representation]\nSpecifically, Sora patchifies videos\nby initially compressing videos into a lower-dimensional latent space, followed by decomposing the repre-\nsentation into spacetime "
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-30-36",
+          "page": 9,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03149801587301587,
+          "reranker_score": 3.0674524307250977,
+          "preview": "[child chunk 30 | page 9 | section 3.2.2 Unified Visual Representation]\nof the latent space representation cannot be fixed. To address this, one can either sample a specific num-\nber of frames (padding or temporal interpolation [34] may be "
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-28-34",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03149801587301587,
+          "reranker_score": null,
+          "preview": "[child chunk 28 | page 8 | section 3.2.2 Unified Visual Representation]\n3.2.3 Video Compression Network\nFigure 8: ViT splits an image into fixed-\nsize patches, linearly embeds each of them,\nadds position embeddings, and feeds the\nresulting "
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-29-35",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03149801587301587,
+          "reranker_score": null,
+          "preview": "[child chunk 29 | page 8 | section 3.2.2 Unified Visual Representation]\nThis involves transforming\nvideo frames into fixed-size patches, akin to the methodolo-\ngies employed in ViT [15] and MAE [33] (see Figure 8), be-\nfore encoding them in"
+        },
+        {
+          "rank": 9,
+          "chunk_id": "58617e8e36236d01-parent-31-37",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03149801587301587,
+          "reranker_score": null,
+          "preview": "[child chunk 31 | page 9 | section 3.2.2 Unified Visual Representation]\nThese encoders can efficiently compress large-size patches (e.g., 256 × 256), facilitating the\nmanagement of large-scale data; Temporal information aggregation– since t"
+        },
+        {
+          "rank": 10,
+          "chunk_id": "58617e8e36236d01-parent-32-38",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03149801587301587,
+          "reranker_score": null,
+          "preview": "[child chunk 32 | page 9 | section 3.2.2 Unified Visual Representation]\nThe graphical illustration and the comparison against\npure spatial-pachifying are depicted in Figure 9. Similar to spatial-patch compression, employing spatial-\ntempora"
+        },
+        {
+          "rank": 11,
+          "chunk_id": "58617e8e36236d01-parent-22-28",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027149321266968326,
+          "reranker_score": null,
+          "preview": "[child chunk 22 | page 6 | section 2.2 Advanced Concepts]\n(3) A CLIP-like [26] conditioning mechanism receives LLM-augmented user instructions and potentially\nvisual prompts to guide the diffusion model to generate styled or themed videos. "
+        },
+        {
+          "rank": 12,
+          "chunk_id": "58617e8e36236d01-parent-34-40",
+          "page": 10,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02265495736286114,
+          "reranker_score": 1.8159184455871582,
+          "preview": "[child chunk 34 | page 10 | section 3.2.4 Spacetime Latent Patches]\nFigure 10: Patch packing enables variable resolution images or videos with preserved aspect ratio.6 Token\ndropping somehow could be treated as data augmentation. Source: Na"
+        },
+        {
+          "rank": 13,
+          "chunk_id": "58617e8e36236d01-parent-33-39",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02265495736286114,
+          "reranker_score": null,
+          "preview": "[child chunk 33 | page 9 | section 3.2.2 Unified Visual Representation]\n(Right) Spatial-temporal patchification extracts and linearly embeds non-overlapping or overlapping\ntubelets that span the spatiotemporal input volume. In summary, we r"
+        },
+        {
+          "rank": 14,
+          "chunk_id": "58617e8e36236d01-parent-35-41",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02265495736286114,
+          "reranker_score": null,
+          "preview": "[child chunk 35 | page 10 | section 3.2.4 Spacetime Latent Patches]\nHere the patchification and token embedding\nsteps need to be completed in the compression network, but Sora may further patchify the latent for trans-\nformer token as Diffu"
+        },
+        {
+          "rank": 15,
+          "chunk_id": "58617e8e36236d01-parent-36-42",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02265495736286114,
+          "reranker_score": null,
+          "preview": "[child chunk 36 | page 10 | section 3.2.4 Spacetime Latent Patches]\nFor the second concern, an intuitive approach is to drop the similar\ntokens [42, 43, 33, 44] or, like PNP, apply dropping rate schedulers. However, it is worth noting that "
+        },
+        {
+          "rank": 16,
+          "chunk_id": "58617e8e36236d01-parent-37-43",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02964426877470356,
+          "reranker_score": null,
+          "preview": "[child chunk 37 | page 10 | section 3.2.4 Spacetime Latent Patches]\nDifferent from previous\napproaches where videos are resized, cropped, or trimmed to a standard size,Sora trains on data at its native\nsize. Although there are several benef"
+        },
+        {
+          "rank": 17,
+          "chunk_id": "58617e8e36236d01-parent-40-46",
+          "page": 11,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02919863597612958,
+          "reranker_score": 1.475177526473999,
+          "preview": "[child chunk 40 | page 11 | section 3.2.6 Diffusion Transformer]\nThe scalability and flexibility of DiT is empirically validated. DiT becomes the new backbone for diffusion models. In U-ViT, as shown in Figure 11, they treat all inputs,\ninc"
+        },
+        {
+          "rank": 18,
+          "chunk_id": "58617e8e36236d01-parent-38-44",
+          "page": 11,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02919863597612958,
+          "reranker_score": null,
+          "preview": "[child chunk 38 | page 11 | section 3.2.6 Diffusion Transformer]\nbefore feeding them to the input layer of diffusion transformer. Spatial-temporal patchification is adopted\nby Sora because it is simple to implement, and it can effectively r"
+        },
+        {
+          "rank": 19,
+          "chunk_id": "58617e8e36236d01-parent-39-45",
+          "page": 11,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02919863597612958,
+          "reranker_score": null,
+          "preview": "[child chunk 39 | page 11 | section 3.2.6 Diffusion Transformer]\nTraditional diffusion models [51, 52, 53] mainly leverage convolutional\nU-Nets that include downsampling and upsampling blocks for the denoising network backbone. However,\nrec"
+        },
+        {
+          "rank": 20,
+          "chunk_id": "58617e8e36236d01-parent-41-47",
+          "page": 12,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02919863597612958,
+          "reranker_score": null,
+          "preview": "[child chunk 41 | page 12 | section 3.2.6 Diffusion Transformer]\nin CNN-based U-Net are not always necessary, and U-ViT achieves record-breaking FID scores in image\nand text-to-image generation. Like Masked AutoEncoder (MAE) [33], Masked Di"
+        },
+        {
+          "rank": 21,
+          "chunk_id": "58617e8e36236d01-parent-42-48",
+          "page": 12,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02919863597612958,
+          "reranker_score": null,
+          "preview": "[child chunk 42 | page 12 | section 3.2.6 Diffusion Transformer]\nBesides, DiffiT uses two hybrid hierarchical architectures for efficient denoising in the pixel space and the\nlatent space, respectively, and achieves new state-of-the-art res"
+        },
+        {
+          "rank": 22,
+          "chunk_id": "58617e8e36236d01-parent-90-96",
+          "page": 23,
+          "section": "6 Conclusion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024961240310077522,
+          "reranker_score": 1.4335659742355347,
+          "preview": "[child chunk 90 | page 23 | section 5.2 Opportunities]\nThe ability of Sora to generate\nhighly realistic video content from textual descriptions alone could revolutionize how brands engage with\ntheir audience, allowing for the creation of im"
+        },
+        {
+          "rank": 23,
+          "chunk_id": "58617e8e36236d01-parent-88-94",
+          "page": 23,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024961240310077522,
+          "reranker_score": null,
+          "preview": "[child chunk 88 | page 23 | section 5.2 Opportunities]\n(1) The introduction ofSora by OpenAI marks a strategic shift towards encouraging the broader\nAI community to delve deeper into the exploration of text-to-video models, leveraging both "
+        },
+        {
+          "rank": 24,
+          "chunk_id": "58617e8e36236d01-parent-89-95",
+          "page": 23,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024961240310077522,
+          "reranker_score": null,
+          "preview": "[child chunk 89 | page 23 | section 5.2 Opportunities]\n(1) The current capabilities of Sora signal a promising path for the advancement of video\nsimulation technologies, highlighting the potential to significantly enhance realism within bot"
+        }
+      ],
+      "retrieval_query": "What video compression approaches does the review discuss for Sora? video compression approaches review discuss sora video compression network spatial-patch compression spatial-temporal-patch compression patch-level compression VAE VQ-VAE",
+      "routed_docs": [
+        {
+          "doc_id": "58617e8e36236d01",
+          "title": "SORA",
+          "routing_score": 15.077428494830809
+        }
+      ]
+    },
+    {
+      "id": "sora_06",
+      "question": "How are spacetime latent patches handled before they are fed into the diffusion transformer?",
+      "score": 10.0,
+      "page_score": 1.0,
+      "keyword_score": 1.0,
+      "matched_pages": [
+        10,
+        11
+      ],
+      "missing_pages": [],
+      "matched_keywords": [
+        "Patch n",
+        "PNP",
+        "fixed",
+        "padding",
+        "super long context window",
+        "3D consistency"
+      ],
+      "missing_keywords": [],
+      "retrieved": [
+        {
+          "rank": 1,
+          "chunk_id": "58617e8e36236d01-parent-31-37",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029551337359792925,
+          "reranker_score": 3.917804718017578,
+          "preview": "[child chunk 31 | page 9 | section 3.2.2 Unified Visual Representation]\nThese encoders can efficiently compress large-size patches (e.g., 256 × 256), facilitating the\nmanagement of large-scale data; Temporal information aggregation– since t"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-29-35",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029551337359792925,
+          "reranker_score": null,
+          "preview": "[child chunk 29 | page 8 | section 3.2.2 Unified Visual Representation]\nThis involves transforming\nvideo frames into fixed-size patches, akin to the methodolo-\ngies employed in ViT [15] and MAE [33] (see Figure 8), be-\nfore encoding them in"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-30-36",
+          "page": 9,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029551337359792925,
+          "reranker_score": null,
+          "preview": "[child chunk 30 | page 9 | section 3.2.2 Unified Visual Representation]\nof the latent space representation cannot be fixed. To address this, one can either sample a specific num-\nber of frames (padding or temporal interpolation [34] may be "
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-32-38",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029551337359792925,
+          "reranker_score": null,
+          "preview": "[child chunk 32 | page 9 | section 3.2.2 Unified Visual Representation]\nThe graphical illustration and the comparison against\npure spatial-pachifying are depicted in Figure 9. Similar to spatial-patch compression, employing spatial-\ntempora"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-33-39",
+          "page": 9,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029551337359792925,
+          "reranker_score": null,
+          "preview": "[child chunk 33 | page 9 | section 3.2.2 Unified Visual Representation]\n(Right) Spatial-temporal patchification extracts and linearly embeds non-overlapping or overlapping\ntubelets that span the spatiotemporal input volume. In summary, we r"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-6-12",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": -0.43212372064590454,
+          "preview": "[child chunk 6 | page 3 | section 1 Introduction]\n1 Introduction\nSince the release of ChatGPT in November 2022, the advent of AI technologies has marked a significant\ntransformation, reshaping interactions and integrating deeply into variou"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-4-10",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": null,
+          "preview": "[child chunk 4 | page 2 | section Contents]\n. . . . . . . . . 16\n3.5.1 Text Prompt . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16\n3.5.2 Image Prompt . . . . . . . . . . . . . . . . . . . . . . . ."
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-5-11",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": null,
+          "preview": "[child chunk 5 | page 2 | section Contents]\n19\n4 Applications 20\n4.1 Movie . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20\n4.2 Education . . . . . . . . . . . . . . . . . . . . . . . "
+        },
+        {
+          "rank": 9,
+          "chunk_id": "58617e8e36236d01-parent-7-13",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": null,
+          "preview": "[child chunk 7 | page 3 | section 1 Introduction]\nThis involves devel-\noping AI models that are capable of not only interpreting complex user instructions but also applying this\nunderstanding to solve real-world problems through dynamic and"
+        },
+        {
+          "rank": 10,
+          "chunk_id": "58617e8e36236d01-parent-8-14",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": null,
+          "preview": "[child chunk 8 | page 3 | section 1 Introduction]\nUnlike earlier models that can\nonly generate short video clips, Sora’s minute-long video creation possesses a sense of progression and a\nvisually consistent journey from its first frame to t"
+        },
+        {
+          "rank": 11,
+          "chunk_id": "58617e8e36236d01-parent-35-41",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031009615384615385,
+          "reranker_score": -1.4600452184677124,
+          "preview": "[child chunk 35 | page 10 | section 3.2.4 Spacetime Latent Patches]\nHere the patchification and token embedding\nsteps need to be completed in the compression network, but Sora may further patchify the latent for trans-\nformer token as Diffu"
+        },
+        {
+          "rank": 12,
+          "chunk_id": "58617e8e36236d01-parent-34-40",
+          "page": 10,
+          "section": "3.2.4 Spacetime Latent Patches",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031009615384615385,
+          "reranker_score": null,
+          "preview": "[child chunk 34 | page 10 | section 3.2.4 Spacetime Latent Patches]\nFigure 10: Patch packing enables variable resolution images or videos with preserved aspect ratio.6 Token\ndropping somehow could be treated as data augmentation. Source: Na"
+        },
+        {
+          "rank": 13,
+          "chunk_id": "58617e8e36236d01-parent-36-42",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031009615384615385,
+          "reranker_score": null,
+          "preview": "[child chunk 36 | page 10 | section 3.2.4 Spacetime Latent Patches]\nFor the second concern, an intuitive approach is to drop the similar\ntokens [42, 43, 33, 44] or, like PNP, apply dropping rate schedulers. However, it is worth noting that "
+        },
+        {
+          "rank": 14,
+          "chunk_id": "58617e8e36236d01-parent-37-43",
+          "page": 10,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031009615384615385,
+          "reranker_score": null,
+          "preview": "[child chunk 37 | page 10 | section 3.2.4 Spacetime Latent Patches]\nDifferent from previous\napproaches where videos are resized, cropped, or trimmed to a standard size,Sora trains on data at its native\nsize. Although there are several benef"
+        },
+        {
+          "rank": 15,
+          "chunk_id": "58617e8e36236d01-parent-40-46",
+          "page": 11,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028258706467661692,
+          "reranker_score": -2.8158388137817383,
+          "preview": "[child chunk 40 | page 11 | section 3.2.6 Diffusion Transformer]\nThe scalability and flexibility of DiT is empirically validated. DiT becomes the new backbone for diffusion models. In U-ViT, as shown in Figure 11, they treat all inputs,\ninc"
+        },
+        {
+          "rank": 16,
+          "chunk_id": "58617e8e36236d01-parent-38-44",
+          "page": 11,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028258706467661692,
+          "reranker_score": null,
+          "preview": "[child chunk 38 | page 11 | section 3.2.6 Diffusion Transformer]\nbefore feeding them to the input layer of diffusion transformer. Spatial-temporal patchification is adopted\nby Sora because it is simple to implement, and it can effectively r"
+        },
+        {
+          "rank": 17,
+          "chunk_id": "58617e8e36236d01-parent-39-45",
+          "page": 11,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028258706467661692,
+          "reranker_score": null,
+          "preview": "[child chunk 39 | page 11 | section 3.2.6 Diffusion Transformer]\nTraditional diffusion models [51, 52, 53] mainly leverage convolutional\nU-Nets that include downsampling and upsampling blocks for the denoising network backbone. However,\nrec"
+        },
+        {
+          "rank": 18,
+          "chunk_id": "58617e8e36236d01-parent-41-47",
+          "page": 12,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028258706467661692,
+          "reranker_score": null,
+          "preview": "[child chunk 41 | page 12 | section 3.2.6 Diffusion Transformer]\nin CNN-based U-Net are not always necessary, and U-ViT achieves record-breaking FID scores in image\nand text-to-image generation. Like Masked AutoEncoder (MAE) [33], Masked Di"
+        },
+        {
+          "rank": 19,
+          "chunk_id": "58617e8e36236d01-parent-42-48",
+          "page": 12,
+          "section": "3.2.6 Diffusion Transformer",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028258706467661692,
+          "reranker_score": null,
+          "preview": "[child chunk 42 | page 12 | section 3.2.6 Diffusion Transformer]\nBesides, DiffiT uses two hybrid hierarchical architectures for efficient denoising in the pixel space and the\nlatent space, respectively, and achieves new state-of-the-art res"
+        },
+        {
+          "rank": 20,
+          "chunk_id": "58617e8e36236d01-parent-24-30",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029631255487269532,
+          "reranker_score": -3.154869556427002,
+          "preview": "[child chunk 24 | page 7 | section 3.2 Data Pre-processing]\nUtilizing the diffusion transformer architecture [4] (see Section 3.2.4),Sora is the first model to embrace the\ndiversity of visual data and can sample in a wide array of video and"
+        },
+        {
+          "rank": 21,
+          "chunk_id": "58617e8e36236d01-parent-22-28",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029631255487269532,
+          "reranker_score": null,
+          "preview": "[child chunk 22 | page 6 | section 2.2 Advanced Concepts]\n(3) A CLIP-like [26] conditioning mechanism receives LLM-augmented user instructions and potentially\nvisual prompts to guide the diffusion model to generate styled or themed videos. "
+        },
+        {
+          "rank": 22,
+          "chunk_id": "58617e8e36236d01-parent-23-29",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029631255487269532,
+          "reranker_score": null,
+          "preview": "[child chunk 23 | page 7 | section 3.2 Data Pre-processing]\nsteps, the latent representation of the generated video is obtained and then mapped back to pixel space with\nthe corresponding decoder. In this section, we aim to reverse engineer "
+        },
+        {
+          "rank": 23,
+          "chunk_id": "58617e8e36236d01-parent-25-31",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029631255487269532,
+          "reranker_score": null,
+          "preview": "[child chunk 25 | page 7 | section 3.2 Data Pre-processing]\nThe comparison between Sora and a model\ntrained on uniformly cropped square videos demon-\nstrates a clear advantage as shown in Figure 6. Videos produced by Sora exhibit better fra"
+        },
+        {
+          "rank": 24,
+          "chunk_id": "58617e8e36236d01-parent-26-32",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029631255487269532,
+          "reranker_score": null,
+          "preview": "[child chunk 26 | page 8 | section 3.2.2 Unified Visual Representation]\nthe core tenet of Richard Sutton’s T HE BITTER LESSON [30], which states that leveraging computation\nover human-designed features leads to more effective and flexible A"
+        }
+      ],
+      "retrieval_query": "How are spacetime latent patches handled before they are fed into the diffusion transformer? spacetime latent patches handled before they fed diffusion transformer Patch n Pack PNP fixed-length sequences padding tokens super long context window 3D consistency",
+      "routed_docs": [
+        {
+          "doc_id": "58617e8e36236d01",
+          "title": "SORA",
+          "routing_score": 9.753469278329728
+        }
+      ]
+    },
+    {
+      "id": "sora_07",
+      "question": "How does Sora improve language understanding and prompt following?",
+      "score": 10.0,
+      "page_score": 1.0,
+      "keyword_score": 1.0,
+      "matched_pages": [
+        14,
+        15
+      ],
+      "missing_pages": [],
+      "matched_keywords": [
+        "DALL",
+        "captioner",
+        "descriptive caption",
+        "fine-tune",
+        "GPT-4V",
+        "prompt extension"
+      ],
+      "missing_keywords": [],
+      "retrieved": [
+        {
+          "rank": 1,
+          "chunk_id": "58617e8e36236d01-parent-48-54",
+          "page": 14,
+          "section": "3.3.1 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031544957774465976,
+          "reranker_score": 6.19033670425415,
+          "preview": "[child chunk 48 | page 14 | section 3.3.1 Discussion]\nvery long videos, models are trained to predict a future frame given a number of context frames, allowing\nfor classifier-free guidance during sampling. To achieve high temporal resolutio"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-46-52",
+          "page": 13,
+          "section": "3.3.1 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031544957774465976,
+          "reranker_score": null,
+          "preview": "[child chunk 46 | page 13 | section 3.2.6 Diffusion Transformer]\nCombining these methods and techniques allows Imagen Video to generate videos with not only\nhigh fidelity but also remarkable controllability, as demonstrated by its ability t"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-47-53",
+          "page": 13,
+          "section": "3.3.1 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031544957774465976,
+          "reranker_score": null,
+          "preview": "[child chunk 47 | page 13 | section 3.2.6 Diffusion Transformer]\nVideo LDM first generates sparse key\nframes and then temporally interpolates twice with the same\nlatent diffusion models to achieve a high frame rate. Finally, the\nlatent vide"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-49-55",
+          "page": 14,
+          "section": "3.3.1 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031544957774465976,
+          "reranker_score": null,
+          "preview": "[child chunk 49 | page 14 | section 3.3.1 Discussion]\nBy reviewing existing works and our reverse engineering, we speculate that Sora also leverages\ncascade diffusion model architecture [59] which is composed of a base model and many space-"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-50-56",
+          "page": 14,
+          "section": "3.4.2 Text-to-Image",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031544957774465976,
+          "reranker_score": null,
+          "preview": "[child chunk 50 | page 14 | section 3.3.1 Discussion]\nFor training efficiency, most of the existing works leverage the pre-trained V AE\nencoder of Stable Diffusions [60, 61], a pre-trained 2D diffusion model, as an initialized model checkpo"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-56-62",
+          "page": 15,
+          "section": "3.5 Prompt Engineering",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029857397504456328,
+          "reranker_score": 3.0116536617279053,
+          "preview": "[child chunk 56 | page 15 | section 3.4.2 Text-to-Image]\nThen, this video captioner is applied to all videos in the training data to generate high-quality (video,\ndescriptive caption) pairs, which are used to fine-tune Sora to improve its i"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-54-60",
+          "page": 15,
+          "section": "3.4.2 Text-to-Image",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029857397504456328,
+          "reranker_score": null,
+          "preview": "[child chunk 54 | page 15 | section 3.4.2 Text-to-Image]\nThe resulting descriptive image captions by the captioner are then used to fine-tune text-to-image models. Specifically, DALL·E 3 follows contrastive captioners (CoCa) [68] to jointly"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-55-61",
+          "page": 15,
+          "section": "3.5 Prompt Engineering",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029857397504456328,
+          "reranker_score": null,
+          "preview": "[child chunk 55 | page 15 | section 3.4.2 Text-to-Image]\nThe training\ndataset for the text-to-image model is a mixture of the re-captioned dataset generated by the image captioner\nand ground-truth human-written data to ensure that the model"
+        },
+        {
+          "rank": 9,
+          "chunk_id": "58617e8e36236d01-parent-57-63",
+          "page": 15,
+          "section": "3.5 Prompt Engineering",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029857397504456328,
+          "reranker_score": null,
+          "preview": "[child chunk 57 | page 15 | section 3.4.2 Text-to-Image]\nThese flattened frame tokens are then processed by a generative pooler and a contrastive\npooler, which are jointly trained with the contrastive loss and captioning loss. Other alterna"
+        },
+        {
+          "rank": 10,
+          "chunk_id": "58617e8e36236d01-parent-58-64",
+          "page": 16,
+          "section": "3.5 Prompt Engineering",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.029857397504456328,
+          "reranker_score": null,
+          "preview": "[child chunk 58 | page 16 | section 3.5 Prompt Engineering]\nby developing a captioner that can generate long and detailed captions, which are then used to train the\nmodel. However, the process of collecting data for training such a captione"
+        },
+        {
+          "rank": 11,
+          "chunk_id": "58617e8e36236d01-parent-52-58",
+          "page": 14,
+          "section": "3.4.2 Text-to-Image",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03149801587301587,
+          "reranker_score": null,
+          "preview": "[child chunk 52 | page 14 | section 3.3.1 Discussion]\nThis ability al-\nlows LLMs to read, understand, and respond appropriately to instructions describing an unseen task without\nexamples. Prompt following ability is obtained and enhanced by"
+        },
+        {
+          "rank": 12,
+          "chunk_id": "58617e8e36236d01-parent-53-59",
+          "page": 15,
+          "section": "3.4.2 Text-to-Image",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03149801587301587,
+          "reranker_score": null,
+          "preview": "[child chunk 53 | page 15 | section 3.4.2 Text-to-Image]\nLLMs significantly outperform the untuned ones on unseen tasks. The instruction-following ability trans-\nforms LLMs into general-purpose task solvers, marking a paradigm shift in the "
+        },
+        {
+          "rank": 13,
+          "chunk_id": "58617e8e36236d01-parent-51-57",
+          "page": 14,
+          "section": "3.4.2 Text-to-Image",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028814262023217248,
+          "reranker_score": null,
+          "preview": "[child chunk 51 | page 14 | section 3.3.1 Discussion]\nModel instruction tuning aims to enhance AI models’ capability to follow prompts accu-\nrately. This improved capability in prompt following enables models to generate output that more cl"
+        },
+        {
+          "rank": 14,
+          "chunk_id": "58617e8e36236d01-parent-8-14",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.025003906860446942,
+          "reranker_score": 1.7069294452667236,
+          "preview": "[child chunk 8 | page 3 | section 1 Introduction]\nUnlike earlier models that can\nonly generate short video clips, Sora’s minute-long video creation possesses a sense of progression and a\nvisually consistent journey from its first frame to t"
+        },
+        {
+          "rank": 15,
+          "chunk_id": "58617e8e36236d01-parent-6-12",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.025003906860446942,
+          "reranker_score": null,
+          "preview": "[child chunk 6 | page 3 | section 1 Introduction]\n1 Introduction\nSince the release of ChatGPT in November 2022, the advent of AI technologies has marked a significant\ntransformation, reshaping interactions and integrating deeply into variou"
+        },
+        {
+          "rank": 16,
+          "chunk_id": "58617e8e36236d01-parent-7-13",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.025003906860446942,
+          "reranker_score": null,
+          "preview": "[child chunk 7 | page 3 | section 1 Introduction]\nThis involves devel-\noping AI models that are capable of not only interpreting complex user instructions but also applying this\nunderstanding to solve real-world problems through dynamic and"
+        },
+        {
+          "rank": 17,
+          "chunk_id": "58617e8e36236d01-parent-9-15",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.025003906860446942,
+          "reranker_score": null,
+          "preview": "[child chunk 9 | page 3 | section 1 Introduction]\nSimilar to powerful large language models\n(LLMs) such as GPT-4, Sora can parse text and comprehend complex user instructions. To make video\ngeneration computationally efficient,Sora employs "
+        },
+        {
+          "rank": 18,
+          "chunk_id": "58617e8e36236d01-parent-10-16",
+          "page": 4,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.025003906860446942,
+          "reranker_score": null,
+          "preview": "[child chunk 10 | page 4 | section 1 Introduction]\ngenerated video emerges through a multi-step refinement process, with each step refining the video to be\nmore aligned with the desired content and quality. Highlights of Sora. Sora’s capabi"
+        },
+        {
+          "rank": 19,
+          "chunk_id": "58617e8e36236d01-parent-61-67",
+          "page": 16,
+          "section": "3.5.3 Video Prompt",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027417840375586856,
+          "reranker_score": 1.5394432544708252,
+          "preview": "[child chunk 61 | page 16 | section 3.5 Prompt Engineering]\nIn addition, a text prompt can instruct the model to animate\nthese elements by e.g., adding layers of movement, interaction, and narrative progression that bring the\n16\n\n[child chu"
+        },
+        {
+          "rank": 20,
+          "chunk_id": "58617e8e36236d01-parent-59-65",
+          "page": 16,
+          "section": "3.5.3 Video Prompt",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027417840375586856,
+          "reranker_score": null,
+          "preview": "[child chunk 59 | page 16 | section 3.5 Prompt Engineering]\n3.5.1 Text Prompt\nText prompt engineering is vital in directing text-to-video models (e.g., Sora [3]) to produce videos that\nare visually striking while precisely meeting user spec"
+        },
+        {
+          "rank": 21,
+          "chunk_id": "58617e8e36236d01-parent-60-66",
+          "page": 16,
+          "section": "3.5.3 Video Prompt",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027417840375586856,
+          "reranker_score": null,
+          "preview": "[child chunk 60 | page 16 | section 3.5 Prompt Engineering]\nThe quality of prompt engineering depends on the careful selection of words, the\nspecificity of the details provided, and comprehension of their impact on the model’s output. For e"
+        },
+        {
+          "rank": 22,
+          "chunk_id": "58617e8e36236d01-parent-62-68",
+          "page": 17,
+          "section": "3.5.3 Video Prompt",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027417840375586856,
+          "reranker_score": null,
+          "preview": "[child chunk 62 | page 17 | section 3.5.3 Video Prompt]\nstatic image to life [27, 80, 81]. The use of image prompts allows Sora to convert static images into\ndynamic, narrative-driven videos by leveraging both visual and textual information"
+        },
+        {
+          "rank": 23,
+          "chunk_id": "58617e8e36236d01-parent-63-69",
+          "page": 17,
+          "section": "3.6.1 Safety Concern",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027417840375586856,
+          "reranker_score": null,
+          "preview": "[child chunk 63 | page 17 | section 3.5.3 Video Prompt]\nRecent works (e.g.,\nMoonshot [84] and Fast-Vid2Vid [85]) show that good video prompts need to be specific and flexible. This\nensures that the model receives clear direction on specific"
+        },
+        {
+          "rank": 24,
+          "chunk_id": "58617e8e36236d01-parent-45-51",
+          "page": 13,
+          "section": "3.3.1 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031544957774465976,
+          "reranker_score": null,
+          "preview": "[child chunk 45 | page 13 | section 3.2.6 Diffusion Transformer]\nFigure 13: The overall framework of Imagen Video. Source: Imagen Video [29]. the base model for low-resolution video generation, which is then refined by cascaded diffusion mo"
+        }
+      ],
+      "retrieval_query": "How does Sora improve language understanding and prompt following? sora improve language understanding prompt following DALL-E 3 captioner descriptive captions video descriptive caption pairs fine-tune Sora GPT-4V prompt extension",
+      "routed_docs": [
+        {
+          "doc_id": "58617e8e36236d01",
+          "title": "SORA",
+          "routing_score": 13.345413285395857
+        }
+      ]
+    },
+    {
+      "id": "sora_08",
+      "question": "What does the review say about prompt engineering for Sora?",
+      "score": 10.0,
+      "page_score": 1.0,
+      "keyword_score": 1.0,
+      "matched_pages": [
+        16,
+        17,
+        18
+      ],
+      "missing_pages": [],
+      "matched_keywords": [
+        "text prompt",
+        "image prompt",
+        "video prompt",
+        "visual anchor",
+        "video extension",
+        "video editing",
+        "video connection"
+      ],
+      "missing_keywords": [],
+      "retrieved": [
+        {
+          "rank": 1,
+          "chunk_id": "58617e8e36236d01-parent-56-62",
+          "page": 15,
+          "section": "3.5 Prompt Engineering",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": 5.768274307250977,
+          "preview": "[child chunk 56 | page 15 | section 3.4.2 Text-to-Image]\nThen, this video captioner is applied to all videos in the training data to generate high-quality (video,\ndescriptive caption) pairs, which are used to fine-tune Sora to improve its i"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-54-60",
+          "page": 15,
+          "section": "3.4.2 Text-to-Image",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": null,
+          "preview": "[child chunk 54 | page 15 | section 3.4.2 Text-to-Image]\nThe resulting descriptive image captions by the captioner are then used to fine-tune text-to-image models. Specifically, DALL·E 3 follows contrastive captioners (CoCa) [68] to jointly"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-55-61",
+          "page": 15,
+          "section": "3.5 Prompt Engineering",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": null,
+          "preview": "[child chunk 55 | page 15 | section 3.4.2 Text-to-Image]\nThe training\ndataset for the text-to-image model is a mixture of the re-captioned dataset generated by the image captioner\nand ground-truth human-written data to ensure that the model"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-57-63",
+          "page": 15,
+          "section": "3.5 Prompt Engineering",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": null,
+          "preview": "[child chunk 57 | page 15 | section 3.4.2 Text-to-Image]\nThese flattened frame tokens are then processed by a generative pooler and a contrastive\npooler, which are jointly trained with the contrastive loss and captioning loss. Other alterna"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-58-64",
+          "page": 16,
+          "section": "3.5 Prompt Engineering",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": null,
+          "preview": "[child chunk 58 | page 16 | section 3.5 Prompt Engineering]\nby developing a captioner that can generate long and detailed captions, which are then used to train the\nmodel. However, the process of collecting data for training such a captione"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-61-67",
+          "page": 16,
+          "section": "3.5.3 Video Prompt",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0315136476426799,
+          "reranker_score": 5.604783058166504,
+          "preview": "[child chunk 61 | page 16 | section 3.5 Prompt Engineering]\nIn addition, a text prompt can instruct the model to animate\nthese elements by e.g., adding layers of movement, interaction, and narrative progression that bring the\n16\n\n[child chu"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-59-65",
+          "page": 16,
+          "section": "3.5.3 Video Prompt",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0315136476426799,
+          "reranker_score": null,
+          "preview": "[child chunk 59 | page 16 | section 3.5 Prompt Engineering]\n3.5.1 Text Prompt\nText prompt engineering is vital in directing text-to-video models (e.g., Sora [3]) to produce videos that\nare visually striking while precisely meeting user spec"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-60-66",
+          "page": 16,
+          "section": "3.5.3 Video Prompt",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0315136476426799,
+          "reranker_score": null,
+          "preview": "[child chunk 60 | page 16 | section 3.5 Prompt Engineering]\nThe quality of prompt engineering depends on the careful selection of words, the\nspecificity of the details provided, and comprehension of their impact on the model’s output. For e"
+        },
+        {
+          "rank": 9,
+          "chunk_id": "58617e8e36236d01-parent-62-68",
+          "page": 17,
+          "section": "3.5.3 Video Prompt",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0315136476426799,
+          "reranker_score": null,
+          "preview": "[child chunk 62 | page 17 | section 3.5.3 Video Prompt]\nstatic image to life [27, 80, 81]. The use of image prompts allows Sora to convert static images into\ndynamic, narrative-driven videos by leveraging both visual and textual information"
+        },
+        {
+          "rank": 10,
+          "chunk_id": "58617e8e36236d01-parent-63-69",
+          "page": 17,
+          "section": "3.6.1 Safety Concern",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0315136476426799,
+          "reranker_score": null,
+          "preview": "[child chunk 63 | page 17 | section 3.5.3 Video Prompt]\nRecent works (e.g.,\nMoonshot [84] and Fast-Vid2Vid [85]) show that good video prompts need to be specific and flexible. This\nensures that the model receives clear direction on specific"
+        },
+        {
+          "rank": 11,
+          "chunk_id": "58617e8e36236d01-parent-64-70",
+          "page": 17,
+          "section": "3.6.1 Safety Concern",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02946236559139785,
+          "reranker_score": null,
+          "preview": "[child chunk 64 | page 17 | section 3.5.3 Video Prompt]\nIn Figure 17(c), the prompt instructs Sora to connect videos while ensuring smooth transitions between\nobjects in different scenes across videos. 3.5.4 Discussion\nPrompt engineering al"
+        },
+        {
+          "rank": 12,
+          "chunk_id": "58617e8e36236d01-parent-65-71",
+          "page": 17,
+          "section": "3.6.1 Safety Concern",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02946236559139785,
+          "reranker_score": null,
+          "preview": "[child chunk 65 | page 17 | section 3.5.3 Video Prompt]\nHowever, these\nadvancements also raise concerns about the potential for misuse of these technologies, including the gener-\nation of fake news [91, 92], privacy breaches [93], and ethic"
+        },
+        {
+          "rank": 13,
+          "chunk_id": "58617e8e36236d01-parent-53-59",
+          "page": 15,
+          "section": "3.4.2 Text-to-Image",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.028665028665028666,
+          "reranker_score": null,
+          "preview": "[child chunk 53 | page 15 | section 3.4.2 Text-to-Image]\nLLMs significantly outperform the untuned ones on unseen tasks. The instruction-following ability trans-\nforms LLMs into general-purpose task solvers, marking a paradigm shift in the "
+        },
+        {
+          "rank": 14,
+          "chunk_id": "58617e8e36236d01-parent-52-58",
+          "page": 14,
+          "section": "3.4.2 Text-to-Image",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.013157894736842105,
+          "reranker_score": null,
+          "preview": "[child chunk 52 | page 14 | section 3.3.1 Discussion]\nThis ability al-\nlows LLMs to read, understand, and respond appropriately to instructions describing an unseen task without\nexamples. Prompt following ability is obtained and enhanced by"
+        },
+        {
+          "rank": 15,
+          "chunk_id": "58617e8e36236d01-parent-50-56",
+          "page": 14,
+          "section": "3.4.2 Text-to-Image",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": null,
+          "preview": "[child chunk 50 | page 14 | section 3.3.1 Discussion]\nFor training efficiency, most of the existing works leverage the pre-trained V AE\nencoder of Stable Diffusions [60, 61], a pre-trained 2D diffusion model, as an initialized model checkpo"
+        },
+        {
+          "rank": 16,
+          "chunk_id": "58617e8e36236d01-parent-51-57",
+          "page": 14,
+          "section": "3.4.2 Text-to-Image",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.032018442622950824,
+          "reranker_score": null,
+          "preview": "[child chunk 51 | page 14 | section 3.3.1 Discussion]\nModel instruction tuning aims to enhance AI models’ capability to follow prompts accu-\nrately. This improved capability in prompt following enables models to generate output that more cl"
+        },
+        {
+          "rank": 17,
+          "chunk_id": "58617e8e36236d01-parent-69-75",
+          "page": 19,
+          "section": "3.6.1 Safety Concern",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0315136476426799,
+          "reranker_score": null,
+          "preview": "[child chunk 69 | page 19 | section 3.6.1 Safety Concern]\nthat do not perpetuate or exacerbate societal biases is a paramount concern. This priority stems from the\nrecognition that biases encoded within these models can reinforce existing s"
+        },
+        {
+          "rank": 18,
+          "chunk_id": "58617e8e36236d01-parent-67-73",
+          "page": 18,
+          "section": "3.6.1 Safety Concern",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0315136476426799,
+          "reranker_score": null,
+          "preview": "[child chunk 67 | page 18 | section 3.6.1 Safety Concern]\nFor instance, AutoDAN [103], a novel and interpretable\nadversarial attack method based on gradient techniques, is introduced to enable system bypass. In a recent\nstudy, researchers e"
+        },
+        {
+          "rank": 19,
+          "chunk_id": "58617e8e36236d01-parent-23-29",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0,
+          "reranker_score": null,
+          "preview": "[child chunk 23 | page 7 | section 3.2 Data Pre-processing]\nsteps, the latent representation of the generated video is obtained and then mapped back to pixel space with\nthe corresponding decoder. In this section, we aim to reverse engineer "
+        },
+        {
+          "rank": 20,
+          "chunk_id": "58617e8e36236d01-parent-25-31",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0,
+          "reranker_score": null,
+          "preview": "[child chunk 25 | page 7 | section 3.2 Data Pre-processing]\nThe comparison between Sora and a model\ntrained on uniformly cropped square videos demon-\nstrates a clear advantage as shown in Figure 6. Videos produced by Sora exhibit better fra"
+        },
+        {
+          "rank": 21,
+          "chunk_id": "58617e8e36236d01-parent-27-33",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0,
+          "reranker_score": null,
+          "preview": "[child chunk 27 | page 8 | section 3.2.2 Unified Visual Representation]\nSpecifically, Sora patchifies videos\nby initially compressing videos into a lower-dimensional latent space, followed by decomposing the repre-\nsentation into spacetime "
+        },
+        {
+          "rank": 22,
+          "chunk_id": "58617e8e36236d01-parent-29-35",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0,
+          "reranker_score": null,
+          "preview": "[child chunk 29 | page 8 | section 3.2.2 Unified Visual Representation]\nThis involves transforming\nvideo frames into fixed-size patches, akin to the methodolo-\ngies employed in ViT [15] and MAE [33] (see Figure 8), be-\nfore encoding them in"
+        },
+        {
+          "rank": 23,
+          "chunk_id": "58617e8e36236d01-parent-24-30",
+          "page": 7,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0,
+          "reranker_score": null,
+          "preview": "[child chunk 24 | page 7 | section 3.2 Data Pre-processing]\nUtilizing the diffusion transformer architecture [4] (see Section 3.2.4),Sora is the first model to embrace the\ndiversity of visual data and can sample in a wide array of video and"
+        },
+        {
+          "rank": 24,
+          "chunk_id": "58617e8e36236d01-parent-26-32",
+          "page": 8,
+          "section": "3.2.2 Unified Visual Representation",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.0,
+          "reranker_score": null,
+          "preview": "[child chunk 26 | page 8 | section 3.2.2 Unified Visual Representation]\nthe core tenet of Richard Sutton’s T HE BITTER LESSON [30], which states that leveraging computation\nover human-designed features leads to more effective and flexible A"
+        }
+      ],
+      "retrieval_query": "What does the review say about prompt engineering for Sora? review say prompt engineering sora text prompt image prompt video prompt visual anchor video extension video editing video connection",
+      "routed_docs": [
+        {
+          "doc_id": "58617e8e36236d01",
+          "title": "SORA",
+          "routing_score": 17.467702403492737
+        }
+      ]
+    },
+    {
+      "id": "sora_09",
+      "question": "What simulation capabilities does Sora demonstrate?",
+      "score": 10.0,
+      "page_score": 1.0,
+      "keyword_score": 1.0,
+      "matched_pages": [
+        4,
+        22,
+        23
+      ],
+      "missing_pages": [],
+      "matched_keywords": [
+        "3D consistency",
+        "dynamic camera motion",
+        "long-range coherence",
+        "object persistence",
+        "interactions with the world",
+        "Minecraft"
+      ],
+      "missing_keywords": [],
+      "retrieved": [
+        {
+          "rank": 1,
+          "chunk_id": "58617e8e36236d01-parent-7-13",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": 6.932013511657715,
+          "preview": "[child chunk 7 | page 3 | section 1 Introduction]\nThis involves devel-\noping AI models that are capable of not only interpreting complex user instructions but also applying this\nunderstanding to solve real-world problems through dynamic and"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-5-11",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": null,
+          "preview": "[child chunk 5 | page 2 | section Contents]\n19\n4 Applications 20\n4.1 Movie . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20\n4.2 Education . . . . . . . . . . . . . . . . . . . . . . . "
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-6-12",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": null,
+          "preview": "[child chunk 6 | page 3 | section 1 Introduction]\n1 Introduction\nSince the release of ChatGPT in November 2022, the advent of AI technologies has marked a significant\ntransformation, reshaping interactions and integrating deeply into variou"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-8-14",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": null,
+          "preview": "[child chunk 8 | page 3 | section 1 Introduction]\nUnlike earlier models that can\nonly generate short video clips, Sora’s minute-long video creation possesses a sense of progression and a\nvisually consistent journey from its first frame to t"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-9-15",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": null,
+          "preview": "[child chunk 9 | page 3 | section 1 Introduction]\nSimilar to powerful large language models\n(LLMs) such as GPT-4, Sora can parse text and comprehend complex user instructions. To make video\ngeneration computationally efficient,Sora employs "
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-3-9",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02946912242686891,
+          "reranker_score": null,
+          "preview": "[child chunk 3 | page 2 | section Contents]\n. . . . . . . . . . . . . . . . 10\n3.2.6 Diffusion Transformer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11\n3.3 Modeling . . . . . . . . . . . . . . . . . . . . ."
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-4-10",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.02946912242686891,
+          "reranker_score": null,
+          "preview": "[child chunk 4 | page 2 | section Contents]\n. . . . . . . . . 16\n3.5.1 Text Prompt . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16\n3.5.2 Image Prompt . . . . . . . . . . . . . . . . . . . . . . . ."
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-86-92",
+          "page": 22,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031024531024531024,
+          "reranker_score": 2.8311614990234375,
+          "preview": "[child chunk 86 | page 22 | section 5 Discussion]\nLimitations in Human-computer Interaction (HCI). Sora, while showing potential in the video gener-\nation domain, faces significant limitations in HCI. These limitations are primarily evident"
+        },
+        {
+          "rank": 9,
+          "chunk_id": "58617e8e36236d01-parent-84-90",
+          "page": 22,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031024531024531024,
+          "reranker_score": null,
+          "preview": "[child chunk 84 | page 22 | section 5 Discussion]\nSora, as a simulation platform, exhibits a range of limitations that under-\nmine its effectiveness in accurately depicting complex scenarios. Most important is its inconsistent handling\nof p"
+        },
+        {
+          "rank": 10,
+          "chunk_id": "58617e8e36236d01-parent-85-91",
+          "page": 22,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031024531024531024,
+          "reranker_score": null,
+          "preview": "[child chunk 85 | page 22 | section 5 Discussion]\nSora occasionally misunderstands instructions related to the place-\nment or arrangement of objects and characters within a given prompt, leading to confusion about directions\n(e.g., confusin"
+        },
+        {
+          "rank": 11,
+          "chunk_id": "58617e8e36236d01-parent-87-93",
+          "page": 23,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031024531024531024,
+          "reranker_score": null,
+          "preview": "[child chunk 87 | page 23 | section 5.2 Opportunities]\nin video content that does not fully meet user expectations or needs. These shortcomings restrict Sora’s\npotential in video editing and enhancement, also impacting the overall satisfact"
+        },
+        {
+          "rank": 12,
+          "chunk_id": "58617e8e36236d01-parent-88-94",
+          "page": 23,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031024531024531024,
+          "reranker_score": null,
+          "preview": "[child chunk 88 | page 23 | section 5.2 Opportunities]\n(1) The introduction ofSora by OpenAI marks a strategic shift towards encouraging the broader\nAI community to delve deeper into the exploration of text-to-video models, leveraging both "
+        },
+        {
+          "rank": 13,
+          "chunk_id": "58617e8e36236d01-parent-81-87",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03200204813108039,
+          "reranker_score": 2.3775534629821777,
+          "preview": "[child chunk 81 | page 21 | section 4.2 Education]\nThese models unlock new capabilities in robots, enabling them to interact with their environment\nand execute tasks with unprecedented complexity and precision. The introduction of web-scale"
+        },
+        {
+          "rank": 14,
+          "chunk_id": "58617e8e36236d01-parent-79-85",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03200204813108039,
+          "reranker_score": null,
+          "preview": "[child chunk 79 | page 21 | section 4.2 Education]\nThis could include\ngenerating changing weather conditions, transforming landscapes, or even creating entirely new settings on\nthe fly, making game worlds more immersive and responsive. Some"
+        },
+        {
+          "rank": 15,
+          "chunk_id": "58617e8e36236d01-parent-80-86",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03200204813108039,
+          "reranker_score": null,
+          "preview": "[child chunk 80 | page 21 | section 4.2 Education]\nAdditionally, models like MedSegDiff-\nV2 [150] and [151] leverage the power of transformers to segment medical images with unprecedented\nprecision, enabling clinicians to pinpoint areas of "
+        },
+        {
+          "rank": 16,
+          "chunk_id": "58617e8e36236d01-parent-82-88",
+          "page": 22,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03200204813108039,
+          "reranker_score": null,
+          "preview": "[child chunk 82 | page 22 | section 5 Discussion]\nallowing robots to understand and execute tasks by predicting the outcome of actions in video format. Furthermore, the reliance on simulated environments for robotics research has been innov"
+        },
+        {
+          "rank": 17,
+          "chunk_id": "58617e8e36236d01-parent-83-89",
+          "page": 22,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03200204813108039,
+          "reranker_score": null,
+          "preview": "[child chunk 83 | page 22 | section 5 Discussion]\nA particularly impressive attribute of Sora is its ability to produce videos up to one\nminute in length while ensuring consistent and engaging storytelling. This marks a significant improvem"
+        },
+        {
+          "rank": 18,
+          "chunk_id": "58617e8e36236d01-parent-2-8",
+          "page": 2,
+          "section": "Contents",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027272727272727275,
+          "reranker_score": null,
+          "preview": "[child chunk 2 | page 2 | section Contents]\nContents\n1 Introduction 3\n2 Background 4\n2.1 History . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4\n2.2 Advanced Concepts . . . . . . . . . ."
+        },
+        {
+          "rank": 19,
+          "chunk_id": "58617e8e36236d01-parent-18-24",
+          "page": 5,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027425373134328357,
+          "reranker_score": 1.2347161769866943,
+          "preview": "[child chunk 18 | page 5 | section 1 Introduction]\nDespite numerous efforts in industry and academia,\nmost existing video generation tools, such as Pika [22] and Gen-2 [23], are limited to producing only short\nvideo clips of a few seconds. "
+        },
+        {
+          "rank": 20,
+          "chunk_id": "58617e8e36236d01-parent-16-22",
+          "page": 5,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027425373134328357,
+          "reranker_score": null,
+          "preview": "[child chunk 16 | page 5 | section 1 Introduction]\nIn CV , researchers take this concept\neven further by combining the transformer architecture with visual components, allowing it to be applied to\ndownstream CV tasks, such as Vision Transfo"
+        },
+        {
+          "rank": 21,
+          "chunk_id": "58617e8e36236d01-parent-17-23",
+          "page": 5,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027425373134328357,
+          "reranker_score": null,
+          "preview": "[child chunk 17 | page 5 | section 1 Introduction]\nBy integrating visual and linguistic knowledge from the outset, CLIP can\nfunction as an image encoder within multimodal generation frameworks. Another notable example is Stable\nDiffusion [1"
+        },
+        {
+          "rank": 22,
+          "chunk_id": "58617e8e36236d01-parent-19-25",
+          "page": 6,
+          "section": "2.2 Advanced Concepts",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027425373134328357,
+          "reranker_score": null,
+          "preview": "[child chunk 19 | page 6 | section 2.2 Advanced Concepts]\n2.2 Advanced Concepts\nScaling Laws for Vision Models. With scaling laws for LLMs, it is natural to ask whether the devel-\nopment of vision models follows similar scaling laws. Recent"
+        },
+        {
+          "rank": 23,
+          "chunk_id": "58617e8e36236d01-parent-20-26",
+          "page": 6,
+          "section": "3.2 Data Pre-processing",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.027425373134328357,
+          "reranker_score": null,
+          "preview": "[child chunk 20 | page 6 | section 2.2 Advanced Concepts]\nEmergent abilities in LLMs are sophisticated behaviors or functions that manifest at\ncertain scales—often linked to the size of the model’s parameters—that were not explicitly progra"
+        },
+        {
+          "rank": 24,
+          "chunk_id": "58617e8e36236d01-parent-46-52",
+          "page": 13,
+          "section": "3.3.1 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023809523809523808,
+          "reranker_score": 0.7935328483581543,
+          "preview": "[child chunk 46 | page 13 | section 3.2.6 Diffusion Transformer]\nCombining these methods and techniques allows Imagen Video to generate videos with not only\nhigh fidelity but also remarkable controllability, as demonstrated by its ability t"
+        }
+      ],
+      "retrieval_query": "What simulation capabilities does Sora demonstrate? simulation capabilities sora demonstrate 3D consistency dynamic camera motion long-range coherence object permanence interactions with the world Minecraft digital environments",
+      "routed_docs": [
+        {
+          "doc_id": "58617e8e36236d01",
+          "title": "SORA",
+          "routing_score": 5.450693855665945
+        }
+      ]
+    },
+    {
+      "id": "sora_10",
+      "question": "What limitations of Sora does the review highlight?",
+      "score": 10.0,
+      "page_score": 1.0,
+      "keyword_score": 1.0,
+      "matched_pages": [
+        22,
+        23
+      ],
+      "missing_pages": [],
+      "matched_keywords": [
+        "cause and effect",
+        "spatial",
+        "temporal",
+        "irrelevant animals or people",
+        "Human-computer Interaction",
+        "Usage Limitation",
+        "one minute"
+      ],
+      "missing_keywords": [],
+      "retrieved": [
+        {
+          "rank": 1,
+          "chunk_id": "58617e8e36236d01-parent-81-87",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03200204813108039,
+          "reranker_score": 3.272632598876953,
+          "preview": "[child chunk 81 | page 21 | section 4.2 Education]\nThese models unlock new capabilities in robots, enabling them to interact with their environment\nand execute tasks with unprecedented complexity and precision. The introduction of web-scale"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "58617e8e36236d01-parent-79-85",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03200204813108039,
+          "reranker_score": null,
+          "preview": "[child chunk 79 | page 21 | section 4.2 Education]\nThis could include\ngenerating changing weather conditions, transforming landscapes, or even creating entirely new settings on\nthe fly, making game worlds more immersive and responsive. Some"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "58617e8e36236d01-parent-80-86",
+          "page": 21,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03200204813108039,
+          "reranker_score": null,
+          "preview": "[child chunk 80 | page 21 | section 4.2 Education]\nAdditionally, models like MedSegDiff-\nV2 [150] and [151] leverage the power of transformers to segment medical images with unprecedented\nprecision, enabling clinicians to pinpoint areas of "
+        },
+        {
+          "rank": 4,
+          "chunk_id": "58617e8e36236d01-parent-82-88",
+          "page": 22,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03200204813108039,
+          "reranker_score": null,
+          "preview": "[child chunk 82 | page 22 | section 5 Discussion]\nallowing robots to understand and execute tasks by predicting the outcome of actions in video format. Furthermore, the reliance on simulated environments for robotics research has been innov"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "58617e8e36236d01-parent-83-89",
+          "page": 22,
+          "section": "5 Discussion",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03200204813108039,
+          "reranker_score": null,
+          "preview": "[child chunk 83 | page 22 | section 5 Discussion]\nA particularly impressive attribute of Sora is its ability to produce videos up to one\nminute in length while ensuring consistent and engaging storytelling. This marks a significant improvem"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "58617e8e36236d01-parent-84-90",
+          "page": 22,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031754032258064516,
+          "reranker_score": null,
+          "preview": "[child chunk 84 | page 22 | section 5 Discussion]\nSora, as a simulation platform, exhibits a range of limitations that under-\nmine its effectiveness in accurately depicting complex scenarios. Most important is its inconsistent handling\nof p"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "58617e8e36236d01-parent-85-91",
+          "page": 22,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031754032258064516,
+          "reranker_score": null,
+          "preview": "[child chunk 85 | page 22 | section 5 Discussion]\nSora occasionally misunderstands instructions related to the place-\nment or arrangement of objects and characters within a given prompt, leading to confusion about directions\n(e.g., confusin"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "58617e8e36236d01-parent-86-92",
+          "page": 22,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.03278688524590164,
+          "reranker_score": null,
+          "preview": "[child chunk 86 | page 22 | section 5 Discussion]\nLimitations in Human-computer Interaction (HCI). Sora, while showing potential in the video gener-\nation domain, faces significant limitations in HCI. These limitations are primarily evident"
+        },
+        {
+          "rank": 9,
+          "chunk_id": "58617e8e36236d01-parent-0-3",
+          "page": 1,
+          "section": "Sora: A Review on Background, Technology, Limitations, and",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.026862026862026864,
+          "reranker_score": -0.2551953196525574,
+          "preview": "[child chunk 0 | page 1 | section Sora: A Review on Background, Technology, Limitations, and]\nSora: A Review on Background, Technology, Limitations, and\nOpportunities of Large Vision Models\nYixin Liu1* Kai Zhang1* Yuan Li1* Zhiling Yan1* Ch"
+        },
+        {
+          "rank": 10,
+          "chunk_id": "58617e8e36236d01-parent-0-4",
+          "page": 1,
+          "section": "Sora: A Review on Background, Technology, Limitations, and",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.026862026862026864,
+          "reranker_score": null,
+          "preview": "[child chunk 0 | page 1 | section Sora: A Review on Background, Technology, Limitations, and]\nSora: A Review on Background, Technology, Limitations, and\nOpportunities of Large Vision Models\nYixin Liu1* Kai Zhang1* Yuan Li1* Zhiling Yan1* Ch"
+        },
+        {
+          "rank": 11,
+          "chunk_id": "58617e8e36236d01-parent-0-5",
+          "page": 1,
+          "section": "Contents",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.026862026862026864,
+          "reranker_score": null,
+          "preview": "[child chunk 0 | page 1 | section Sora: A Review on Background, Technology, Limitations, and]\nSora: A Review on Background, Technology, Limitations, and\nOpportunities of Large Vision Models\nYixin Liu1* Kai Zhang1* Yuan Li1* Zhiling Yan1* Ch"
+        },
+        {
+          "rank": 12,
+          "chunk_id": "58617e8e36236d01-parent-78-84",
+          "page": 21,
+          "section": "4.2 Education",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024696835255841466,
+          "reranker_score": null,
+          "preview": "[child chunk 78 | page 21 | section 4.2 Education]\nBy integrating these models into edu-\ncational content creation, educators can produce videos on a myriad of subjects, making complex concepts\nmore accessible and captivating for students. "
+        },
+        {
+          "rank": 13,
+          "chunk_id": "58617e8e36236d01-parent-7-13",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023684210526315787,
+          "reranker_score": -1.1186978816986084,
+          "preview": "[child chunk 7 | page 3 | section 1 Introduction]\nThis involves devel-\noping AI models that are capable of not only interpreting complex user instructions but also applying this\nunderstanding to solve real-world problems through dynamic and"
+        },
+        {
+          "rank": 14,
+          "chunk_id": "58617e8e36236d01-parent-5-11",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023684210526315787,
+          "reranker_score": null,
+          "preview": "[child chunk 5 | page 2 | section Contents]\n19\n4 Applications 20\n4.1 Movie . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20\n4.2 Education . . . . . . . . . . . . . . . . . . . . . . . "
+        },
+        {
+          "rank": 15,
+          "chunk_id": "58617e8e36236d01-parent-6-12",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023684210526315787,
+          "reranker_score": null,
+          "preview": "[child chunk 6 | page 3 | section 1 Introduction]\n1 Introduction\nSince the release of ChatGPT in November 2022, the advent of AI technologies has marked a significant\ntransformation, reshaping interactions and integrating deeply into variou"
+        },
+        {
+          "rank": 16,
+          "chunk_id": "58617e8e36236d01-parent-8-14",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023684210526315787,
+          "reranker_score": null,
+          "preview": "[child chunk 8 | page 3 | section 1 Introduction]\nUnlike earlier models that can\nonly generate short video clips, Sora’s minute-long video creation possesses a sense of progression and a\nvisually consistent journey from its first frame to t"
+        },
+        {
+          "rank": 17,
+          "chunk_id": "58617e8e36236d01-parent-9-15",
+          "page": 3,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023684210526315787,
+          "reranker_score": null,
+          "preview": "[child chunk 9 | page 3 | section 1 Introduction]\nSimilar to powerful large language models\n(LLMs) such as GPT-4, Sora can parse text and comprehend complex user instructions. To make video\ngeneration computationally efficient,Sora employs "
+        },
+        {
+          "rank": 18,
+          "chunk_id": "58617e8e36236d01-parent-10-16",
+          "page": 4,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030309988518943745,
+          "reranker_score": null,
+          "preview": "[child chunk 10 | page 4 | section 1 Introduction]\ngenerated video emerges through a multi-step refinement process, with each step refining the video to be\nmore aligned with the desired content and quality. Highlights of Sora. Sora’s capabi"
+        },
+        {
+          "rank": 19,
+          "chunk_id": "58617e8e36236d01-parent-11-17",
+          "page": 4,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.030309988518943745,
+          "reranker_score": null,
+          "preview": "[child chunk 11 | page 4 | section 1 Introduction]\n• Boosting creativity: Imagine outlining a concept through text, whether a simple object or a full scene,\nand seeing a realistic or highly stylized video rendered within seconds. Sora allow"
+        },
+        {
+          "rank": 20,
+          "chunk_id": "58617e8e36236d01-parent-87-93",
+          "page": 23,
+          "section": "5.2 Opportunities",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.031754032258064516,
+          "reranker_score": null,
+          "preview": "[child chunk 87 | page 23 | section 5.2 Opportunities]\nin video content that does not fully meet user expectations or needs. These shortcomings restrict Sora’s\npotential in video editing and enhancement, also impacting the overall satisfact"
+        },
+        {
+          "rank": 21,
+          "chunk_id": "58617e8e36236d01-parent-2-8",
+          "page": 2,
+          "section": "Contents",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.026862026862026864,
+          "reranker_score": null,
+          "preview": "[child chunk 2 | page 2 | section Contents]\nContents\n1 Introduction 3\n2 Background 4\n2.1 History . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4\n2.2 Advanced Concepts . . . . . . . . . ."
+        },
+        {
+          "rank": 22,
+          "chunk_id": "58617e8e36236d01-parent-75-81",
+          "page": 20,
+          "section": "4.2 Education",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024696835255841466,
+          "reranker_score": null,
+          "preview": "[child chunk 75 | page 20 | section 4 Applications]\n4.1 Movie\nTraditionally, creating cinematic masterpieces has been an arduous and expensive process, often requir-\ning decades of effort, cutting-edge equipment, and substantial financial i"
+        },
+        {
+          "rank": 23,
+          "chunk_id": "58617e8e36236d01-parent-76-82",
+          "page": 20,
+          "section": "4.2 Education",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.024696835255841466,
+          "reranker_score": null,
+          "preview": "[child chunk 76 | page 20 | section 4 Applications]\nThese developments, epitomized by Sora’s ability to\ngenerate captivating movie content effortlessly, mark a pivotal moment in the democratization of movie\nproduction. They offer a glimpse "
+        },
+        {
+          "rank": 24,
+          "chunk_id": "58617e8e36236d01-parent-3-9",
+          "page": 2,
+          "section": "1 Introduction",
+          "source": "parent_context",
+          "neighbor_role": "parent_context",
+          "hybrid_score": 0.023684210526315787,
+          "reranker_score": null,
+          "preview": "[child chunk 3 | page 2 | section Contents]\n. . . . . . . . . . . . . . . . 10\n3.2.6 Diffusion Transformer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11\n3.3 Modeling . . . . . . . . . . . . . . . . . . . . ."
+        }
+      ],
+      "retrieval_query": "What limitations of Sora does the review highlight? limitations sora review highlight physical principles cause and effect spatial temporal irrelevant animals or people human-computer interaction usage limitation public access one minute",
+      "routed_docs": [
+        {
+          "doc_id": "58617e8e36236d01",
+          "title": "SORA",
+          "routing_score": 13.077428494830809
+        }
+      ]
+    }
+  ]
+}

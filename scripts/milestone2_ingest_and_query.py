@@ -8,9 +8,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.bootstrap import bootstrap_app
-from ingestion.pipeline import IngestionPipeline
-from retrieval.search import RetrievalService
+from local_agent.app.bootstrap import bootstrap_app
+from local_agent.ingestion.pipeline import IngestionPipeline
+from local_agent.retrieval.search import RetrievalService
 
 def build_context(results: list[dict]) -> str:
     parts: list[str] = []

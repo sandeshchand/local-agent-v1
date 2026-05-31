@@ -1,5 +1,0 @@
-app
-ingestion
-observability
-retrieval
-storage

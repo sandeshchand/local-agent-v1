@@ -1,438 +1,242 @@
-# Local Agent V1
+# Local Agentic RAG System
 
-A local-first PDF RAG assistant built with **Ollama**, **Qdrant**, **SQLite**, and **FastAPI**.
+Local-first agentic RAG for grounded question answering over many PDF documents.
 
-Local Agent V1 lets you ingest PDF documents, search them semantically, and chat with them through a simple web interface — all while keeping inference and storage on your own machine.
+The system is designed for multi-document retrieval quality, visible traces, repeatable evaluation, and safe local tool use. It currently supports PDF ingestion, hybrid retrieval, document routing, answer verification, answer repair, memory, guarded tools, MCP-style local connectors, feedback analytics, and a web UI for trace inspection.
 
-The project is designed as a modular foundation for future **planner/orchestrator logic**, **agent workflows**, and **MCP-based tool integration**.
+This repo is not treated as a toy demo. The engineering target is a production-ready local RAG application with measurable quality gates and clear operational controls.
 
----
+## Core Capabilities
 
-## Highlights
-
-- **Local-first** architecture
-- **PDF ingestion** from a single file or an entire folder
-- **Semantic retrieval** over indexed document chunks
-- **Chat interface** powered by FastAPI
-- **Source citations** in responses
-- **SQLite-backed metadata and trace storage**
-- **Qdrant vector search**
-- **Ollama-based local LLM + embeddings**
-- Built with a clean architecture for future agentic expansion
-
----
-
-## Demo Scope
-
-Current capabilities include:
-
-- Indexing PDFs into a local vector database
-- Asking grounded questions over indexed documents
-- Viewing indexed documents in a web UI
-- Tracking query traces for debugging and iteration
-
-This repository currently focuses on a strong **local RAG core** before introducing more advanced agentic features.
-
----
-
-## Tech Stack
-
-- **Python**
-- **Ollama** — local model serving and embeddings
-- **Qdrant** — vector database
-- **SQLite** — metadata and trace storage
-- **FastAPI** — web backend and API layer
-- **PyPDF** — PDF text extraction
-
----
+- Multi-PDF ingestion with cleaned, metadata-rich chunks.
+- Hybrid retrieval with dense search, BM25, fusion, reranking, and context expansion.
+- Document routing to reduce wrong-document answers in large collections.
+- Evidence-grounded answer generation with citations.
+- Answer verification, repair, and retrieval retry when quality fails.
+- Short-term conversation memory and long-term project/user memory.
+- Tool-call guardrails with `allow`, `deny`, and `needs_approval`.
+- MCP-style read-only File and SQLite connectors.
+- Read-only weather tool for current weather questions.
+- Web UI with trace view, source inspection, feedback, eval drafts, and tool visibility.
+- Gold QA evaluation and regression commands for quality control.
 
 ## Architecture
 
-The project is organized into modular layers:
+```text
+PDFs / files
+-> ingestion and chunking
+-> vector + metadata storage
+-> document routing
+-> hybrid retrieval
+-> evidence selection
+-> answer generation
+-> verification
+-> answer repair or retrieval retry
+-> trace and feedback storage
+-> UI / API / CLI
+```
 
-- **`app/`** — app entrypoints, configuration, dependency wiring, FastAPI layer
-- **`ingestion/`** — PDF parsing, chunking, and indexing
-- **`retrieval/`** — embedding, search, context building, answer generation
-- **`storage/`** — SQLite and Qdrant access
-- **`observability/`** — trace logging and future evaluation hooks
-- **`templates/` + `static/`** — web UI
-
-This structure keeps the current system simple while making it easier to evolve into a larger agent-based application.
-
----
-
-## Current Status
-
-Completed milestones:
-
-- **Milestone 1** — local infrastructure setup
-- **Milestone 2** — PDF ingestion and retrieval pipeline
-- **Milestone 3** — reusable RAG application core
-- **Milestone 3.5** — FastAPI web interface and UI improvements
-
-Next milestone:
-
-- **Milestone 4** — planner and orchestrator layer
-
----
-
-## Repository Structure
+Tool requests follow a separate guarded path:
 
 ```text
-local-agent-v1/
-├── app/
-├── ingestion/
-│   └── parsers/
-├── retrieval/
-├── storage/
-├── observability/
-├── static/
-├── templates/
-├── scripts/
-├── data/
-│   ├── raw/
-│   │   └── documents/
-│   ├── processed/
-│   ├── qdrant/
-│   ├── sqlite/
-│   └── logs/
-├── tests/
-├── .env.example
-├── .gitignore
-├── pyproject.toml
-└── README.md
-
-
----
-
-## Prerequisites
-
-Before running the project, make sure you have:
-
-* **Python 3.10+**
-* **Git**
-* **Ollama installed and running locally**
-
-You will also need two local Ollama models:
-
-* one **chat model**
-* one **embedding model**
-
-Example models used in this project:
-
-* `qwen2.5:7b-instruct`
-* `nomic-embed-text`
-
----
-
-## Installation
-
-### 1. Clone the repository
-
-```bash
-git clone <your-repo-url>
-cd local-agent-v1
+planner
+-> tool registry
+-> guardrails
+-> approved read-only tool or MCP-style connector
+-> tool answer
+-> trace
 ```
 
-### 2. Create a virtual environment
+Memory is used only as project/user guidance. It is not PDF evidence. PDF answers must still come from retrieved document chunks and citations.
 
-#### Windows (Command Prompt)
+## Quick Start
 
-```bat
-python -m venv venv
-venv\Scripts\activate
-```
-
-#### Windows (PowerShell)
+Create and activate the virtual environment.
 
 ```powershell
 python -m venv venv
 venv\Scripts\Activate.ps1
 ```
 
-#### Linux / macOS
+Install the project.
 
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install project dependencies
-
-```bash
+```powershell
 pip install -e .
 ```
 
----
+Optional OCR support for scanned PDFs:
 
-## Ollama Setup
+```powershell
+pip install -e .[ocr]
+```
 
-Install Ollama on your machine and make sure it is running locally.
+Pull local Ollama models.
 
-Then pull the required models:
-
-```bash
+```powershell
 ollama pull qwen2.5:7b-instruct
 ollama pull nomic-embed-text
 ```
 
-You can change the chat model later depending on your hardware and performance needs.
+Create local config.
 
----
-
-## Environment Setup
-
-Copy the example environment file:
-
-### Windows
-
-```bat
+```powershell
 copy .env.example .env
 ```
 
-### Linux / macOS
-
-```bash
-cp .env.example .env
-```
-
-Example `.env`:
+Common `.env` values:
 
 ```env
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 CHAT_MODEL=qwen2.5:7b-instruct
 EMBED_MODEL=nomic-embed-text
-QDRANT_PATH=./qdrant_data
-SQLITE_PATH=./app.db
+QDRANT_PATH=./var/qdrant
+SQLITE_PATH=./var/sqlite/app.db
 TOP_K=3
-CHUNK_SIZE=800
-CHUNK_OVERLAP=120
 DEBUG=true
 ```
 
-### Notes
+## Ingest And Ask
 
-* `CHAT_MODEL` should be a local Ollama chat model
-* `EMBED_MODEL` should be a local Ollama embedding model
-* `TOP_K` controls how many chunks are retrieved
-* `CHUNK_SIZE` and `CHUNK_OVERLAP` control PDF chunking behavior
-
----
-
-## Prepare Document Folder
-
-Place your PDFs inside:
+Put PDFs under:
 
 ```text
 data/raw/documents/
 ```
 
-Example:
+Ingest all PDFs:
 
-```text
-data/raw/documents/SORA.pdf
+```powershell
+local-agent ingest --path data\raw\documents
 ```
 
----
+Ask from the CLI:
 
-## Running the Application
-
-### Option 1 — Run the FastAPI web app
-
-Start the server:
-
-```bash
-uvicorn app.web:app --reload
+```powershell
+local-agent ask --query "What are the key features of WatchTower?"
 ```
 
-Then open:
+List indexed documents:
+
+```powershell
+local-agent list-docs
+```
+
+## Run The Web UI
+
+Use the helper script so only one local server owns the app and Qdrant path.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start_web.ps1
+```
+
+Open:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-From the web UI, you can:
-
-* ingest a PDF file or folder
-* browse indexed documents
-* ask questions in the chat window
-
----
-
-### Option 2 — Run from CLI
-
-#### Ingest a file or folder
-
-```bash
-python app/main.py ingest --path data/raw/documents
-```
-
-#### Ask a question
-
-```bash
-python app/main.py ask --query "What is Sora?"
-```
-
-#### List indexed documents
-
-```bash
-python app/main.py list-docs
-```
-
----
-
-## Recommended First Run
-
-A safe first run looks like this:
-
-1. place one PDF inside `data/raw/documents/`
-2. start the FastAPI server
-3. ingest that PDF from the UI
-4. ask a simple question like:
+Do not run a second `uvicorn local_agent.app.web:app` process from another Python installation. The helper starts the server from `venv` and writes logs to:
 
 ```text
-What is Sora?
+var/logs/web.out.log
+var/logs/web.err.log
 ```
 
-Then try a more specific question like:
+## Quality Gates
 
-```text
-How does Sora represent the visual world?
+Run the standard regression gate before committing important changes:
+
+```powershell
+venv\Scripts\python.exe scripts\run_regression.py
 ```
 
----
+Run compile and smoke checks only:
 
-## Storage
-
-### SQLite
-
-Used for:
-
-* document registry
-* chunk metadata
-* trace logging
-
-### Qdrant
-
-Used for:
-
-* vector storage
-* semantic search
-
-### Local Filesystem
-
-Used for:
-
-* source PDFs
-* local runtime data
-* future processed outputs
-
----
-
-## Current Status
-
-Completed milestones:
-
-* **Milestone 1** — local infrastructure setup
-* **Milestone 2** — PDF ingestion and retrieval pipeline
-* **Milestone 3** — reusable RAG application core
-* **Milestone 3.5** — FastAPI web interface and UI improvements
-
-Next milestone:
-
-* **Milestone 4** — planner and orchestrator layer
-
----
-
-## Troubleshooting
-
-### Ollama timeout during answer generation
-
-If answer generation is slow:
-
-* use a smaller chat model
-* reduce `TOP_K`
-* reduce context size
-* increase Ollama client timeout
-
-### PDF gives weak retrieval results
-
-Possible reasons:
-
-* the PDF is scanned or image-based
-* extracted text quality is poor
-* chunk size may need tuning
-
-### Frontend loads but chat does not respond
-
-Check:
-
-* FastAPI server is running
-* Ollama is running
-* the correct models are available
-* browser console shows no JavaScript errors
-
-### Database or index looks inconsistent
-
-During development, it is often easiest to reset local state:
-
-#### Windows
-
-```bat
-del app.db
-rmdir /s /q qdrant_data
-mkdir qdrant_data
+```powershell
+venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```
 
-#### Linux / macOS
+Run the full RAG benchmark:
 
-```bash
-rm -f app.db
-rm -rf qdrant_data
-mkdir -p qdrant_data
+```powershell
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
-Then re-ingest your documents.
+Quality rules:
 
----
+- Add 3 to 5 gold QA items for every important new PDF.
+- Keep average eval score above `8/10`.
+- Keep important individual questions above `7/10`.
+- Inspect failed items by `missing_must_have`, `triggered_must_not_have`, `top_routed_doc`, `verification`, and `answer`.
 
-## Roadmap
+## Operations
 
-### Completed
+Useful CLI commands:
 
-* local infrastructure
-* Ollama integration
-* Qdrant integration
-* SQLite integration
-* PDF ingestion pipeline
-* semantic retrieval
-* answer generation
-* FastAPI chat UI
-* improved frontend usability
+```powershell
+local-agent ask --query "hi"
+local-agent ask --query "List database tables"
+local-agent ask --query "Read file docs/MCP.md"
+local-agent ask --query "What is the current weather in Berlin?"
+local-agent list-memory
+```
 
-### Planned
+Reset the local index only when parsing, chunking, or storage is inconsistent. See [docs/CHUNKING.md](docs/CHUNKING.md) and [docs/REGRESSION.md](docs/REGRESSION.md) before resetting.
 
-* planner + orchestrator
-* direct-answer vs retrieve-only modes
-* MCP integration
-* richer trace/debug views
-* improved retrieval quality
-* better support for larger document sets
-* more advanced UI state and interaction patterns
+## Production Readiness
 
----
+Already implemented:
 
-## Limitations
+- repeatable local regression command,
+- gold QA benchmark,
+- trace storage,
+- feedback collection,
+- answer verification and repair,
+- guarded tool execution,
+- read-only local file/database connectors,
+- documented architecture and subsystem behavior.
 
-Current limitations include:
+Required before real production use:
 
-* optimized mainly for text-based PDFs
-* no OCR pipeline yet for scanned/image-only PDFs
-* no streaming token output yet
-* no authentication or multi-user support
-* frontend is still intentionally lightweight
-* planner/orchestrator is not implemented yet
+- authentication and user/session isolation,
+- secrets management outside `.env` for deployed environments,
+- backup and restore plan for SQLite and Qdrant data,
+- deployment/container strategy,
+- monitoring and alerting,
+- stronger permission model for any future write/delete tools,
+- larger benchmark coverage for unseen document families,
+- explicit data retention and privacy policy.
 
----
+Detailed checklist: [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md)
 
+## Documentation Map
 
+Architecture and orchestration:
+
+- [docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)
+- [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)
+- [docs/PLANNER.md](docs/PLANNER.md)
+- [docs/DOCUMENT_ROUTER.md](docs/DOCUMENT_ROUTER.md)
+
+Retrieval and answers:
+
+- [docs/CHUNKING.md](docs/CHUNKING.md)
+- [docs/ANSWER_SERVICE.md](docs/ANSWER_SERVICE.md)
+- [docs/ANSWER_VERIFICATION.md](docs/ANSWER_VERIFICATION.md)
+- [docs/ANSWER_REPAIR.md](docs/ANSWER_REPAIR.md)
+
+Tools, guardrails, and memory:
+
+- [docs/GUARDRAILS.md](docs/GUARDRAILS.md)
+- [docs/MCP.md](docs/MCP.md)
+- [docs/WEB_TOOLS.md](docs/WEB_TOOLS.md)
+- [docs/MEMORY.md](docs/MEMORY.md)
+
+Evaluation, UI, and roadmap:
+
+- [docs/EVALUATION.md](docs/EVALUATION.md)
+- [docs/REGRESSION.md](docs/REGRESSION.md)
+- [docs/UI_TRACE_VIEW.md](docs/UI_TRACE_VIEW.md)
+- [docs/FEEDBACK_ANALYTICS.md](docs/FEEDBACK_ANALYTICS.md)
+- [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
+- [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md)

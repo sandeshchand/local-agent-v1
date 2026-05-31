@@ -1,0 +1,2126 @@
+[
+  {
+    "id": "sora_what_is",
+    "doc": "sora",
+    "question": "What is Sora?",
+    "expected_doc_title": "SORA",
+    "expected_answer": "Sora is an OpenAI text-to-video generative AI model released in February 2024. It can generate realistic or imaginative scenes from text prompts and can create videos up to about one minute long.",
+    "must_have": [
+      [
+        "text-to-video",
+        "text to video"
+      ],
+      "OpenAI",
+      [
+        "February 2024",
+        "Feb 2024"
+      ],
+      [
+        "realistic or imaginative",
+        "realistic",
+        "imaginative"
+      ],
+      [
+        "one-minute",
+        "one minute",
+        "1 minute"
+      ]
+    ],
+    "should_have": [
+      [
+        "physical world",
+        "world simulator"
+      ]
+    ],
+    "must_not_have": [
+      "WatchTower",
+      "LazyDocker",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "sora_world_simulator",
+    "doc": "sora",
+    "question": "Why does the paper describe Sora as a potential world simulator?",
+    "expected_doc_title": "SORA",
+    "expected_answer": "The paper describes Sora as a potential world simulator because it can model aspects of physical and digital worlds, including 3D consistency, dynamic camera motion, long-range coherence, object persistence, simple interactions, and digital environments such as Minecraft.",
+    "must_have": [
+      "3D consistency",
+      [
+        "dynamic camera motion",
+        "dynamic camera"
+      ],
+      [
+        "long-range coherence",
+        "long range coherence"
+      ],
+      [
+        "object persistence",
+        "object permanence"
+      ],
+      [
+        "simple interactions",
+        "interactions with the world"
+      ],
+      "Minecraft"
+    ],
+    "should_have": [
+      [
+        "physical world",
+        "physical worlds"
+      ],
+      [
+        "digital environments",
+        "digital worlds"
+      ]
+    ],
+    "must_not_have": [
+      "WatchTower",
+      "LazyDocker",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "sora_visual_input",
+    "doc": "sora",
+    "question": "How does Sora turn visual data into model input?",
+    "expected_doc_title": "SORA",
+    "expected_answer": "Sora compresses raw visual input into a lower-dimensional latent representation, then extracts spacetime patches from the compressed video. These patches act like tokens and are fed into a diffusion transformer.",
+    "must_have": [
+      [
+        "lower-dimensional latent",
+        "latent representation",
+        "latent space"
+      ],
+      [
+        "spacetime patches",
+        "space-time patches",
+        "spatio-temporal patches"
+      ],
+      [
+        "compressed",
+        "compresses"
+      ],
+      [
+        "diffusion transformer",
+        "DiT"
+      ]
+    ],
+    "should_have": [
+      [
+        "tokens",
+        "tokenized"
+      ],
+      [
+        "visual appearance",
+        "motion dynamics"
+      ]
+    ],
+    "must_not_have": [
+      "WatchTower",
+      "LazyDocker",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "sora_prompt_following",
+    "doc": "sora",
+    "question": "How does Sora improve language understanding and prompt following?",
+    "expected_doc_title": "SORA",
+    "expected_answer": "Sora improves prompt following using captioning and prompt expansion methods, including descriptive captions, fine-tuning on video-text data, and GPT-4V-based prompt extension.",
+    "must_have": [
+      [
+        "captioner",
+        "captioning"
+      ],
+      [
+        "descriptive caption",
+        "descriptive captions"
+      ],
+      [
+        "fine-tuning",
+        "fine tuning",
+        "fine-tune"
+      ],
+      "GPT-4V",
+      [
+        "prompt extension",
+        "prompt expansion"
+      ]
+    ],
+    "should_have": [
+      [
+        "DALL-E",
+        "DALL"
+      ],
+      [
+        "instruction following",
+        "prompt following"
+      ]
+    ],
+    "must_not_have": [
+      "WatchTower",
+      "LazyDocker",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "sora_limitations",
+    "doc": "sora",
+    "question": "What limitations of Sora does the review highlight?",
+    "expected_doc_title": "SORA",
+    "expected_answer": "The review highlights limitations with physical principles such as cause and effect, spatial and temporal consistency, irrelevant animals or people appearing, human-computer interaction issues, usage limitations, and the one-minute video constraint.",
+    "must_have": [
+      [
+        "cause-and-effect",
+        "cause and effect"
+      ],
+      "spatial",
+      "temporal",
+      [
+        "irrelevant animals or people",
+        "animals or people"
+      ],
+      [
+        "human-computer interaction",
+        "HCI"
+      ],
+      [
+        "one-minute",
+        "one minute",
+        "usage limitation",
+        "usage limitations"
+      ]
+    ],
+    "should_have": [
+      [
+        "public release",
+        "public access"
+      ],
+      "safety"
+    ],
+    "must_not_have": [
+      "WatchTower",
+      "LazyDocker",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "docker_three_tools",
+    "doc": "docker",
+    "question": "Which three tools does the Docker article recommend for better container management?",
+    "expected_doc_title": "Stop Managing Docker",
+    "expected_answer": "The article recommends LazyDocker, Dive, and WatchTower as tools to save time, reduce stress, and improve Docker productivity.",
+    "must_have": [
+      "LazyDocker",
+      "Dive",
+      "WatchTower"
+    ],
+    "should_have": [
+      [
+        "save time",
+        "time"
+      ],
+      [
+        "reduce stress",
+        "stress"
+      ],
+      [
+        "productivity",
+        "boost productivity"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Tsetlin",
+      "Random Kitchen Sinks"
+    ]
+  },
+  {
+    "id": "docker_lazydocker_features",
+    "doc": "docker",
+    "question": "What are the key features of LazyDocker?",
+    "expected_doc_title": "Stop Managing Docker",
+    "expected_answer": "LazyDocker is a terminal UI for Docker and Docker Compose. It lets users view container status, logs, metrics, restart/remove/rebuild containers, monitor resource usage, attach to shells, prune unused resources, and use mouse support.",
+    "must_have": [
+      [
+        "terminal UI",
+        "interactive interface"
+      ],
+      [
+        "Docker Compose",
+        "Docker and Docker Compose"
+      ],
+      [
+        "status",
+        "container status"
+      ],
+      "logs",
+      [
+        "restart",
+        "rebuild"
+      ],
+      [
+        "resource usage",
+        "metrics"
+      ]
+    ],
+    "should_have": [
+      [
+        "attach",
+        "shells"
+      ],
+      [
+        "prune",
+        "unused containers"
+      ],
+      [
+        "mouse support",
+        "clicking and scrolling"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "docker_dive_features",
+    "doc": "docker",
+    "question": "What does Dive help you analyze in Docker images?",
+    "expected_doc_title": "Stop Managing Docker",
+    "expected_answer": "Dive helps analyze Docker images layer by layer, showing layer contents and size information, efficiency score, duplicated files, wasted space, command history, and CI/CD integration.",
+    "must_have": [
+      [
+        "layer-by-layer",
+        "layer by layer"
+      ],
+      [
+        "size information",
+        "image size",
+        "shrink"
+      ],
+      [
+        "efficiency score",
+        "efficiency"
+      ],
+      [
+        "duplicated files",
+        "duplicate files"
+      ],
+      [
+        "wasted space",
+        "waste"
+      ],
+      [
+        "command history",
+        "history"
+      ]
+    ],
+    "should_have": [
+      [
+        "CI/CD",
+        "CI CD"
+      ],
+      [
+        "Dockerfile",
+        "instruction"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "docker_watchtower_features",
+    "doc": "docker",
+    "question": "What are the key features of WatchTower?",
+    "expected_doc_title": "Stop Managing Docker",
+    "expected_answer": "WatchTower monitors running Docker containers and automatically updates them when their base image changes. Its features include monitoring image version changes, detecting updates, and updating containers with fresh images.",
+    "must_have": [
+      [
+        "monitors",
+        "monitoring"
+      ],
+      [
+        "base image changes",
+        "image version changes"
+      ],
+      [
+        "detecting updates",
+        "detects updates",
+        "new container image versions"
+      ],
+      [
+        "updating containers",
+        "updates containers",
+        "fresh images"
+      ],
+      [
+        "automatically updates",
+        "automatic updates"
+      ]
+    ],
+    "should_have": [
+      [
+        "security",
+        "reliability"
+      ],
+      [
+        "reduced overhead",
+        "stability"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Tsetlin",
+      "Random Kitchen Sinks"
+    ]
+  },
+  {
+    "id": "docker_best_practices",
+    "doc": "docker",
+    "question": "What best practices does the Docker article suggest when using LazyDocker, Dive, and WatchTower together?",
+    "expected_doc_title": "Stop Managing Docker",
+    "expected_answer": "The article suggests using LazyDocker during development, running Dive analysis before pushing images to production, setting efficiency score thresholds in CI/CD, using multi-stage builds from Dive feedback, configuring WatchTower for specific containers, notifications, and low-traffic update schedules.",
+    "must_have": [
+      [
+        "LazyDocker for Development",
+        "LazyDocker during development"
+      ],
+      [
+        "Dive analysis before pushing",
+        "before pushing images"
+      ],
+      [
+        "efficiency score thresholds",
+        "score thresholds"
+      ],
+      [
+        "multi-stage builds",
+        "multi stage builds"
+      ],
+      [
+        "specific containers",
+        "monitoring only specific containers"
+      ],
+      [
+        "notification systems",
+        "notifications"
+      ],
+      [
+        "low-traffic",
+        "low traffic"
+      ]
+    ],
+    "should_have": [
+      [
+        "custom keybindings",
+        "keybindings"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "ml_symbolic_regression",
+    "doc": "machine-learning",
+    "question": "What is Symbolic Regression according to the machine learning article?",
+    "expected_doc_title": "Machine Learning Algorithms",
+    "expected_answer": "Symbolic Regression discovers the mathematical expression or underlying equation that best fits the data instead of assuming a predefined equation. It uses genetic programming with mutation and crossover.",
+    "must_have": [
+      [
+        "mathematical expression",
+        "underlying equation",
+        "actual equation"
+      ],
+      [
+        "predefined equation",
+        "predefined"
+      ],
+      [
+        "genetic programming",
+        "evolves models"
+      ],
+      "mutation",
+      "crossover"
+    ],
+    "should_have": [
+      [
+        "physical laws",
+        "physics experiments"
+      ],
+      [
+        "stock market",
+        "medical research"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "WatchTower"
+    ]
+  },
+  {
+    "id": "ml_isolation_forest",
+    "doc": "machine-learning",
+    "question": "How does Isolation Forest detect anomalies and when is it useful?",
+    "expected_doc_title": "Machine Learning Algorithms",
+    "expected_answer": "Isolation Forest is a tree-based anomaly detection algorithm that isolates outliers by how quickly they stand out in randomly partitioned space. It works on high-dimensional unlabeled data and is useful for fraud detection, network intrusion or malware detection, quality control, rare disease detection, and unusual stock market activity.",
+    "must_have": [
+      [
+        "anomaly detection",
+        "outliers"
+      ],
+      [
+        "isolates outliers",
+        "isolating outliers"
+      ],
+      [
+        "randomly partitioned",
+        "random partitioned"
+      ],
+      [
+        "high-dimensional",
+        "high dimensional"
+      ],
+      [
+        "unlabeled",
+        "unsupervised"
+      ],
+      [
+        "fraudulent",
+        "fraud"
+      ]
+    ],
+    "should_have": [
+      [
+        "network intrusions",
+        "malware"
+      ],
+      [
+        "quality control",
+        "defective products"
+      ],
+      [
+        "rare diseases",
+        "stock market"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "WatchTower"
+    ]
+  },
+  {
+    "id": "ml_tsetlin_machine",
+    "doc": "machine-learning",
+    "question": "What are the key strengths of Tsetlin Machines?",
+    "expected_doc_title": "Machine Learning Algorithms",
+    "expected_answer": "Tsetlin Machines use propositional logic and a reward-and-penalty mechanism to learn patterns. Their strengths include low memory footprint, high learning speed, competitive performance, simple implementation on low-power hardware, and interpretable human-readable rules.",
+    "must_have": [
+      [
+        "propositional logic",
+        "logic"
+      ],
+      [
+        "reward-and-penalty",
+        "reward and penalty"
+      ],
+      [
+        "low memory",
+        "memory footprint"
+      ],
+      [
+        "high learning speed",
+        "learning speed"
+      ],
+      [
+        "low-power hardware",
+        "low power hardware"
+      ],
+      [
+        "human-readable rules",
+        "interpretable"
+      ]
+    ],
+    "should_have": [
+      [
+        "competitive predictive performance",
+        "benchmark datasets"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "WatchTower"
+    ]
+  },
+  {
+    "id": "ml_random_kitchen_sinks",
+    "doc": "machine-learning",
+    "question": "How do Random Kitchen Sinks make kernel methods scalable?",
+    "expected_doc_title": "Machine Learning Algorithms",
+    "expected_answer": "Random Kitchen Sinks approximate kernel functions efficiently by projecting data into a higher-dimensional feature space using randomized Fourier features. This helps approximate non-linear decision boundaries while reducing computation and memory cost for SVMs, kernel regression, and RBF kernels.",
+    "must_have": [
+      [
+        "kernel functions",
+        "kernel methods"
+      ],
+      [
+        "randomized Fourier features",
+        "Fourier features"
+      ],
+      [
+        "higher-dimensional feature space",
+        "feature space"
+      ],
+      [
+        "non-linear decision boundaries",
+        "nonlinear decision boundaries"
+      ],
+      [
+        "less computation",
+        "computational cost",
+        "scalable"
+      ]
+    ],
+    "should_have": [
+      [
+        "SVMs",
+        "Support Vector Machines"
+      ],
+      [
+        "kernel regression",
+        "RBF"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "WatchTower"
+    ]
+  },
+  {
+    "id": "ml_crfs",
+    "doc": "machine-learning",
+    "question": "What are Conditional Random Fields used for?",
+    "expected_doc_title": "Machine Learning Algorithms",
+    "expected_answer": "Conditional Random Fields are probabilistic models for structured prediction. They account for context instead of making independent predictions, making them useful for sequential data such as named entity recognition.",
+    "must_have": [
+      [
+        "probabilistic models",
+        "probabilistic"
+      ],
+      [
+        "structured prediction",
+        "structured"
+      ],
+      [
+        "context",
+        "take context into account"
+      ],
+      [
+        "sequential data",
+        "sequence"
+      ],
+      [
+        "independent predictions",
+        "not independent"
+      ],
+      [
+        "Named Entity Recognition",
+        "NER"
+      ]
+    ],
+    "should_have": [
+      [
+        "CRF",
+        "Conditional Random Field"
+      ],
+      [
+        "labels",
+        "predictions"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "WatchTower"
+    ]
+  },
+  {
+    "id": "python_name_origin",
+    "doc": "python-facts",
+    "question": "Why was Python not actually named after the snake?",
+    "expected_doc_title": "10 Surprising Python Facts",
+    "expected_answer": "Python was not named after the snake. Guido van Rossum named it after the British comedy series Monty Python's Flying Circus because he wanted a short, unique, and slightly mysterious name.",
+    "must_have": [
+      [
+        "not named after the snake",
+        "not the snake",
+        "not reptiles"
+      ],
+      "Guido van Rossum",
+      [
+        "Monty Python's Flying Circus",
+        "Monty Python"
+      ],
+      [
+        "British comedy series",
+        "comedy"
+      ],
+      [
+        "short",
+        "unique",
+        "mysterious"
+      ]
+    ],
+    "should_have": [
+      [
+        "creator",
+        "Python's creator"
+      ],
+      [
+        "fan of the show",
+        "fan"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "SmolDocling"
+    ]
+  },
+  {
+    "id": "python_loop_else",
+    "doc": "python-facts",
+    "question": "How does Python's else block work after a loop?",
+    "expected_doc_title": "10 Surprising Python Facts",
+    "expected_answer": "Python allows an else block after a loop. The else block runs only when the loop completes normally without hitting a break statement; if the loop is interrupted by break, the else block is skipped.",
+    "must_have": [
+      [
+        "else block",
+        "else statement"
+      ],
+      [
+        "loop completes",
+        "completes normally"
+      ],
+      [
+        "without a break",
+        "without break"
+      ],
+      [
+        "break statement",
+        "break"
+      ],
+      [
+        "skipped",
+        "won't print",
+        "does not run"
+      ]
+    ],
+    "should_have": [
+      [
+        "rarely used",
+        "handy"
+      ],
+      [
+        "for loop",
+        "loops"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "Bayesian Optimization",
+      "DocTags"
+    ]
+  },
+  {
+    "id": "python_indentation_clean_code",
+    "doc": "python-facts",
+    "question": "Why does the article say Python uses indentation instead of braces?",
+    "expected_doc_title": "10 Surprising Python Facts",
+    "expected_answer": "The article says Python enforces indentation instead of curly braces to define code blocks. This forces developers to write clean and readable code and avoids missing braces or strange formatting.",
+    "must_have": [
+      [
+        "indentation",
+        "indented"
+      ],
+      [
+        "curly braces",
+        "braces",
+        "{}"
+      ],
+      [
+        "code blocks",
+        "blocks of code"
+      ],
+      [
+        "clean",
+        "readable"
+      ],
+      [
+        "forces developers",
+        "enforces"
+      ]
+    ],
+    "should_have": [
+      [
+        "C",
+        "Java",
+        "JavaScript"
+      ],
+      [
+        "no missing braces",
+        "weird formatting"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "CRF",
+      "AI side hustle"
+    ]
+  },
+  {
+    "id": "python_builtin_http_server",
+    "doc": "python-facts",
+    "question": "What built-in HTTP server command does Python provide and why is it useful?",
+    "expected_doc_title": "10 Surprising Python Facts",
+    "expected_answer": "Python provides a built-in HTTP server that can be started with python -m http.server 8000. It is useful for quickly testing web applications, serving files in a browser, and sharing files over a local network without third-party tools.",
+    "must_have": [
+      [
+        "python -m http.server 8000",
+        "http.server"
+      ],
+      [
+        "built-in",
+        "comes with"
+      ],
+      [
+        "web server",
+        "HTTP server"
+      ],
+      [
+        "test web applications",
+        "quickly test"
+      ],
+      [
+        "local network",
+        "share files"
+      ]
+    ],
+    "should_have": [
+      [
+        "localhost:8000",
+        "browser"
+      ],
+      [
+        "No need for third-party tools",
+        "third-party tools"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Dive",
+      "SmolDocling",
+      "GPT-4V"
+    ]
+  },
+  {
+    "id": "python_large_numbers",
+    "doc": "python-facts",
+    "question": "How does Python handle very large integers according to the article?",
+    "expected_doc_title": "10 Surprising Python Facts",
+    "expected_answer": "Python automatically manages large integers without requiring separate int or long types. It dynamically allocates memory, so developers can use very large numbers normally, such as 10**100.",
+    "must_have": [
+      [
+        "large integers",
+        "large numbers",
+        "big numbers"
+      ],
+      [
+        "automatically manages",
+        "handles automatically"
+      ],
+      [
+        "no int or long",
+        "int or long types"
+      ],
+      [
+        "dynamically allocates memory",
+        "dynamic memory"
+      ],
+      [
+        "10**100",
+        "100 digits"
+      ]
+    ],
+    "should_have": [
+      [
+        "use numbers normally",
+        "normally"
+      ],
+      [
+        "special data types",
+        "special types"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "WatchTower",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "ai_coding_shift_to_agents",
+    "doc": "ai-coding",
+    "question": "How do agentic code assistance tools differ from first-generation AI coding tools?",
+    "expected_doc_title": "From Code Assistants to Agents",
+    "expected_answer": "First-generation AI coding tools were mainly reactive autocomplete-style systems that suggested the next line or block of code. Agentic code assistance tools are more autonomous and can plan architecture, debug through multi-step reasoning, refactor across files, generate tests, and even help with deployment.",
+    "must_have": [
+      [
+        "reactive",
+        "autocomplete"
+      ],
+      [
+        "next line",
+        "next block"
+      ],
+      [
+        "autonomous",
+        "greater autonomy"
+      ],
+      [
+        "planning",
+        "plan architecture"
+      ],
+      [
+        "debugging",
+        "multi-step reasoning"
+      ],
+      [
+        "refactoring",
+        "multiple files"
+      ],
+      [
+        "test suites",
+        "tests"
+      ]
+    ],
+    "should_have": [
+      [
+        "deployment",
+        "deploying"
+      ],
+      [
+        "GitHub Copilot",
+        "Copilot"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "SmolDocling",
+      "Tsetlin",
+      "WatchTower"
+    ]
+  },
+  {
+    "id": "ai_coding_three_advancements",
+    "doc": "ai-coding",
+    "question": "Which three technical advancements drive the shift from reactive coding tools to autonomous agents?",
+    "expected_doc_title": "From Code Assistants to Agents",
+    "expected_answer": "The shift is driven by more sophisticated language models, multi-step reasoning capabilities, and deeper integration with development environments that provide access to project structure, version control history, and runtime information.",
+    "must_have": [
+      [
+        "sophisticated language models",
+        "better foundation models"
+      ],
+      [
+        "multi-step reasoning",
+        "complex sequences of actions"
+      ],
+      [
+        "deeper integration",
+        "development environments"
+      ],
+      [
+        "project structure",
+        "codebase"
+      ],
+      [
+        "version control history",
+        "runtime information"
+      ]
+    ],
+    "should_have": [
+      [
+        "evaluate success",
+        "adapting accordingly"
+      ],
+      [
+        "context",
+        "more context"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Python loop else",
+      "DocTags",
+      "WatchTower"
+    ]
+  },
+  {
+    "id": "ai_coding_tool_ecosystem",
+    "doc": "ai-coding",
+    "question": "Which agentic coding tools are mentioned in the article and what are their general strengths?",
+    "expected_doc_title": "From Code Assistants to Agents",
+    "expected_answer": "The article mentions GitHub Copilot, Cursor and Windsurf, Cline and Roo Code, and Augment Code. Their strengths include code explanation, test generation, code review, deep codebase context, multi-file modifications, multi-model support, and project-wide consistency.",
+    "must_have": [
+      "GitHub Copilot",
+      "Cursor",
+      "Windsurf",
+      "Cline",
+      "Roo Code",
+      "Augment Code",
+      [
+        "multi-file",
+        "multiple files"
+      ],
+      [
+        "context",
+        "codebase"
+      ]
+    ],
+    "should_have": [
+      [
+        "code explanation",
+        "test generation",
+        "code review"
+      ],
+      [
+        "multi-model support",
+        "Claude",
+        "GPT-4",
+        "local models"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Tsetlin",
+      "SmolDocling",
+      "Pydantic"
+    ]
+  },
+  {
+    "id": "ai_coding_multi_agent_architecture",
+    "doc": "ai-coding",
+    "question": "What roles can specialized agents play in a multi-agent coding architecture?",
+    "expected_doc_title": "From Code Assistants to Agents",
+    "expected_answer": "In a multi-agent coding architecture, specialized agents can collaborate as planning agents, coding agents, testing agents, debugging agents, and documentation agents. This supports specialization and parallel processing for complex software tasks.",
+    "must_have": [
+      [
+        "multi-agent",
+        "specialized agents"
+      ],
+      [
+        "planning agents",
+        "planning"
+      ],
+      [
+        "coding agents",
+        "coding"
+      ],
+      [
+        "testing agents",
+        "testing"
+      ],
+      [
+        "debugging agents",
+        "debugging"
+      ],
+      [
+        "documentation agents",
+        "documentation"
+      ],
+      [
+        "parallel processing",
+        "specialization"
+      ]
+    ],
+    "should_have": [
+      [
+        "human team dynamics",
+        "collaborate"
+      ],
+      [
+        "complex projects",
+        "complex tasks"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Random Kitchen Sinks",
+      "Monty Python"
+    ]
+  },
+  {
+    "id": "ai_coding_quality_best_practices",
+    "doc": "ai-coding",
+    "question": "What best practices does the article recommend for maintaining code quality when using AI coding agents?",
+    "expected_doc_title": "From Code Assistants to Agents",
+    "expected_answer": "The article recommends clear and specific prompting, aligning generated code with coding standards, using formatters and linters, keeping human oversight, running comprehensive tests such as unit, integration, end-to-end, stress, and security tests, and maintaining good documentation such as README or CLAUDE.md files.",
+    "must_have": [
+      [
+        "clear and specific prompting",
+        "specific prompting"
+      ],
+      [
+        "coding standards",
+        "style guides"
+      ],
+      [
+        "formatters",
+        "linters"
+      ],
+      [
+        "human oversight",
+        "human review"
+      ],
+      [
+        "unit tests",
+        "integration tests"
+      ],
+      [
+        "security tests",
+        "vulnerability"
+      ],
+      [
+        "documentation",
+        "README",
+        "CLAUDE.md"
+      ]
+    ],
+    "should_have": [
+      [
+        "trust but verify",
+        "verify"
+      ],
+      [
+        "end-to-end tests",
+        "stress tests"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "SmolDocling"
+    ]
+  },
+  {
+    "id": "pydantic_env_file_purpose",
+    "doc": "pydantic-env",
+    "question": "Why does the Pydantic article recommend using a .env file during local development?",
+    "expected_doc_title": "Manage Environment Variables with Pydantic",
+    "expected_answer": "The article recommends a .env file because declaring environment variables directly on the local machine is slow and messy. A .env file stores variables such as API keys, database URLs, and tokens in key-value format for local development.",
+    "must_have": [
+      [
+        ".env file",
+        "env file"
+      ],
+      [
+        "local development",
+        "local"
+      ],
+      [
+        "slow and messy",
+        "inconvenient"
+      ],
+      [
+        "API keys",
+        "tokens",
+        "secrets"
+      ],
+      [
+        "database URL",
+        "URL of your database",
+        "db"
+      ]
+    ],
+    "should_have": [
+      [
+        "key-value",
+        "key : value",
+        "key value"
+      ],
+      [
+        "environment variables",
+        "variables"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "SmolDocling"
+    ]
+  },
+  {
+    "id": "pydantic_gitignore_env_example",
+    "doc": "pydantic-env",
+    "question": "What is the difference between a .env file and an env.example file?",
+    "expected_doc_title": "Manage Environment Variables with Pydantic",
+    "expected_answer": "The .env file contains real private environment variables such as API keys and should be kept private and added to .gitignore. The env.example file contains only the keys or placeholders so other developers know which variables they need to set when cloning the repository.",
+    "must_have": [
+      [
+        ".env",
+        "env file"
+      ],
+      [
+        "private",
+        "real private"
+      ],
+      [
+        ".gitignore",
+        "gitignore"
+      ],
+      [
+        "env.example",
+        "example file"
+      ],
+      [
+        "only the keys",
+        "placeholders"
+      ],
+      [
+        "clone your repository",
+        "other developers"
+      ]
+    ],
+    "should_have": [
+      [
+        "never push",
+        "GitHub"
+      ],
+      [
+        "steal your keys",
+        "secrets"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "Tsetlin",
+      "DocTags"
+    ]
+  },
+  {
+    "id": "pydantic_python_dotenv_behavior",
+    "doc": "pydantic-env",
+    "question": "How does python-dotenv load environment variables according to the article?",
+    "expected_doc_title": "Manage Environment Variables with Pydantic",
+    "expected_answer": "python-dotenv uses load_dotenv to load variables declared in the .env file. The variables can then be accessed with os.getenv. If the .env file does not exist, the variable is taken from the host machine environment, which is useful for virtual machines or Docker containers.",
+    "must_have": [
+      [
+        "python-dotenv",
+        "dotenv"
+      ],
+      "load_dotenv",
+      [
+        ".env file",
+        "env file"
+      ],
+      "os.getenv",
+      [
+        "host machine",
+        "host environment"
+      ],
+      [
+        "Docker container",
+        "virtual machine"
+      ]
+    ],
+    "should_have": [
+      [
+        "pip install python-dotenv",
+        "install"
+      ],
+      [
+        "local development",
+        "deployed"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "LazyDocker",
+      "SmolDocling",
+      "GPT-4V"
+    ]
+  },
+  {
+    "id": "pydantic_settings_aliases",
+    "doc": "pydantic-env",
+    "question": "How does pydantic-settings help validate and map environment variables?",
+    "expected_doc_title": "Manage Environment Variables with Pydantic",
+    "expected_answer": "pydantic-settings lets a Settings class inherit from BaseSettings so configuration fields are loaded from environment variables or default values. Field can define alias or validation_alias, AliasChoices can allow multiple possible environment variable names, and SettingsConfigDict can set an env_prefix for grouped settings.",
+    "must_have": [
+      [
+        "pydantic-settings",
+        "pydantic settings"
+      ],
+      "BaseSettings",
+      [
+        "environment variables",
+        "env"
+      ],
+      [
+        "default value",
+        "default values"
+      ],
+      [
+        "alias",
+        "validation_alias"
+      ],
+      "AliasChoices",
+      [
+        "env_prefix",
+        "SettingsConfigDict"
+      ]
+    ],
+    "should_have": [
+      [
+        "Field",
+        "fields"
+      ],
+      [
+        "validate",
+        "validation"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "Random Kitchen Sinks"
+    ]
+  },
+  {
+    "id": "pydantic_no_hardcoding",
+    "doc": "pydantic-env",
+    "question": "Why does the article discourage hardcoding secrets in application code?",
+    "expected_doc_title": "Manage Environment Variables with Pydantic",
+    "expected_answer": "The article discourages hardcoding secrets because API keys, database connections, and other secrets power the application and should be handled safely. Using pydantic settings provides a structured and safer way to manage configuration instead of placing secrets directly in code.",
+    "must_have": [
+      [
+        "hardcode",
+        "hardcoding"
+      ],
+      [
+        "secrets",
+        "API keys"
+      ],
+      [
+        "database connections",
+        "db connections"
+      ],
+      [
+        "configuration",
+        "configurations"
+      ],
+      [
+        "structured",
+        "safe way"
+      ],
+      [
+        "pydantic settings",
+        "Pydantic"
+      ]
+    ],
+    "should_have": [
+      [
+        "boring but important",
+        "important part"
+      ],
+      [
+        "Settings",
+        "settings object"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "SmolDocling",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "smoldocling_vs_ocr",
+    "doc": "smoldocling",
+    "question": "Why does the SmolDocling article say traditional OCR is not enough for complex documents?",
+    "expected_doc_title": "Stop Fighting With OCR",
+    "expected_answer": "The article says traditional OCR works well for plain text but can fail on complex documents with multi-column layouts, code blocks, equations, tables, headers, and structured lists. Such documents need a layout-aware system that understands structure, semantics, and reading order.",
+    "must_have": [
+      [
+        "traditional OCR",
+        "OCR"
+      ],
+      [
+        "plain text",
+        "works great for plain text"
+      ],
+      [
+        "multi-column layouts",
+        "multi column"
+      ],
+      [
+        "code blocks",
+        "equations"
+      ],
+      [
+        "tables",
+        "headers"
+      ],
+      [
+        "structure",
+        "semantics",
+        "reading order"
+      ]
+    ],
+    "should_have": [
+      [
+        "Tesseract",
+        "Textract"
+      ],
+      [
+        "layout-aware",
+        "understands layout"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "Monty Python"
+    ]
+  },
+  {
+    "id": "smoldocling_docling_definition",
+    "doc": "smoldocling",
+    "question": "What are SmolDocling and Docling according to the article?",
+    "expected_doc_title": "Stop Fighting With OCR",
+    "expected_answer": "SmolDocling is a 256M-parameter visual language model that reads document pages as images and outputs semantic markup called DocTags. Docling is a Python toolkit that converts those DocTags into structured formats such as Markdown, HTML, or JSON.",
+    "must_have": [
+      [
+        "SmolDocling",
+        "SmolDocling"
+      ],
+      [
+        "256M-parameter",
+        "256M",
+        "256 million"
+      ],
+      [
+        "Visual Language Model",
+        "vision-language model"
+      ],
+      [
+        "document pages as images",
+        "pages as images"
+      ],
+      "DocTags",
+      [
+        "Docling",
+        "Python toolkit"
+      ],
+      [
+        "Markdown",
+        "HTML",
+        "JSON"
+      ]
+    ],
+    "should_have": [
+      [
+        "semantic markup",
+        "semantic"
+      ],
+      [
+        "structured formats",
+        "structured"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "LazyDocker",
+      "Tsetlin",
+      "GPT-4V"
+    ]
+  },
+  {
+    "id": "smoldocling_doctags",
+    "doc": "smoldocling",
+    "question": "What are DocTags and why are they useful?",
+    "expected_doc_title": "Stop Fighting With OCR",
+    "expected_answer": "DocTags are the semantic markup produced by SmolDocling. They preserve layout, semantics, reading order, and hierarchy, which helps downstream tools like Docling perform more accurate conversions than heuristic-based parsers.",
+    "must_have": [
+      "DocTags",
+      [
+        "semantic markup",
+        "markup"
+      ],
+      [
+        "layout",
+        "semantics"
+      ],
+      [
+        "reading order",
+        "order"
+      ],
+      [
+        "hierarchy",
+        "hierarchical"
+      ],
+      [
+        "Docling",
+        "downstream tools"
+      ],
+      [
+        "heuristic-based",
+        "heuristic"
+      ]
+    ],
+    "should_have": [
+      [
+        "heading",
+        "paragraph",
+        "table"
+      ],
+      [
+        "accurate conversions",
+        "more accurate"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Isolation Forest",
+      "Monty Python"
+    ]
+  },
+  {
+    "id": "smoldocling_app_pipeline",
+    "doc": "smoldocling",
+    "question": "What is the main pipeline of the SmolDocling document processing app?",
+    "expected_doc_title": "Stop Fighting With OCR",
+    "expected_answer": "The app loads PDFs or images from a local file or URL, loads the SmolDocling model, generates DocTags for each page image, creates a DocTagsDocument and DoclingDocument, exports the result to Markdown, HTML, or JSON, prepares a download, and renders a preview in a Gradio UI.",
+    "must_have": [
+      [
+        "PDFs or Images",
+        "PDF",
+        "images"
+      ],
+      [
+        "local",
+        "URL"
+      ],
+      [
+        "load the SmolDocling model",
+        "load_model"
+      ],
+      [
+        "DocTags",
+        "generate DocTags"
+      ],
+      [
+        "DocTagsDocument",
+        "DoclingDocument"
+      ],
+      [
+        "Markdown",
+        "HTML",
+        "JSON"
+      ],
+      [
+        "Gradio",
+        "UI"
+      ]
+    ],
+    "should_have": [
+      [
+        "download",
+        "preview"
+      ],
+      [
+        "page",
+        "each image"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "Bayesian Optimization"
+    ]
+  },
+  {
+    "id": "smoldocling_setup_and_run",
+    "doc": "smoldocling",
+    "question": "What setup and run commands does the SmolDocling tutorial provide?",
+    "expected_doc_title": "Stop Fighting With OCR",
+    "expected_answer": "The tutorial creates a uv virtual environment with uv venv smoldocling-env and activates it. It installs packages with uv pip install gradio mlx-vlm docling-core pillow pdf2image requests and installs poppler with brew install poppler. The app is run with uv run main.py and starts at http://127.0.0.1:7860/.",
+    "must_have": [
+      [
+        "uv venv smoldocling-env",
+        "uv venv"
+      ],
+      [
+        "source smoldocling-env/bin/activate",
+        "activate"
+      ],
+      [
+        "uv pip install",
+        "install"
+      ],
+      "gradio",
+      "mlx-vlm",
+      "docling-core",
+      "pdf2image",
+      [
+        "brew install poppler",
+        "poppler"
+      ],
+      [
+        "uv run main.py",
+        "main.py"
+      ],
+      [
+        "127.0.0.1:7860",
+        "7860"
+      ]
+    ],
+    "should_have": [
+      [
+        "Mac M1",
+        "M2",
+        "M3",
+        "M4",
+        "Apple Silicon"
+      ],
+      [
+        "MLX",
+        "Metal"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "GPT-4V"
+    ]
+  },
+  {
+    "id": "intro_basic_intros_fail",
+    "doc": "intro-formula",
+    "question": "Why does the introduction article say basic introductions are forgettable?",
+    "expected_doc_title": "The 1-Minute Introduction",
+    "expected_answer": "The article says basic name-job-hobby introductions are predictable, creating a 'Broken Robot' effect where brains tune out. It also mentions the Halo Effect, where people quickly form first impressions, so a memorable introduction should use storytelling and curiosity.",
+    "must_have": [
+      [
+        "name, job, hobby",
+        "name-job-hobby"
+      ],
+      [
+        "predictable",
+        "brains tune out"
+      ],
+      [
+        "Broken Robot",
+        "Broken Robot effect"
+      ],
+      [
+        "Halo Effect",
+        "first impressions"
+      ],
+      [
+        "storytelling",
+        "curiosity"
+      ]
+    ],
+    "should_have": [
+      [
+        "seconds",
+        "stick like glue"
+      ],
+      [
+        "attention",
+        "hijack their attention"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "Tsetlin",
+      "SmolDocling"
+    ]
+  },
+  {
+    "id": "intro_three_part_formula",
+    "doc": "intro-formula",
+    "question": "What is the article's three-part formula for a memorable one-minute introduction?",
+    "expected_doc_title": "The 1-Minute Introduction",
+    "expected_answer": "The three-part formula is Hook, Highlight, and Handoff. The Hook starts with a story instead of a name, the Highlight adds a quirky or surprising detail, and the Handoff makes it about the other person by ending with an engaging question.",
+    "must_have": [
+      "Hook",
+      "Highlight",
+      "Handoff",
+      [
+        "story",
+        "start with a story"
+      ],
+      [
+        "quirky detail",
+        "WTF detail",
+        "surprising detail"
+      ],
+      [
+        "question",
+        "make it about them"
+      ]
+    ],
+    "should_have": [
+      [
+        "not your name",
+        "instead of your name"
+      ],
+      [
+        "brain",
+        "engage"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Pydantic",
+      "Bayesian Optimization"
+    ]
+  },
+  {
+    "id": "intro_hook_example",
+    "doc": "intro-formula",
+    "question": "What example does the article give for turning a boring data introduction into a memorable one?",
+    "expected_doc_title": "The 1-Minute Introduction",
+    "expected_answer": "The article contrasts 'I'm Alex. I work in data. I like reading' with a stronger version: 'I spent 3 years tracking how 500 people brush their teeth. Now companies pay me to fix weird habits. What's a habit you'd love to break?' This makes the person memorable as the 'Toothbrush Data Guy.'",
+    "must_have": [
+      "Alex",
+      [
+        "work in data",
+        "data"
+      ],
+      [
+        "500 people",
+        "brush their teeth"
+      ],
+      [
+        "fix weird habits",
+        "weird habits"
+      ],
+      [
+        "habit you'd love to break",
+        "habit"
+      ],
+      [
+        "Toothbrush Data Guy",
+        "toothbrush"
+      ]
+    ],
+    "should_have": [
+      [
+        "forgotten",
+        "10 seconds"
+      ],
+      [
+        "Wow",
+        "memorable"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "SmolDocling",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "intro_seven_day_challenge",
+    "doc": "intro-formula",
+    "question": "What steps are included in the article's 7-day introduction challenge?",
+    "expected_doc_title": "The 1-Minute Introduction",
+    "expected_answer": "The 7-day challenge suggests writing your Hook on days 1–2, practicing it in the mirror on days 3–4, testing it on a friend for honest feedback on days 5–6, and using it in real life on day 7.",
+    "must_have": [
+      [
+        "7-day challenge",
+        "7 day"
+      ],
+      [
+        "Day 1",
+        "Day 1–2",
+        "days 1-2"
+      ],
+      [
+        "write your Hook",
+        "Hook"
+      ],
+      [
+        "practice",
+        "mirror"
+      ],
+      [
+        "test it on a friend",
+        "friend"
+      ],
+      [
+        "honest feedback",
+        "feedback"
+      ],
+      [
+        "use it in real life",
+        "real life"
+      ]
+    ],
+    "should_have": [
+      [
+        "coffee shop",
+        "Zoom call",
+        "anywhere"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "Pydantic"
+    ]
+  },
+  {
+    "id": "intro_brain_science",
+    "doc": "intro-formula",
+    "question": "What brain-science reasons does the article give for why the introduction formula works?",
+    "expected_doc_title": "The 1-Minute Introduction",
+    "expected_answer": "The article says surprise creates a dopamine hit, stories activate mirror neurons and emotional connection, and ending with a question uses recency bias because the question becomes the last thing the other person remembers.",
+    "must_have": [
+      [
+        "dopamine",
+        "dopamine hit"
+      ],
+      [
+        "surprise",
+        "surprise triggers"
+      ],
+      [
+        "mirror neurons",
+        "stories"
+      ],
+      [
+        "emotional connection",
+        "feel"
+      ],
+      [
+        "recency bias",
+        "last thing they remember"
+      ],
+      [
+        "question",
+        "end with a question"
+      ]
+    ],
+    "should_have": [
+      [
+        "brains love you",
+        "brain"
+      ],
+      [
+        "movie mode",
+        "story"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "SmolDocling",
+      "Isolation Forest"
+    ]
+  },
+  {
+    "id": "ai_money_no_quit_job",
+    "doc": "ai-money",
+    "question": "What is the main message of the AI money article about quitting your job?",
+    "expected_doc_title": "You Can Make Money With AI Without Quitting Your Job",
+    "expected_answer": "The article argues that you do not need to quit your job, risk everything, or burn the boats to start making money with AI. The author says they kept their paycheck and started making money with AI by working about two focused hours per day.",
+    "must_have": [
+      [
+        "do not need to quit",
+        "don't need to quit",
+        "without quitting"
+      ],
+      [
+        "risk everything",
+        "burn the boats"
+      ],
+      [
+        "paycheck",
+        "still had a paycheck"
+      ],
+      [
+        "AI",
+        "with AI"
+      ],
+      [
+        "2 hours a day",
+        "two hours a day"
+      ]
+    ],
+    "should_have": [
+      [
+        "making real money",
+        "real money"
+      ],
+      [
+        "job",
+        "9-to-5"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "SmolDocling"
+    ]
+  },
+  {
+    "id": "ai_money_two_hour_side_hustle",
+    "doc": "ai-money",
+    "question": "What does the author do in their 2-hour AI side hustle?",
+    "expected_doc_title": "You Can Make Money With AI Without Quitting Your Job",
+    "expected_answer": "The author spends two focused hours after work using ChatGPT and Claude to write quick content for businesses, including outlines, blog posts, and email sequences. They find clients through Twitter, Reddit, and cold emails, use AI for about 80% of the work, add a personal touch, and charge around $250–$500 per project.",
+    "must_have": [
+      [
+        "2 hours",
+        "two hours"
+      ],
+      [
+        "ChatGPT",
+        "Claude"
+      ],
+      [
+        "content for businesses",
+        "businesses"
+      ],
+      [
+        "outlines",
+        "blog posts",
+        "email sequences"
+      ],
+      [
+        "Twitter",
+        "Reddit",
+        "cold emails"
+      ],
+      [
+        "80%",
+        "personal touch"
+      ],
+      [
+        "$250",
+        "$500"
+      ]
+    ],
+    "should_have": [
+      [
+        "after work",
+        "No scrolling",
+        "No Netflix"
+      ],
+      [
+        "extra $1,000",
+        "$1,000"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "Tsetlin",
+      "DocTags"
+    ]
+  },
+  {
+    "id": "ai_money_starting_steps",
+    "doc": "ai-money",
+    "question": "What first steps does the article recommend for starting an AI side hustle?",
+    "expected_doc_title": "You Can Make Money With AI Without Quitting Your Job",
+    "expected_answer": "The article recommends picking one skill you already have, asking AI tools like ChatGPT or Claude to help you do it faster, packaging the skill as a service, going where people already need help such as Twitter, Reddit, IndieHackers, or small business Facebook groups, and doing it quickly without overthinking.",
+    "must_have": [
+      [
+        "pick one skill",
+        "skill you already have"
+      ],
+      [
+        "ChatGPT",
+        "Claude",
+        "AI tools"
+      ],
+      [
+        "do it faster",
+        "draft",
+        "research",
+        "brainstorm"
+      ],
+      [
+        "package it as a service",
+        "service"
+      ],
+      [
+        "Twitter",
+        "Reddit",
+        "IndieHackers",
+        "Facebook groups"
+      ],
+      [
+        "Do it messy",
+        "Do it fast",
+        "don't overthink"
+      ]
+    ],
+    "should_have": [
+      [
+        "writing",
+        "design",
+        "talking to people"
+      ],
+      [
+        "real people",
+        "offer help"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "SmolDocling"
+    ]
+  },
+  {
+    "id": "ai_money_fear_holding_back",
+    "doc": "ai-money",
+    "question": "According to the article, what really holds people back from making money with AI?",
+    "expected_doc_title": "You Can Make Money With AI Without Quitting Your Job",
+    "expected_answer": "The article says people are held back less by their job and more by fear: fear of failing, looking dumb, and wasting time. The author argues that waiting until you feel ready wastes time, and that progress starts by trying, even imperfectly.",
+    "must_have": [
+      [
+        "fear",
+        "scared"
+      ],
+      [
+        "fear of failing",
+        "failing"
+      ],
+      [
+        "looking dumb",
+        "dumb"
+      ],
+      [
+        "wasting time",
+        "waste time"
+      ],
+      [
+        "not stuck because of your job",
+        "not your job"
+      ],
+      [
+        "try",
+        "trying",
+        "just try"
+      ]
+    ],
+    "should_have": [
+      [
+        "ready",
+        "wasn't ready"
+      ],
+      [
+        "first $50",
+        "$50"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "Docker",
+      "Pydantic",
+      "Tsetlin"
+    ]
+  },
+  {
+    "id": "ai_money_ai_replacement_message",
+    "doc": "ai-money",
+    "question": "What does the article mean by 'AI won't replace you, but someone using AI will'?",
+    "expected_doc_title": "You Can Make Money With AI Without Quitting Your Job",
+    "expected_answer": "The article means AI is a tool that can help people work faster and create side income. It argues that people do not need a degree, a technical background, or a product; they need to learn to use AI tools to help others save time or make money, because people who use AI effectively will have an advantage.",
+    "must_have": [
+      [
+        "AI won't replace you",
+        "someone using AI will"
+      ],
+      [
+        "tool",
+        "AI tools"
+      ],
+      [
+        "work faster",
+        "faster"
+      ],
+      [
+        "side income",
+        "make side income"
+      ],
+      [
+        "no degree",
+        "don't need a degree"
+      ],
+      [
+        "not a tech bro",
+        "technical background",
+        "no code"
+      ],
+      [
+        "save time",
+        "make money"
+      ]
+    ],
+    "should_have": [
+      [
+        "advantage",
+        "levelled the playing field",
+        "leveled the playing field"
+      ],
+      [
+        "learn",
+        "care enough to learn"
+      ]
+    ],
+    "must_not_have": [
+      "Sora",
+      "WatchTower",
+      "Tsetlin",
+      "SmolDocling"
+    ]
+  }
+]

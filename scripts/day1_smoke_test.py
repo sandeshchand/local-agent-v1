@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.bootstrap import bootstrap_app  # noqa: E402
+from local_agent.app.bootstrap import bootstrap_app  # noqa: E402
 
 
 def print_header(title: str) -> None:
@@ -32,7 +32,7 @@ def main() -> None:
     print("Chat test passed.")
 
     print_header("EMBEDDING TEST")
-    sample_text = "Sora is a text-to-video model."
+    sample_text = "This document describes a local retrieval system."
     vector = deps.embedding_client.embed(sample_text)
     print(f"Embedding length: {len(vector)}")
     if not vector:
