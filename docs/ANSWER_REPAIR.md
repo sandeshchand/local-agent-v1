@@ -5,9 +5,9 @@ Answer repair is the recovery step after verification finds a problem with a gen
 The implementation is in:
 
 ```text
-agent/orchestrator.py
-agent/verifier.py
-retrieval/answer_service.py
+src/local_agent/agent/orchestrator.py
+src/local_agent/agent/verifier.py
+src/local_agent/retrieval/answer_service.py
 ```
 
 ## Purpose
@@ -63,7 +63,7 @@ Repair may run for issues such as:
 These issues come from:
 
 ```text
-agent/verifier.py
+src/local_agent/agent/verifier.py
 ```
 
 ## LLM Repair Prompt

@@ -5,9 +5,9 @@ Chunking converts parsed PDF pages into clean, searchable text units for SQLite 
 The implementation is in:
 
 ```text
-ingestion/parsers/pdf_parser.py
-ingestion/chunking.py
-ingestion/pipeline.py
+src/local_agent/ingestion/parsers/pdf_parser.py
+src/local_agent/ingestion/chunking.py
+src/local_agent/ingestion/pipeline.py
 ```
 
 ## High-Level Flow

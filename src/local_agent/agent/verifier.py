@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from agent.schemas import VerificationResult
+from local_agent.agent.schemas import VerificationResult
 
 class Verifier:
     def verify(

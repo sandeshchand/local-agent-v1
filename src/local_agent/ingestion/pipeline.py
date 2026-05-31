@@ -4,11 +4,11 @@ from dataclasses import asdict
 import hashlib
 from pathlib import  Path
 
-from app.ollama_client import OllamaEmbeddingClient
-from ingestion.chunking import  chunk_pages
-from ingestion.parsers.pdf_parser import parse_pdf
-from  storage.qdrant_store import QdrantStore
-from storage.sqlite_store import SQLiteStore
+from local_agent.app.ollama_client import OllamaEmbeddingClient
+from local_agent.ingestion.chunking import  chunk_pages
+from local_agent.ingestion.parsers.pdf_parser import parse_pdf
+from local_agent.storage.qdrant_store import QdrantStore
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 class IngestionPipeline:

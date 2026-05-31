@@ -5,10 +5,10 @@ from typing import Any
 
 from rank_bm25 import BM25Okapi
 
-from app.ollama_client import  OllamaEmbeddingClient
-from storage.qdrant_store import QdrantStore
-from storage.sqlite_store import SQLiteStore
-from retrieval.reranker import CrossEncoderReranker
+from local_agent.app.ollama_client import  OllamaEmbeddingClient
+from local_agent.storage.qdrant_store import QdrantStore
+from local_agent.storage.sqlite_store import SQLiteStore
+from local_agent.retrieval.reranker import CrossEncoderReranker
 
 class RetrievalService:
     def __init__(

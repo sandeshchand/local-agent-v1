@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
-from ingestion.parsers.pdf_parser import ParsedPage
+from local_agent.ingestion.parsers.pdf_parser import ParsedPage
 
 @dataclass(slots=True)
 class ChunkRecord:

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 
-from agent.schemas import PlanDecision
-from app.ollama_client import OllamaChatClient
+from local_agent.agent.schemas import PlanDecision
+from local_agent.app.ollama_client import OllamaChatClient
 
 
 class Planner:

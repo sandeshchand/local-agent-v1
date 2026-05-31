@@ -30,7 +30,7 @@ Planner
 
 ## Policy Rules
 
-The policy lives in `agent/guardrails.py`.
+The policy lives in `src/local_agent/agent/guardrails.py`.
 
 For a tool call:
 
@@ -60,7 +60,7 @@ deps.orchestrator.handle_query(
 Command-line callers can approve a tool for one `ask` command:
 
 ```cmd
-venv\Scripts\python.exe app\main.py ask --query "Run the approved tool" --approve-tool tool_name
+local-agent ask --query "Run the approved tool" --approve-tool tool_name
 ```
 
 API callers can include approved tool names in the chat payload:

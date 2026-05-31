@@ -4,13 +4,13 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from app.eval_candidates import (
+from local_agent.app.eval_candidates import (
     create_feedback_eval_candidate,
     load_gold_eval_items,
     promote_feedback_eval_candidate,
     update_feedback_eval_candidate,
 )
-from storage.sqlite_store import SQLiteStore
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 def main() -> None:

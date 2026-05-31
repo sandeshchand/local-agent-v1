@@ -6,8 +6,8 @@ MCP V1 adds a generic adapter layer plus read-only local connectors for files an
 
 Implemented:
 
-- `app/mcp_adapter.py`
-- `app/file_mcp.py`
+- `src/local_agent/app/mcp_adapter.py`
+- `src/local_agent/app/file_mcp.py`
 - MCP-style tool discovery through a small client protocol
 - registration into the existing `ToolRegistry`
 - MCP tool metadata on `ToolSpec`
@@ -84,9 +84,9 @@ The web UI also shows the same registered tools in the left sidebar Tools panel.
 Example CLI questions:
 
 ```cmd
-venv\Scripts\python.exe app\main.py ask --query "List files in docs"
-venv\Scripts\python.exe app\main.py ask --query "Read file docs/MCP.md"
-venv\Scripts\python.exe app\main.py ask --query "Show metadata for file docs/MCP.md"
+local-agent ask --query "List files in docs"
+local-agent ask --query "Read file docs/MCP.md"
+local-agent ask --query "Show metadata for file docs/MCP.md"
 ```
 
 Example chat UI questions:
@@ -127,10 +127,10 @@ SQLite MCP tools inspect the local app database through narrow read-only methods
 Example CLI questions:
 
 ```cmd
-venv\Scripts\python.exe app\main.py ask --query "List database tables"
-venv\Scripts\python.exe app\main.py ask --query "Preview table traces limit 5"
-venv\Scripts\python.exe app\main.py ask --query "Show recent traces from database"
-venv\Scripts\python.exe app\main.py ask --query "Show feedback summary"
+local-agent ask --query "List database tables"
+local-agent ask --query "Preview table traces limit 5"
+local-agent ask --query "Show recent traces from database"
+local-agent ask --query "Show feedback summary"
 ```
 
 Example chat UI questions:

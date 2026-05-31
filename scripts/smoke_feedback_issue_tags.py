@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from storage.sqlite_store import SQLiteStore
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 def main() -> None:

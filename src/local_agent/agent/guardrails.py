@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent.schemas import AgentAction, GuardrailDecision
+from local_agent.agent.schemas import AgentAction, GuardrailDecision
 
 
 class GuardrailPolicy:

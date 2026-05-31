@@ -8,7 +8,7 @@ The goal is not to make memory another source of document facts. PDF answers mus
 
 ## 1. Short-Term Memory
 
-File: `agent/memory_manager.py`
+File: `src/local_agent/agent/memory_manager.py`
 
 Short-term memory is the recent conversation history for the active `session_id`.
 
@@ -32,7 +32,7 @@ The old misspelled method `load_sesssion_memory()` is still available as an alia
 
 ## 2. Long-Term Memory
 
-File: `storage/sqlite_store.py`
+File: `src/local_agent/storage/sqlite_store.py`
 
 Long-term memory is stored in a new SQLite table:
 
@@ -64,7 +64,7 @@ known_issue
 
 ## 3. Memory Capture
 
-File: `agent/memory_manager.py`
+File: `src/local_agent/agent/memory_manager.py`
 
 The agent automatically captures only explicit memory-like messages, for example:
 
@@ -84,7 +84,7 @@ capture_long_term_memory(session_id, user_message)
 
 ## 4. Memory Guardrails
 
-File: `agent/memory_manager.py`
+File: `src/local_agent/agent/memory_manager.py`
 
 The memory layer rejects text that looks sensitive, including:
 
@@ -105,7 +105,7 @@ _is_sensitive(text)
 
 ## 5. Relevant Memory Retrieval
 
-File: `agent/memory_manager.py`
+File: `src/local_agent/agent/memory_manager.py`
 
 The system does not inject all memories into every prompt.
 
@@ -136,7 +136,7 @@ This returns:
 
 ## 6. Orchestrator Integration
 
-File: `agent/orchestrator.py`
+File: `src/local_agent/agent/orchestrator.py`
 
 The orchestration flow now does this at the beginning of every query:
 
@@ -162,7 +162,7 @@ The trace steps now include a memory step:
 
 ## 7. Prompt Integration
 
-File: `retrieval/answer_service.py`
+File: `src/local_agent/retrieval/answer_service.py`
 
 Memory is passed into retrieval, direct-answer, and tool-answer prompts.
 
@@ -177,24 +177,24 @@ This protects answer grounding. If a PDF question asks for facts, those facts mu
 
 ## 8. CLI Commands
 
-File: `app/cli.py`
+File: `src/local_agent/app/cli.py`
 
 Manually add a memory:
 
 ```cmd
-venv\Scripts\python.exe app\main.py remember --content "Do not use document-specific hardcoded keywords." --kind project_decision --importance 3
+local-agent remember --content "Do not use document-specific hardcoded keywords." --kind project_decision --importance 3
 ```
 
 List memory:
 
 ```cmd
-venv\Scripts\python.exe app\main.py list-memory
+local-agent list-memory
 ```
 
 Session-scoped memory:
 
 ```cmd
-venv\Scripts\python.exe app\main.py remember --content "Use short answers in this session." --kind user_preference --scope session --session-id default
+local-agent remember --content "Use short answers in this session." --kind user_preference --scope session --session-id default
 ```
 
 ## 9. Smoke Test

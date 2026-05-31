@@ -9,7 +9,7 @@ from typing import Any, List, Mapping
 from rank_bm25 import BM25Okapi
 from sentence_transformers import CrossEncoder
 
-from storage.sqlite_store import SQLiteStore
+from local_agent.storage.sqlite_store import SQLiteStore
 
 class DocumentRouter:
     """

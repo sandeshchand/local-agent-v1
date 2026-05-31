@@ -62,9 +62,9 @@ Goal: support external tools through a clean connector layer.
 Status:
 
 - A narrow read-only current weather web tool is implemented.
-- A generic MCP adapter layer is implemented in `app/mcp_adapter.py`.
-- A read-only local File MCP connector is implemented in `app/file_mcp.py`.
-- A read-only SQLite inspection connector is implemented in `app/sqlite_mcp.py`.
+- A generic MCP adapter layer is implemented in `src/local_agent/app/mcp_adapter.py`.
+- A read-only local File MCP connector is implemented in `src/local_agent/app/file_mcp.py`.
+- A read-only SQLite inspection connector is implemented in `src/local_agent/app/sqlite_mcp.py`.
 - Registered tools are visible through `GET /api/tools`.
 - Registered tools are visible in the UI.
 - The UI can approve approval-required tool calls for one request.

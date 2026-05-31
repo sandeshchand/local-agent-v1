@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from app.bootstrap import bootstrap_app
+from local_agent.app.bootstrap import bootstrap_app
 
 
 def normalize(text: str) -> str:

@@ -94,7 +94,7 @@ Timeline steps can include:
 Start the web app:
 
 ```cmd
-uvicorn app.web:app --reload
+uvicorn local_agent.app.web:app --reload
 ```
 
 Open:

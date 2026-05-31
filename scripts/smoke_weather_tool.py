@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 
-from agent.planner import Planner
-from app.weather_tool import CurrentWeatherTool
-from retrieval.answer_service import AnswerService
+from local_agent.agent.planner import Planner
+from local_agent.app.weather_tool import CurrentWeatherTool
+from local_agent.retrieval.answer_service import AnswerService
 
 
 class ChatClientStub:

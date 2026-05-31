@@ -135,7 +135,7 @@ Open:
 http://127.0.0.1:8000
 ```
 
-Do not run a second `uvicorn app.web:app` process from another Python installation. The helper starts the server from `venv` and writes logs to:
+Do not run a second `uvicorn local_agent.app.web:app` process from another Python installation. The helper starts the server from `venv` and writes logs to:
 
 ```text
 var/logs/web.out.log

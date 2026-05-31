@@ -5,9 +5,9 @@ The planner is the first routing decision layer for a user query.
 The implementation is in:
 
 ```text
-agent/planner.py
-agent/tool_router.py
-agent/schemas.py
+src/local_agent/agent/planner.py
+src/local_agent/agent/tool_router.py
+src/local_agent/agent/schemas.py
 ```
 
 ## Purpose

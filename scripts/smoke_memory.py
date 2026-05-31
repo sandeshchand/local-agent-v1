@@ -3,8 +3,8 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from agent.memory_manager import MemoryManager
-from storage.sqlite_store import SQLiteStore
+from local_agent.agent.memory_manager import MemoryManager
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 def main() -> None:

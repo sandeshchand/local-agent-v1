@@ -5,9 +5,9 @@ Answer verification checks whether a generated answer is grounded, focused, and 
 The main implementation is in:
 
 ```text
-agent/verifier.py
-agent/orchestrator.py
-retrieval/answer_service.py
+src/local_agent/agent/verifier.py
+src/local_agent/agent/orchestrator.py
+src/local_agent/retrieval/answer_service.py
 ```
 
 ## Where Verification Runs

@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import re
 
-from app.ollama_client import OllamaChatClient
-from retrieval.context_builder import build_context
+from local_agent.app.ollama_client import OllamaChatClient
+from local_agent.retrieval.context_builder import build_context
 
 
 class AnswerService:

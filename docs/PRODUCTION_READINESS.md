@@ -58,7 +58,7 @@ Data ingestion
 - Keep automated tests in `tests/`.
 - Keep gold QA benchmark files outside the test package, for example `benchmarks/gold_qa/`.
 - Keep local runtime state under `var/`.
-- Prefer console entry points such as `local-agent` over file-path commands such as `python app/main.py`.
+- Prefer console entry points such as `local-agent` over file-path commands such as `python -m local_agent.app.main`.
 
 ### Retrieval Quality
 

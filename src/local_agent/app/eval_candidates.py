@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from app.paths import EVAL_CANDIDATES_PATH, GOLD_EVAL_PATH
-from storage.sqlite_store import SQLiteStore
+from local_agent.app.paths import EVAL_CANDIDATES_PATH, GOLD_EVAL_PATH
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 DEFAULT_CANDIDATES_PATH = EVAL_CANDIDATES_PATH

@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.api_models import (
+from local_agent.app.api_models import (
     ChatRequest,
     ChatResponse,
     CitationItem,
@@ -33,20 +33,20 @@ from app.api_models import (
     TraceSummary,
     ToolItem,
 )
-from app.bootstrap import bootstrap_app
-from app.config import load_config
-from app.dependencies import AppDependencies
-from app.eval_candidates import (
+from local_agent.app.bootstrap import bootstrap_app
+from local_agent.app.config import load_config
+from local_agent.app.dependencies import AppDependencies
+from local_agent.app.eval_candidates import (
     create_feedback_eval_candidate,
     list_feedback_eval_candidates,
     promote_feedback_eval_candidate,
     update_feedback_eval_candidate,
 )
-from app.eval_runner import load_gold_eval_item, run_candidate_eval
-from app.paths import EVAL_CANDIDATES_PATH, EVAL_OUTPUT_DIR, GOLD_EVAL_PATH, STATIC_DIR, TEMPLATES_DIR
-from ingestion.file_loader import discover_pdf_files
-from ingestion.pipeline import IngestionPipeline
-from storage.sqlite_store import SQLiteStore
+from local_agent.app.eval_runner import load_gold_eval_item, run_candidate_eval
+from local_agent.app.paths import EVAL_CANDIDATES_PATH, EVAL_OUTPUT_DIR, GOLD_EVAL_PATH, STATIC_DIR, TEMPLATES_DIR
+from local_agent.ingestion.file_loader import discover_pdf_files
+from local_agent.ingestion.pipeline import IngestionPipeline
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 @lru_cache(maxsize=1)

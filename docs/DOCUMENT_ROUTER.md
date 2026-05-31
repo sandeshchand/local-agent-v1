@@ -5,9 +5,9 @@ The document router is the first retrieval stage for multi-PDF RAG.
 The implementation is in:
 
 ```text
-retrieval/doc_router.py
-agent/orchestrator.py
-storage/sqlite_store.py
+src/local_agent/retrieval/doc_router.py
+src/local_agent/agent/orchestrator.py
+src/local_agent/storage/sqlite_store.py
 ```
 
 ## Purpose

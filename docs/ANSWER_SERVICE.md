@@ -1,6 +1,6 @@
 # Answer Service Implementation
 
-This document explains `retrieval/answer_service.py`.
+This document explains `src/local_agent/retrieval/answer_service.py`.
 
 `AnswerService` is the final answer layer of the RAG system. It receives the user query and the retrieved/evidence-selected chunks, then returns a grounded answer with citations.
 

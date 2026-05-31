@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from agent.schemas import MemoryKind, MemoryRecord
-from storage.sqlite_store import SQLiteStore
+from local_agent.agent.schemas import MemoryKind, MemoryRecord
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 class MemoryManager:

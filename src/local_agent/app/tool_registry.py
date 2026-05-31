@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from agent.schemas import ToolSpec, ToolResult
+from local_agent.agent.schemas import ToolSpec, ToolResult
 
 
 class ToolRegistry:

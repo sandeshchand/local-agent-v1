@@ -1,6 +1,6 @@
 # Orchestration Layer
 
-The orchestration layer lives in `agent/orchestrator.py`. Its job is to coordinate the full agentic RAG flow without adding document-specific logic.
+The orchestration layer lives in `src/local_agent/agent/orchestrator.py`. Its job is to coordinate the full agentic RAG flow without adding document-specific logic.
 
 The layer should stay generic. It must not contain hardcoded PDF names, author names, or topic-specific keyword hacks for Sora, Docker, machine-learning papers, or any future document source.
 

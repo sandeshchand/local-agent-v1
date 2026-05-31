@@ -84,7 +84,4 @@ uvicorn*.log
 # Node (only if you add frontend tooling later)
 node_modules/
 
-#agent
-agent/planner_old.py
-
 # local runtime data

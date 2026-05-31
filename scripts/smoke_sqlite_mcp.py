@@ -4,14 +4,14 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from agent.guardrails import GuardrailPolicy
-from agent.planner import Planner
-from agent.schemas import AgentAction
-from app.mcp_adapter import MCPToolAdapter
-from app.sqlite_mcp import ReadOnlySQLiteMCPClient
-from app.tool_registry import ToolRegistry
-from retrieval.answer_service import AnswerService
-from storage.sqlite_store import SQLiteStore
+from local_agent.agent.guardrails import GuardrailPolicy
+from local_agent.agent.planner import Planner
+from local_agent.agent.schemas import AgentAction
+from local_agent.app.mcp_adapter import MCPToolAdapter
+from local_agent.app.sqlite_mcp import ReadOnlySQLiteMCPClient
+from local_agent.app.tool_registry import ToolRegistry
+from local_agent.retrieval.answer_service import AnswerService
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 class ChatClientStub:

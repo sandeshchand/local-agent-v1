@@ -22,7 +22,7 @@ Write-Output "Stopping existing app.web uvicorn processes..."
 $existing = Get-CimInstance Win32_Process |
     Where-Object {
         $_.Name -match "^(python|uvicorn)(\.exe)?$" -and
-        $_.CommandLine -like "*uvicorn app.web:app*"
+        ($_.CommandLine -like "*uvicorn app.web:app*" -or $_.CommandLine -like "*uvicorn local_agent.app.web:app*")
     }
 
 foreach ($process in $existing) {
@@ -35,7 +35,7 @@ Start-Sleep -Seconds 1
 Write-Output "Starting Local Agent web UI from venv..."
 $server = Start-Process `
     -FilePath $VenvPython `
-    -ArgumentList @("-m", "uvicorn", "app.web:app", "--host", $HostAddress, "--port", "$Port") `
+    -ArgumentList @("-m", "uvicorn", "local_agent.app.web:app", "--host", $HostAddress, "--port", "$Port") `
     -WorkingDirectory $Root `
     -WindowStyle Hidden `
     -RedirectStandardOutput $OutLog `

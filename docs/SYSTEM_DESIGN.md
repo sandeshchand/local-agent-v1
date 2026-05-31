@@ -2,19 +2,14 @@
 
 This document describes the target production structure for the local agentic RAG system.
 
-The current application works, but the repository still has prototype-style layout decisions. Production readiness needs clean source packaging, separated tests, separated benchmark data, clear runtime storage, and stable operational entry points.
+The current application now uses a production-style `src/local_agent` package layout. Remaining production work is mainly around deployment, backup/restore, health checks, and optional deeper domain refactoring.
 
 ## Current Layout Diagnosis
 
 Current top-level folders:
 
 ```text
-app/
-agent/
-ingestion/
-retrieval/
-storage/
-observability/
+src/
 scripts/
 docs/
 data/
@@ -27,7 +22,8 @@ templates/
 
 What is good:
 
-- the core domains are already separated,
+- product code is under `src/local_agent`,
+- the core domains are already separated as subpackages,
 - docs are split by subsystem,
 - regression and eval scripts exist,
 - local runtime data is mostly ignored by `.gitignore`,
@@ -35,12 +31,9 @@ What is good:
 
 What should improve:
 
-- production Python code is at repo root instead of under `src/`,
-- tests and gold QA are now split, but code still needs a full `src/` migration,
-- web assets are top-level instead of owned by the web package,
-- runtime artifacts such as logs, local DBs, and vector stores sit near source code,
-- package discovery is manually listed in `pyproject.toml`,
-- deployment, backup, restore, and health-check structure is not formal yet.
+- web assets are still top-level instead of owned by the web package,
+- deployment, backup, restore, and health-check structure is not formal yet,
+- a deeper domain refactor could later split `app`, `agent`, and `storage` into clearer `api`, `application`, `infrastructure`, and `tools` packages.
 
 ## Target Production Layout
 
@@ -50,51 +43,12 @@ Recommended final structure:
 local-agent-v1/
   src/
     local_agent/
-      api/
-        web.py
-        api_models.py
-      cli/
-        main.py
-        commands.py
-      application/
-        orchestrator.py
-        planner.py
-        tool_router.py
-        guardrails.py
-        memory_manager.py
-        verifier.py
-        schemas.py
+      app/
+      agent/
       ingestion/
-        pipeline.py
-        chunking.py
-        file_loader.py
-        parsers/
       retrieval/
-        answer_service.py
-        context_builder.py
-        doc_router.py
-        evidence_checker.py
-        evidence_judge.py
-        reranker.py
-        search.py
-      infrastructure/
-        config.py
-        bootstrap.py
-        dependencies.py
-        ollama_client.py
-        sqlite_store.py
-        qdrant_store.py
-      tools/
-        registry.py
-        weather_tool.py
-        mcp_adapter.py
-        file_mcp.py
-        sqlite_mcp.py
+      storage/
       observability/
-        traces.py
-      web_assets/
-        templates/
-        static/
   tests/
     unit/
     integration/
@@ -184,13 +138,13 @@ user query
 
 ## Packaging Direction
 
-The project should move to a `src/` layout, but not by only creating an empty `src` folder.
+The project uses a `src/` layout.
 
-Correct migration means:
+The migration included:
 
 - move product packages under `src/local_agent`,
 - update imports,
-- update web template/static paths,
+- keep web template/static paths rooted at the project root for now,
 - update CLI entry points,
 - update eval and regression script paths,
 - update docs and commands,
@@ -205,10 +159,10 @@ local-agent ask --query "What are the key features of WatchTower?"
 This is better than relying on:
 
 ```powershell
-python app\main.py ...
+python -m local_agent.app.main ...
 ```
 
-because the command can survive a later `src/` migration.
+because the command is independent of source file locations.
 
 ## Test And Benchmark Separation
 
@@ -232,12 +186,12 @@ This matters because tests and evaluation datasets have different lifecycles. Te
 
 ### Phase 1: Stabilize Entry Points
 
-Status: started.
+Status: completed.
 
 - Add `local-agent` console script.
-- Add `app/paths.py` as the central project path registry.
-- Prefer `python -m app.main` or `local-agent` in docs.
-- Keep old file-path CLI commands working during migration.
+- Add `src/local_agent/app/paths.py` as the central project path registry.
+- Prefer `python -m local_agent.app.main` or `local-agent` in docs.
+- Keep file-path CLI commands out of docs; use `local-agent` or `python -m local_agent.app.main`.
 
 ### Phase 2: Split Tests And Gold QA
 
@@ -249,11 +203,13 @@ Status: completed.
 
 ### Phase 3: Move To `src/`
 
-- Move product code under `src/local_agent`.
-- Convert imports from package groups such as `app`, `agent`, `retrieval`, and `storage` into the new namespace.
-- Update packaging to use package discovery from `src`.
-- Update web template/static loading.
-- Run full regression.
+Status: completed.
+
+- Product packages moved under `src/local_agent`.
+- Existing package groups such as `app`, `agent`, `retrieval`, and `storage` are preserved as subpackages for a safer first migration.
+- Imports now use the `local_agent.*` namespace.
+- Packaging uses `src` package discovery.
+- A deeper domain refactor into `api`, `application`, `infrastructure`, and `tools` can happen after this migration is stable.
 
 ### Phase 4: Separate Runtime State
 

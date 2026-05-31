@@ -22,7 +22,7 @@ dependencies =[
 ]
 
 [project.scripts]
-local-agent = "app.main:main"
+local-agent = "local_agent.app.main:main"
 
 [project.optional-dependencies]
 ocr = [
@@ -31,4 +31,7 @@ ocr = [
 ]
 
 [tool.setuptools]
-packages =["app","agent","storage","ingestion","ingestion.parsers", "retrieval","observability"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
-from storage.sqlite_store import SQLiteStore
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 def main() -> None:

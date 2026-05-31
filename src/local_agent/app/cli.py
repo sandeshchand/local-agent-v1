@@ -3,10 +3,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from agent.schemas import MemoryKind
-from app.dependencies import AppDependencies
-from ingestion.file_loader import discover_pdf_files
-from ingestion.pipeline import IngestionPipeline
+from local_agent.agent.schemas import MemoryKind
+from local_agent.app.dependencies import AppDependencies
+from local_agent.ingestion.file_loader import discover_pdf_files
+from local_agent.ingestion.pipeline import IngestionPipeline
 
 
 

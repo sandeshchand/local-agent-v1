@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from app.bootstrap import bootstrap_app
-from app.cli import build_parser, run_ask, run_ingest, run_list_docs, run_list_memory, run_remember
+from local_agent.app.bootstrap import bootstrap_app
+from local_agent.app.cli import build_parser, run_ask, run_ingest, run_list_docs, run_list_memory, run_remember
 
 
 def main() ->None:

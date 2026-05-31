@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from storage.sqlite_store import SQLiteStore
+from local_agent.storage.sqlite_store import SQLiteStore
 
 def save_trace(
         sqlite_store: SQLiteStore,

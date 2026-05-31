@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from agent.guardrails import GuardrailPolicy
-from agent.orchestrator import Orchestrator
-from agent.schemas import AgentAction, AgentState, ToolSpec, VerificationResult
-from app.tool_registry import ToolRegistry
+from local_agent.agent.guardrails import GuardrailPolicy
+from local_agent.agent.orchestrator import Orchestrator
+from local_agent.agent.schemas import AgentAction, AgentState, ToolSpec, VerificationResult
+from local_agent.app.tool_registry import ToolRegistry
 
 
 class VerifierStub:

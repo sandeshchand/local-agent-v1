@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from storage.sqlite_store import SQLiteStore
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 class ReadOnlySQLiteMCPClient:

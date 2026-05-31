@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from app.api_models import ChatResponse
-from app.web import approval_payload
+from local_agent.app.api_models import ChatResponse
+from local_agent.app.web import approval_payload
 
 
 def main() -> None:

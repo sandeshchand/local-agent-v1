@@ -5,8 +5,8 @@ import json
 import re
 from typing import Any, Protocol
 
-from agent.schemas import ToolSpec
-from app.tool_registry import ToolRegistry
+from local_agent.agent.schemas import ToolSpec
+from local_agent.app.tool_registry import ToolRegistry
 
 
 class MCPClientProtocol(Protocol):

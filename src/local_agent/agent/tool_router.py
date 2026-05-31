@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 
-from agent.schemas import AgentState, AgentAction
+from local_agent.agent.schemas import AgentState, AgentAction
 
 
 class ToolRouter:

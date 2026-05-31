@@ -1,9 +1,21 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+def _find_project_root() -> Path:
+    configured_root = os.getenv("LOCAL_AGENT_ROOT")
+    if configured_root:
+        return Path(configured_root).expanduser().resolve()
+
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "pyproject.toml").exists():
+            return parent
+    return Path.cwd().resolve()
+
+
+PROJECT_ROOT = _find_project_root()
 
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DOCUMENTS_DIR = DATA_DIR / "raw" / "documents"

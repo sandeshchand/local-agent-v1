@@ -2,21 +2,21 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent.guardrails import GuardrailPolicy
-from agent.memory_manager import MemoryManager
-from agent.planner import Planner
-from agent.schemas import AgentAction, AgentState, GuardrailDecision, VerificationResult
-from agent.tool_router import ToolRouter
-from agent.verifier import Verifier
-from app.tool_registry import ToolRegistry
-from observability.traces import save_trace
-from retrieval.answer_service import AnswerService
-from retrieval.doc_router import DocumentRouter
-from retrieval.evidence_checker import EvidenceChecker
-from retrieval.evidence_judge import EvidenceJudge
-from retrieval.query_rewriter import QueryRewriter
-from retrieval.search import RetrievalService
-from storage.sqlite_store import SQLiteStore
+from local_agent.agent.guardrails import GuardrailPolicy
+from local_agent.agent.memory_manager import MemoryManager
+from local_agent.agent.planner import Planner
+from local_agent.agent.schemas import AgentAction, AgentState, GuardrailDecision, VerificationResult
+from local_agent.agent.tool_router import ToolRouter
+from local_agent.agent.verifier import Verifier
+from local_agent.app.tool_registry import ToolRegistry
+from local_agent.observability.traces import save_trace
+from local_agent.retrieval.answer_service import AnswerService
+from local_agent.retrieval.doc_router import DocumentRouter
+from local_agent.retrieval.evidence_checker import EvidenceChecker
+from local_agent.retrieval.evidence_judge import EvidenceJudge
+from local_agent.retrieval.query_rewriter import QueryRewriter
+from local_agent.retrieval.search import RetrievalService
+from local_agent.storage.sqlite_store import SQLiteStore
 
 
 class Orchestrator:

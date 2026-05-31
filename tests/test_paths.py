@@ -1,4 +1,4 @@
-from app.paths import (
+from local_agent.app.paths import (
     DEFAULT_QDRANT_PATH,
     DEFAULT_SQLITE_PATH,
     EVAL_CANDIDATES_PATH,

@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from app.bootstrap import bootstrap_app
+from local_agent.app.bootstrap import bootstrap_app
 
 
 Requirement = str | list[str]
