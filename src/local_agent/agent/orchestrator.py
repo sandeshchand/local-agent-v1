@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from local_agent.agent.guardrails import GuardrailPolicy
@@ -59,10 +60,15 @@ class Orchestrator:
         session_id: str = "default",
         approved_tools: list[str] | None = None,
     ) -> dict:
+        total_started_at = time.perf_counter()
+        timings_ms: dict[str, float] = {}
+
+        memory_started_at = time.perf_counter()
         self.memory_manager.save_user_turn(session_id, query)
         captured_memory = self.memory_manager.capture_long_term_memory(session_id, query)
         memory = self.memory_manager.load_memory_for_query(session_id, query)
         memory_context = self.memory_manager.format_memory_context(memory)
+        timings_ms["memory_load_ms"] = self._elapsed_ms(memory_started_at)
 
         state = AgentState(
             user_query=query,
@@ -79,7 +85,9 @@ class Orchestrator:
             }
         )
 
+        planning_started_at = time.perf_counter()
         state.plan = self.planner.plan(query)
+        timings_ms["planning_ms"] = self._elapsed_ms(planning_started_at)
         state.steps.append(
             {
                 "step": 1,
@@ -91,6 +99,7 @@ class Orchestrator:
         used_citations: list[dict] = []
         verification: VerificationResult | None = None
 
+        action_started_at = time.perf_counter()
         for step_no in range(2, self.max_steps + 2):
             action = self.tool_router.next_action(state)
 
@@ -135,18 +144,32 @@ class Orchestrator:
             verification = self._verify_and_maybe_repair(query, used_citations, state)
             break
 
-        if verification is None:
-            verification = self._verify_and_maybe_repair(query, used_citations, state)
+        timings_ms["action_ms"] = self._elapsed_ms(action_started_at)
 
+        if verification is None:
+            verification_started_at = time.perf_counter()
+            verification = self._verify_and_maybe_repair(query, used_citations, state)
+            timings_ms["fallback_verification_ms"] = self._elapsed_ms(verification_started_at)
+
+        assistant_memory_started_at = time.perf_counter()
         self.memory_manager.save_assistant_turn(
             session_id=session_id,
             content=state.final_answer,
         )
+        timings_ms["memory_save_ms"] = self._elapsed_ms(assistant_memory_started_at)
 
         grounded_citations: list[dict] = []
         if verification.grounded and used_citations:
             grounded_citations = used_citations
 
+        performance_step = self._append_performance_step(
+            state=state,
+            timings_ms=timings_ms,
+            total_started_at=total_started_at,
+            citation_count=len(grounded_citations or used_citations),
+        )
+
+        trace_started_at = time.perf_counter()
         trace_id = save_trace(
             sqlite_store=self.sqlite_store,
             query=query,
@@ -159,6 +182,12 @@ class Orchestrator:
             tool_results=[result.model_dump() for result in state.tool_results],
             verification=verification.model_dump(),
         )
+        performance_summary = {
+            **performance_step,
+            "trace_save_ms": self._elapsed_ms(trace_started_at),
+            "total_ms": self._elapsed_ms(total_started_at),
+        }
+        state.steps[-1].update(performance_summary)
 
         return {
             "session_id": session_id,
@@ -171,6 +200,7 @@ class Orchestrator:
             "steps": state.steps,
             "tool_results": [result.model_dump() for result in state.tool_results],
             "verification": verification.model_dump(),
+            "performance": performance_summary,
         }
 
     def _handle_direct_answer(
@@ -181,16 +211,19 @@ class Orchestrator:
         action: AgentAction,
         step_no: int,
     ) -> tuple[list[dict], VerificationResult]:
+        started_at = time.perf_counter()
         state.final_answer = self.answer_service.answer_direct(
             query,
             memory_context=memory_context,
         )
+        answer_generation_ms = self._elapsed_ms(started_at)
         state.done = True
         state.steps.append(
             {
                 "step": step_no,
                 "type": "direct_answer",
                 "notes": action.notes,
+                "answer_generation_ms": answer_generation_ms,
             }
         )
         return [], self._verify_and_maybe_repair(query, [], state)
@@ -273,11 +306,13 @@ class Orchestrator:
         step_no: int,
         approved_tools: list[str] | None = None,
     ) -> tuple[list[dict], VerificationResult]:
+        guardrail_started_at = time.perf_counter()
         guardrail_decision = self.guardrail_policy.evaluate_tool_call(
             action,
             self.tool_registry,
             approved_tools=approved_tools,
         )
+        guardrail_ms = self._elapsed_ms(guardrail_started_at)
         state.steps.append(
             {
                 "step": step_no,
@@ -289,6 +324,7 @@ class Orchestrator:
                 "requires_approval": guardrail_decision.requires_approval,
                 "approved": guardrail_decision.approved,
                 "policy_name": guardrail_decision.policy_name,
+                "duration_ms": guardrail_ms,
             }
         )
 
@@ -299,8 +335,23 @@ class Orchestrator:
 
         tool_name, tool_args = self._tool_call_name_args(action)
         tool_spec = self.tool_registry.get_tool_spec(tool_name)
+        tool_started_at = time.perf_counter()
         tool_result = self.tool_registry.execute(tool_name, **tool_args)
+        tool_duration_ms = self._elapsed_ms(tool_started_at)
         state.tool_results.append(tool_result)
+
+        answer_generation_ms = 0.0
+        if tool_result.success:
+            answer_started_at = time.perf_counter()
+            state.final_answer = self.answer_service.answer_from_tool_result(
+                query=query,
+                tool_context=str(tool_result.output),
+                memory_context=memory_context,
+            )
+            answer_generation_ms = self._elapsed_ms(answer_started_at)
+        else:
+            state.final_answer = "I could not get the result from the tool."
+
         state.steps.append(
             {
                 "step": step_no,
@@ -309,18 +360,11 @@ class Orchestrator:
                 "tool_source": tool_spec.source if tool_spec else "unknown",
                 "tool_metadata": tool_spec.metadata if tool_spec else {},
                 "success": tool_result.success,
+                "tool_duration_ms": tool_duration_ms,
+                "answer_generation_ms": answer_generation_ms,
                 "notes": action.notes,
             }
         )
-
-        if tool_result.success:
-            state.final_answer = self.answer_service.answer_from_tool_result(
-                query=query,
-                tool_context=str(tool_result.output),
-                memory_context=memory_context,
-            )
-        else:
-            state.final_answer = "I could not get the result from the tool."
 
         state.done = True
         return [], self._verify_and_maybe_repair(query, [], state)
@@ -342,12 +386,16 @@ class Orchestrator:
         broaden_doc_scope: bool = False,
         retry_reason: str = "",
     ) -> list[dict]:
+        attempt_started_at = time.perf_counter()
         candidate_doc_ids: list[str] | None = None
         routed_docs: list[dict] = []
         candidate_scope = "all_documents"
+        doc_routing_ms = 0.0
 
         if self.doc_router is not None:
+            doc_routing_started_at = time.perf_counter()
             routed_docs = self.doc_router.route(retrieval_query, top_n=3)
+            doc_routing_ms = self._elapsed_ms(doc_routing_started_at)
             if broaden_doc_scope:
                 candidate_doc_ids = None
                 candidate_scope = "all_documents_retry"
@@ -355,57 +403,29 @@ class Orchestrator:
                 candidate_doc_ids = self._candidate_doc_ids(routed_docs)
                 candidate_scope = "routed_documents" if candidate_doc_ids else "all_documents"
 
+        search_started_at = time.perf_counter()
         results = self.retrieval_service.search(
             query=retrieval_query,
             candidate_doc_ids=candidate_doc_ids,
         )
+        retrieval_search_ms = self._elapsed_ms(search_started_at)
+        evidence_started_at = time.perf_counter()
         selected_results, judgments = self.evidence_judge.select_evidence(
             query,
             results,
             max_items=10 if broaden_doc_scope else 8,
         )
+        evidence_selection_ms = self._elapsed_ms(evidence_started_at)
+        context_started_at = time.perf_counter()
         answer_results = self._merge_answer_context(
             selected_results,
             results,
             max_items=10 if broaden_doc_scope else 8,
         )
-
-        state.steps.append(
-            {
-                "step": step_no,
-                "type": "retrieve",
-                "attempt": attempt,
-                "retry": attempt > 1,
-                "retry_reason": retry_reason,
-                "broaden_doc_scope": broaden_doc_scope,
-                "retrieval_query": retrieval_query,
-                "candidate_scope": candidate_scope,
-                "candidate_doc_count": len(candidate_doc_ids or []),
-                "routed_docs": [
-                    {
-                        "doc_id": doc["doc_id"],
-                        "title": doc["title"],
-                        "routing_score": doc.get("routing_score", 0.0),
-                    }
-                    for doc in routed_docs
-                ],
-                "result_count": len(results),
-                "selected_count": len(selected_results),
-                "answer_context_count": len(answer_results),
-                "evidence_judgements": [
-                    {
-                        "label": judgment.label,
-                        "reason": judgment.reason,
-                        "chunk_id": judgment.item.get("chunk_id"),
-                        "page_number": judgment.item.get("page_number"),
-                    }
-                    for judgment in judgments
-                ],
-                "notes": action.notes,
-            }
-        )
+        context_merge_ms = self._elapsed_ms(context_started_at)
 
         if answer_results:
+            answer_started_at = time.perf_counter()
             state.retrieved_items = answer_results
             state.final_answer = self.answer_service.answer_from_context(
                 query=query,
@@ -413,10 +433,57 @@ class Orchestrator:
                 memory_context=memory_context,
                 tool_context="",
             )
+            answer_generation_ms = self._elapsed_ms(answer_started_at)
+            state.steps.append(
+                self._retrieval_step(
+                    step_no=step_no,
+                    attempt=attempt,
+                    retry_reason=retry_reason,
+                    broaden_doc_scope=broaden_doc_scope,
+                    retrieval_query=retrieval_query,
+                    candidate_scope=candidate_scope,
+                    candidate_doc_count=len(candidate_doc_ids or []),
+                    routed_docs=routed_docs,
+                    result_count=len(results),
+                    selected_count=len(selected_results),
+                    answer_context_count=len(answer_results),
+                    judgments=judgments,
+                    notes=action.notes,
+                    doc_routing_ms=doc_routing_ms,
+                    retrieval_search_ms=retrieval_search_ms,
+                    evidence_selection_ms=evidence_selection_ms,
+                    context_merge_ms=context_merge_ms,
+                    answer_generation_ms=answer_generation_ms,
+                    duration_ms=self._elapsed_ms(attempt_started_at),
+                )
+            )
             return answer_results[:]
 
         state.retrieved_items = []
         state.final_answer = "Unable to find relevant information in the indexed documents."
+        state.steps.append(
+            self._retrieval_step(
+                step_no=step_no,
+                attempt=attempt,
+                retry_reason=retry_reason,
+                broaden_doc_scope=broaden_doc_scope,
+                retrieval_query=retrieval_query,
+                candidate_scope=candidate_scope,
+                candidate_doc_count=len(candidate_doc_ids or []),
+                routed_docs=routed_docs,
+                result_count=len(results),
+                selected_count=len(selected_results),
+                answer_context_count=len(answer_results),
+                judgments=judgments,
+                notes=action.notes,
+                doc_routing_ms=doc_routing_ms,
+                retrieval_search_ms=retrieval_search_ms,
+                evidence_selection_ms=evidence_selection_ms,
+                context_merge_ms=context_merge_ms,
+                answer_generation_ms=0.0,
+                duration_ms=self._elapsed_ms(attempt_started_at),
+            )
+        )
         return []
 
     def _verify_and_maybe_repair(
@@ -425,6 +492,7 @@ class Orchestrator:
         used_citations: list[dict],
         state: AgentState,
     ) -> VerificationResult:
+        verification_started_at = time.perf_counter()
         verification = self.verifier.verify(
             answer=state.final_answer,
             retrieved_items=used_citations,
@@ -436,10 +504,12 @@ class Orchestrator:
                 "status": verification.status,
                 "issues": verification.issues,
                 "grounded": verification.grounded,
+                "duration_ms": self._elapsed_ms(verification_started_at),
             }
         )
 
         if used_citations and verification.status != "verified":
+            repair_started_at = time.perf_counter()
             repaired_answer = self.answer_service.repair_answer(
                 query=query,
                 answer=state.final_answer,
@@ -457,6 +527,7 @@ class Orchestrator:
                     "issues": verification.issues,
                     "repaired": repaired_answer != state.final_answer,
                     "verification_after_repair": repaired_verification.model_dump(),
+                    "duration_ms": self._elapsed_ms(repair_started_at),
                 }
             )
             if repaired_verification.status == "verified":
@@ -531,6 +602,95 @@ class Orchestrator:
 
         return merged
 
+    def _retrieval_step(
+        self,
+        *,
+        step_no: int,
+        attempt: int,
+        retry_reason: str,
+        broaden_doc_scope: bool,
+        retrieval_query: str,
+        candidate_scope: str,
+        candidate_doc_count: int,
+        routed_docs: list[dict],
+        result_count: int,
+        selected_count: int,
+        answer_context_count: int,
+        judgments: list[Any],
+        notes: str,
+        doc_routing_ms: float,
+        retrieval_search_ms: float,
+        evidence_selection_ms: float,
+        context_merge_ms: float,
+        answer_generation_ms: float,
+        duration_ms: float,
+    ) -> dict:
+        return {
+            "step": step_no,
+            "type": "retrieve",
+            "attempt": attempt,
+            "retry": attempt > 1,
+            "retry_reason": retry_reason,
+            "broaden_doc_scope": broaden_doc_scope,
+            "retrieval_query": retrieval_query,
+            "candidate_scope": candidate_scope,
+            "candidate_doc_count": candidate_doc_count,
+            "routed_docs": [
+                {
+                    "doc_id": doc["doc_id"],
+                    "title": doc["title"],
+                    "routing_score": doc.get("routing_score", 0.0),
+                }
+                for doc in routed_docs
+            ],
+            "result_count": result_count,
+            "selected_count": selected_count,
+            "answer_context_count": answer_context_count,
+            "evidence_judgements": [
+                {
+                    "label": judgment.label,
+                    "reason": judgment.reason,
+                    "chunk_id": judgment.item.get("chunk_id"),
+                    "page_number": judgment.item.get("page_number"),
+                }
+                for judgment in judgments
+            ],
+            "timings_ms": {
+                "doc_routing_ms": doc_routing_ms,
+                "retrieval_search_ms": retrieval_search_ms,
+                "evidence_selection_ms": evidence_selection_ms,
+                "context_merge_ms": context_merge_ms,
+                "answer_generation_ms": answer_generation_ms,
+            },
+            "duration_ms": duration_ms,
+            "notes": notes,
+        }
+
+    def _append_performance_step(
+        self,
+        *,
+        state: AgentState,
+        timings_ms: dict[str, float],
+        total_started_at: float,
+        citation_count: int,
+    ) -> dict:
+        step_counts: dict[str, int] = {}
+        for step in state.steps:
+            step_type = str(step.get("type", "unknown"))
+            step_counts[step_type] = step_counts.get(step_type, 0) + 1
+
+        performance_step = {
+            "type": "performance",
+            "total_before_trace_save_ms": self._elapsed_ms(total_started_at),
+            "timings_ms": timings_ms,
+            "step_counts": step_counts,
+            "retrieval_attempts": step_counts.get("retrieve", 0),
+            "tool_calls": len(state.tool_results),
+            "citation_count": citation_count,
+        }
+        state.steps.append(performance_step)
+        return performance_step
+
     def _candidate_doc_ids(self, routed_docs: list[dict]) -> list[str]:
         if not routed_docs:
             return []
@@ -542,3 +702,6 @@ class Orchestrator:
         if top_score >= second_score * 1.05 or (top_score - second_score) >= 3.0:
             return [routed_docs[0]["doc_id"]]
         return [doc["doc_id"] for doc in routed_docs]
+
+    def _elapsed_ms(self, started_at: float) -> float:
+        return round((time.perf_counter() - started_at) * 1000, 2)

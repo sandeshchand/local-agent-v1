@@ -42,6 +42,7 @@ COMPILE_TARGETS = [
     "scripts/smoke_tool_approval_ui.py",
     "scripts/smoke_weather_tool.py",
     "scripts/query_visual_world.py",
+    "scripts/benchmark_latency.py",
     "scripts/eval_rag_quality.py",
     "tests/test_paths.py",
 ]

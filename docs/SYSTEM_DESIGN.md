@@ -26,6 +26,7 @@ What is good:
 - the core domains are already separated as subpackages,
 - docs are split by subsystem,
 - regression and eval scripts exist,
+- latency benchmark and per-trace performance timings exist,
 - local runtime data is mostly ignored by `.gitignore`,
 - the app can be installed with `pip install -e .`.
 
@@ -233,5 +234,6 @@ Status: started.
 - Keep RAG facts grounded in retrieved chunks, not memory or tools.
 - Keep tool execution behind guardrails.
 - Add eval coverage before optimizing answer behavior.
+- Run latency benchmarks before and after performance changes.
 - Run regression before commit.
 - Update docs when architecture changes.
