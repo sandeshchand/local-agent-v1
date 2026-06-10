@@ -41,7 +41,8 @@ src/local_agent/answering/
   tool_outputs.py     structured weather, file MCP, and SQLite MCP formatting
   source_windows.py   focused source-window extraction around high-signal text
   evidence_facts.py   evidence fact extraction and generic fallback facts
-  extractors.py       deterministic answer-shape extractors
+  extractors.py       combines deterministic answer-shape extractor mixins
+  extractive/         focused extractor groups by answer shape
   query_intent.py     query focus, answer-shape, and quality heuristics
   cleaning.py         final cleanup, citation normalization, and leakage removal
 ```
@@ -386,6 +387,6 @@ When adding or changing logic:
 - Put output formatting for tools in `tool_outputs.py`.
 - Put final answer cleaning in `cleaning.py`.
 - Put query-shape and focus heuristics in `query_intent.py`.
-- Put deterministic extraction logic in `extractors.py` or `source_windows.py`.
+- Put deterministic extraction logic in `extractive/` or `source_windows.py`.
 - Update eval coverage before changing answer priority.
 - Run regression before committing.
