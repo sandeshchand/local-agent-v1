@@ -68,7 +68,7 @@ For document questions, answers must still come from retrieved PDF chunks and ci
 Run:
 
 ```cmd
-venv\Scripts\python.exe -m py_compile app\weather_tool.py agent\planner.py
+venv\Scripts\python.exe -m py_compile src\local_agent\tools\weather_tool.py src\local_agent\agent\planner.py
 venv\Scripts\python.exe scripts\smoke_weather_tool.py
 ```
 

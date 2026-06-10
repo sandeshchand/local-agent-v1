@@ -1,6 +1,12 @@
 # Answer Service Implementation
 
-This document explains `src/local_agent/retrieval/answer_service.py`.
+This document explains the answer service implementation.
+
+The implementation lives in:
+
+```text
+src/local_agent/answering/
+```
 
 `AnswerService` is the final answer layer of the RAG system. It receives the user query and the retrieved/evidence-selected chunks, then returns a grounded answer with citations.
 
@@ -17,6 +23,38 @@ The design goal is general-purpose quality across unseen PDFs. The code must not
 5. Provide deterministic fallbacks for common document-question shapes.
 
 It does not retrieve chunks. Retrieval is handled by `RetrievalService`, document routing by `DocumentRouter`, and evidence filtering by `EvidenceJudge`.
+
+## Module Layout
+
+The public API remains:
+
+```python
+from local_agent.answering import AnswerService
+```
+
+The implementation is split by responsibility:
+
+```text
+src/local_agent/answering/
+  service.py          public AnswerService orchestration and answer priority flow
+  prompts.py          retrieval, direct-answer, and tool-answer prompts
+  tool_outputs.py     structured weather, file MCP, and SQLite MCP formatting
+  source_windows.py   focused source-window extraction around high-signal text
+  evidence_facts.py   evidence fact extraction and generic fallback facts
+  extractors.py       combines deterministic answer-shape extractor mixins
+  extractive/         focused extractor groups by answer shape
+  query_intent.py     query focus, answer-shape, and quality heuristics
+  cleaning.py         final cleanup, citation normalization, and leakage removal
+```
+
+The split uses mixins. This keeps the behavior stable while making each group easier to test and maintain. `AnswerService` still exposes the same methods used by the orchestrator:
+
+- `answer_from_context()`
+- `repair_answer()`
+- `answer_direct()`
+- `answer_from_tool_result()`
+
+This package sits outside `retrieval` because it is not only a retrieval component. It also handles direct answers, tool answers, answer repair, and final response cleanup.
 
 ## Main Entry Points
 
@@ -320,7 +358,7 @@ Any new extractor should work for future PDFs from Medium, arXiv, docs, blog pos
 
 ## Evaluation Guidance
 
-When changing `answer_service.py`, run at least targeted eval for the affected shape.
+When changing the answer service, run at least targeted eval for the affected shape.
 
 Useful examples:
 
@@ -338,17 +376,17 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_
 
 Or run it in batches if the full command is slow.
 
-## Current Known Weakness
+## Maintenance Notes
 
-`answer_service.py` is powerful but large. The next engineering improvement should be to split it into modules after the behavior is protected by eval:
+The old large answer-service implementation has been split, but the priority order in `service.py` is still important. Many extractors can produce valid-looking answers, so the ordering decides which candidate wins.
 
-```text
-retrieval/answer/
-  service.py
-  prompts.py
-  extractors.py
-  cleaners.py
-  query_intent.py
-```
+When adding or changing logic:
 
-Do not split it until there is a strong regression gate, because many extractors interact through priority order in `answer_from_context()`.
+- Keep document-specific keyword hacks out of the codebase.
+- Put prompt changes in `prompts.py`.
+- Put output formatting for tools in `tool_outputs.py`.
+- Put final answer cleaning in `cleaning.py`.
+- Put query-shape and focus heuristics in `query_intent.py`.
+- Put deterministic extraction logic in `extractive/` or `source_windows.py`.
+- Update eval coverage before changing answer priority.
+- Run regression before committing.

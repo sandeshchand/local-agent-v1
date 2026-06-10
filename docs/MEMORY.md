@@ -162,7 +162,7 @@ The trace steps now include a memory step:
 
 ## 7. Prompt Integration
 
-File: `src/local_agent/retrieval/answer_service.py`
+File: `src/local_agent/answering/prompts.py`
 
 Memory is passed into retrieval, direct-answer, and tool-answer prompts.
 

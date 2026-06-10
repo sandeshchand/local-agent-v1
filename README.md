@@ -162,11 +162,18 @@ Run the full RAG benchmark:
 venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
+Run a quick latency benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output eval\latency_benchmark_report.json
+```
+
 Quality rules:
 
 - Add 3 to 5 gold QA items for every important new PDF.
 - Keep average eval score above `8/10`.
 - Keep important individual questions above `7/10`.
+- Track latency before and after performance changes.
 - Inspect failed items by `missing_must_have`, `triggered_must_not_have`, `top_routed_doc`, `verification`, and `answer`.
 
 ## Operations
@@ -214,6 +221,7 @@ Detailed checklist: [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md)
 Architecture and orchestration:
 
 - [docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)
+- [docs/APP_STRUCTURE.md](docs/APP_STRUCTURE.md)
 - [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)
 - [docs/PLANNER.md](docs/PLANNER.md)
 - [docs/DOCUMENT_ROUTER.md](docs/DOCUMENT_ROUTER.md)
@@ -236,6 +244,7 @@ Evaluation, UI, and roadmap:
 
 - [docs/EVALUATION.md](docs/EVALUATION.md)
 - [docs/REGRESSION.md](docs/REGRESSION.md)
+- [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
 - [docs/UI_TRACE_VIEW.md](docs/UI_TRACE_VIEW.md)
 - [docs/FEEDBACK_ANALYTICS.md](docs/FEEDBACK_ANALYTICS.md)
 - [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)

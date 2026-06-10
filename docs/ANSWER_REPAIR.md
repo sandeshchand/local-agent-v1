@@ -7,7 +7,7 @@ The implementation is in:
 ```text
 src/local_agent/agent/orchestrator.py
 src/local_agent/agent/verifier.py
-src/local_agent/retrieval/answer_service.py
+src/local_agent/answering/service.py
 ```
 
 ## Purpose

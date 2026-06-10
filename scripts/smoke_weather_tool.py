@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 
 from local_agent.agent.planner import Planner
-from local_agent.app.weather_tool import CurrentWeatherTool
-from local_agent.retrieval.answer_service import AnswerService
+from local_agent.tools import CurrentWeatherTool
+from local_agent.answering import AnswerService
 
 
 class ChatClientStub:

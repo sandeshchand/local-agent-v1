@@ -6,7 +6,7 @@ import re
 from typing import Any, Protocol
 
 from local_agent.agent.schemas import ToolSpec
-from local_agent.app.tool_registry import ToolRegistry
+from local_agent.tools.tool_registry import ToolRegistry
 
 
 class MCPClientProtocol(Protocol):

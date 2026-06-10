@@ -6,8 +6,8 @@ MCP V1 adds a generic adapter layer plus read-only local connectors for files an
 
 Implemented:
 
-- `src/local_agent/app/mcp_adapter.py`
-- `src/local_agent/app/file_mcp.py`
+- `src/local_agent/tools/mcp_adapter.py`
+- `src/local_agent/tools/file_mcp.py`
 - MCP-style tool discovery through a small client protocol
 - registration into the existing `ToolRegistry`
 - MCP tool metadata on `ToolSpec`
@@ -196,7 +196,7 @@ Each item includes:
 Run:
 
 ```cmd
-venv\Scripts\python.exe -m py_compile app\mcp_adapter.py app\file_mcp.py app\sqlite_mcp.py agent\schemas.py agent\orchestrator.py app\web.py
+venv\Scripts\python.exe -m py_compile src\local_agent\tools\mcp_adapter.py src\local_agent\tools\file_mcp.py src\local_agent\tools\sqlite_mcp.py src\local_agent\agent\schemas.py src\local_agent\agent\orchestrator.py src\local_agent\app\web.py
 venv\Scripts\python.exe scripts\smoke_mcp_adapter.py
 venv\Scripts\python.exe scripts\smoke_file_mcp.py
 venv\Scripts\python.exe scripts\smoke_sqlite_mcp.py

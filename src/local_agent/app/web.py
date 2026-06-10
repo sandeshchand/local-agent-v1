@@ -36,13 +36,13 @@ from local_agent.app.api_models import (
 from local_agent.app.bootstrap import bootstrap_app
 from local_agent.app.config import load_config
 from local_agent.app.dependencies import AppDependencies
-from local_agent.app.eval_candidates import (
+from local_agent.evaluation.eval_candidates import (
     create_feedback_eval_candidate,
     list_feedback_eval_candidates,
     promote_feedback_eval_candidate,
     update_feedback_eval_candidate,
 )
-from local_agent.app.eval_runner import load_gold_eval_item, run_candidate_eval
+from local_agent.evaluation.eval_runner import load_gold_eval_item, run_candidate_eval
 from local_agent.app.paths import EVAL_CANDIDATES_PATH, EVAL_OUTPUT_DIR, GOLD_EVAL_PATH, STATIC_DIR, TEMPLATES_DIR
 from local_agent.ingestion.file_loader import discover_pdf_files
 from local_agent.ingestion.pipeline import IngestionPipeline

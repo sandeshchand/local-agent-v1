@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from local_agent.app.eval_runner import run_candidate_eval
+from local_agent.evaluation.eval_runner import run_candidate_eval
 
 
 class OrchestratorStub:

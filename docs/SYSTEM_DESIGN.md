@@ -26,6 +26,7 @@ What is good:
 - the core domains are already separated as subpackages,
 - docs are split by subsystem,
 - regression and eval scripts exist,
+- latency benchmark and per-trace performance timings exist,
 - local runtime data is mostly ignored by `.gitignore`,
 - the app can be installed with `pip install -e .`.
 
@@ -45,9 +46,13 @@ local-agent-v1/
     local_agent/
       app/
       agent/
+      answering/
+      evaluation/
       ingestion/
+      llm/
       retrieval/
       storage/
+      tools/
       observability/
   tests/
     unit/
@@ -77,6 +82,10 @@ local-agent-v1/
 This target layout gives each concern a clear owner:
 
 - `src/local_agent`: installable product code,
+- `src/local_agent/app`: composition root, CLI/web entrypoints, config, paths, dependency wiring,
+- `src/local_agent/llm`: model/provider clients,
+- `src/local_agent/tools`: tool registry, web tools, and MCP-style connectors,
+- `src/local_agent/evaluation`: gold QA scoring, feedback eval candidates, and eval runs,
 - `tests`: automated tests only,
 - `benchmarks/gold_qa`: versioned evaluation datasets,
 - `data/raw`: user/source documents,
@@ -94,6 +103,7 @@ Data ingestion
 -> indexing and storage
 -> document routing
 -> retrieval
+-> context expansion
 -> evidence selection
 -> answer generation
 -> verification and repair
@@ -117,7 +127,7 @@ user query
 -> document router
 -> retrieval
 -> evidence selection
--> answer service
+-> answering service
 -> verifier
 -> repair or retry if needed
 -> trace saved
@@ -233,5 +243,6 @@ Status: started.
 - Keep RAG facts grounded in retrieved chunks, not memory or tools.
 - Keep tool execution behind guardrails.
 - Add eval coverage before optimizing answer behavior.
+- Run latency benchmarks before and after performance changes.
 - Run regression before commit.
 - Update docs when architecture changes.
