@@ -9,14 +9,16 @@ from local_agent.agent.schemas import ToolSpec
 from local_agent.agent.verifier import Verifier
 from local_agent.app.config import load_config
 from local_agent.app.dependencies import  AppDependencies
-from local_agent.app.file_mcp import ReadOnlyFileMCPClient
-from local_agent.app.mcp_adapter import MCPToolAdapter
-from local_agent.app.ollama_client import OllamaChatClient, OllamaEmbeddingClient
 from local_agent.app.paths import PROJECT_ROOT
-from local_agent.app.sqlite_mcp import ReadOnlySQLiteMCPClient
-from local_agent.app.tool_registry import ToolRegistry
-from local_agent.app.weather_tool import CurrentWeatherTool
-from local_agent.retrieval.answer_service import AnswerService
+from local_agent.llm import OllamaChatClient, OllamaEmbeddingClient
+from local_agent.tools import (
+    CurrentWeatherTool,
+    MCPToolAdapter,
+    ReadOnlyFileMCPClient,
+    ReadOnlySQLiteMCPClient,
+    ToolRegistry,
+)
+from local_agent.answering import AnswerService
 from local_agent.retrieval.search import RetrievalService
 from local_agent.retrieval.doc_router import DocumentRouter
 from local_agent.storage.qdrant_store import  QdrantStore

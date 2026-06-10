@@ -4,8 +4,7 @@ import json
 
 from local_agent.agent.guardrails import GuardrailPolicy
 from local_agent.agent.schemas import AgentAction
-from local_agent.app.mcp_adapter import MCPToolAdapter
-from local_agent.app.tool_registry import ToolRegistry
+from local_agent.tools import MCPToolAdapter, ToolRegistry
 
 
 class FakeMCPClient:

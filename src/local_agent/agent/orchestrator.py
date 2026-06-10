@@ -9,9 +9,9 @@ from local_agent.agent.planner import Planner
 from local_agent.agent.schemas import AgentAction, AgentState, GuardrailDecision, VerificationResult
 from local_agent.agent.tool_router import ToolRouter
 from local_agent.agent.verifier import Verifier
-from local_agent.app.tool_registry import ToolRegistry
+from local_agent.tools import ToolRegistry
 from local_agent.observability.traces import save_trace
-from local_agent.retrieval.answer_service import AnswerService
+from local_agent.answering import AnswerService
 from local_agent.retrieval.doc_router import DocumentRouter
 from local_agent.retrieval.evidence_checker import EvidenceChecker
 from local_agent.retrieval.evidence_judge import EvidenceJudge

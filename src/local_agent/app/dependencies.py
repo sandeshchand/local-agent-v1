@@ -7,9 +7,9 @@ from local_agent.agent.orchestrator import Orchestrator
 from local_agent.agent.planner import Planner
 from local_agent.agent.verifier import Verifier
 from local_agent.app.config import AppConfig
-from local_agent.app.ollama_client import OllamaChatClient, OllamaEmbeddingClient
-from local_agent.app.tool_registry import ToolRegistry
-from local_agent.retrieval.answer_service import AnswerService
+from local_agent.llm import OllamaChatClient, OllamaEmbeddingClient
+from local_agent.tools import ToolRegistry
+from local_agent.answering import AnswerService
 from local_agent.retrieval.search import RetrievalService
 from local_agent.storage.qdrant_store import QdrantStore
 from local_agent.storage.sqlite_store import SQLiteStore

@@ -221,6 +221,7 @@ Detailed checklist: [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md)
 Architecture and orchestration:
 
 - [docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)
+- [docs/APP_STRUCTURE.md](docs/APP_STRUCTURE.md)
 - [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)
 - [docs/PLANNER.md](docs/PLANNER.md)
 - [docs/DOCUMENT_ROUTER.md](docs/DOCUMENT_ROUTER.md)

@@ -167,6 +167,64 @@ Qdrant stores:
 
 The Qdrant point id is a deterministic numeric hash of `chunk_id`.
 
+## Retrieval Context Expansion
+
+Chunking creates relatively focused chunks, but a final answer often needs nearby context. Retrieval therefore expands around the highest-ranked chunks after dense search, BM25, RRF fusion, and reranking.
+
+The implementation is in:
+
+```text
+src/local_agent/retrieval/context_expansion.py
+src/local_agent/retrieval/query_terms.py
+src/local_agent/storage/sqlite_store.py
+```
+
+The flow is:
+
+```text
+top ranked chunks
+-> add previous/next chunks from the same document
+-> add matching chunks from the same section
+-> add chunks whose section titles match query terms
+-> optionally build parent context windows
+-> pass expanded context to evidence selection and answering
+```
+
+Neighbor chunks are loaded through:
+
+```python
+SQLiteStore.get_neighbor_chunks(doc_id, chunk_index, window)
+```
+
+Important safeguards:
+
+- neighbors are filtered by the same `doc_id`, so context never crosses into another PDF,
+- duplicate `chunk_id`s are skipped,
+- anchor chunks get `neighbor_role="anchor"`,
+- nearby chunks get `source="neighbor"` and `neighbor_role="context"`,
+- each neighbor stores `anchor_chunk_id`, so traces can show which retrieved chunk caused the expansion.
+
+Current retrieval defaults:
+
+```text
+neighbor_window=2
+use_parent_context=True
+parent_window=3
+parent_max_chars=4200
+final_context_limit=24
+```
+
+That means each strong anchor can bring up to two chunks before and two chunks after it. Parent context can then combine nearby child chunks into a larger focused context block when the query terms appear in that window.
+
+This helps with PDFs where the exact answer is split across adjacent chunks, for example:
+
+- a heading is in one chunk and the list is in the next,
+- an explanation starts before the retrieved chunk,
+- a numbered list continues after the retrieved chunk,
+- Medium-style articles place key context around headings and short paragraphs.
+
+This is not document-specific optimization. It is a general RAG strategy for preserving local continuity after chunking.
+
 ## When To Reingest
 
 Reingest documents when changing:

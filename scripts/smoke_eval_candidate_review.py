@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from local_agent.app.eval_candidates import (
+from local_agent.evaluation.eval_candidates import (
     create_feedback_eval_candidate,
     load_gold_eval_items,
     promote_feedback_eval_candidate,

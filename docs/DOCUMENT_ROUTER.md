@@ -90,7 +90,7 @@ selected doc_ids
 -> BM25 keyword search over chunks
 -> RRF fusion
 -> cross-encoder reranking
--> neighbor and section context expansion
+-> neighbor, section, and parent context expansion
 -> evidence selection
 ```
 
@@ -215,6 +215,7 @@ This helps identify whether a bad answer came from:
 
 - wrong routed document,
 - weak chunk retrieval,
+- weak context expansion,
 - evidence selection,
 - answer generation,
 - verifier/repair.

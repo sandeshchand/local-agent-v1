@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from local_agent.app.eval_candidates import create_feedback_eval_candidate, load_feedback_eval_candidates
+from local_agent.evaluation.eval_candidates import create_feedback_eval_candidate, load_feedback_eval_candidates
 from local_agent.storage.sqlite_store import SQLiteStore
 
 

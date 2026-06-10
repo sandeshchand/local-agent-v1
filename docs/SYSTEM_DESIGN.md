@@ -46,9 +46,13 @@ local-agent-v1/
     local_agent/
       app/
       agent/
+      answering/
+      evaluation/
       ingestion/
+      llm/
       retrieval/
       storage/
+      tools/
       observability/
   tests/
     unit/
@@ -78,6 +82,10 @@ local-agent-v1/
 This target layout gives each concern a clear owner:
 
 - `src/local_agent`: installable product code,
+- `src/local_agent/app`: composition root, CLI/web entrypoints, config, paths, dependency wiring,
+- `src/local_agent/llm`: model/provider clients,
+- `src/local_agent/tools`: tool registry, web tools, and MCP-style connectors,
+- `src/local_agent/evaluation`: gold QA scoring, feedback eval candidates, and eval runs,
 - `tests`: automated tests only,
 - `benchmarks/gold_qa`: versioned evaluation datasets,
 - `data/raw`: user/source documents,
@@ -95,6 +103,7 @@ Data ingestion
 -> indexing and storage
 -> document routing
 -> retrieval
+-> context expansion
 -> evidence selection
 -> answer generation
 -> verification and repair
@@ -118,7 +127,7 @@ user query
 -> document router
 -> retrieval
 -> evidence selection
--> answer service
+-> answering service
 -> verifier
 -> repair or retry if needed
 -> trace saved

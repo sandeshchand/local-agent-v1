@@ -109,7 +109,7 @@ Do not:
 Run:
 
 ```cmd
-venv\Scripts\python.exe -m py_compile agent\orchestrator.py agent\guardrails.py agent\schemas.py app\tool_registry.py
+venv\Scripts\python.exe -m py_compile src\local_agent\agent\orchestrator.py src\local_agent\agent\guardrails.py src\local_agent\agent\schemas.py src\local_agent\tools\tool_registry.py
 venv\Scripts\python.exe scripts\smoke_guardrails.py
 venv\Scripts\python.exe scripts\smoke_memory.py
 ```

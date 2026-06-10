@@ -4,7 +4,7 @@ from dataclasses import asdict
 import hashlib
 from pathlib import  Path
 
-from local_agent.app.ollama_client import OllamaEmbeddingClient
+from local_agent.llm import OllamaEmbeddingClient
 from local_agent.ingestion.chunking import  chunk_pages
 from local_agent.ingestion.parsers.pdf_parser import parse_pdf
 from local_agent.storage.qdrant_store import QdrantStore

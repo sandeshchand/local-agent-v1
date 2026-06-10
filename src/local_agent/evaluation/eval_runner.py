@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from local_agent.app.eval_candidates import load_gold_eval_items
+from local_agent.evaluation.eval_candidates import load_gold_eval_items
 
 
 Requirement = str | list[str]
