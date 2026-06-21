@@ -25,7 +25,16 @@ Example questions:
 
 The tool uses Open-Meteo's geocoding and forecast APIs. It does not require an API key.
 
-The planner accepts common phrasing such as `weather in`, `weather of`, and `temperature in`. The tool also makes one conservative retry with a shortened location token, which helps simple typos such as `stuttgat` resolve to `Stuttgart`.
+The planner accepts common phrasing such as `weather in`, `weather of`, and `temperature in`.
+
+The tool uses conservative location retries before giving up:
+
+- full location, such as `Kathmandu Nepal`,
+- leading place tokens, such as `Kathmandu`,
+- a shortened final token for simple endings,
+- adjacent-letter transpositions, such as `Kathamndu Nepal` -> `Kathmandu Nepal`.
+
+The match check validates against the returned place label, including country/admin fields, so city-plus-country queries can resolve without hardcoding any specific city.
 
 ## Planner Routing
 

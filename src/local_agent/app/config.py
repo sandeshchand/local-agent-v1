@@ -6,6 +6,15 @@ import os
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field
 
+from local_agent.app.paths import DEFAULT_QDRANT_PATH, DEFAULT_SQLITE_PATH, PROJECT_ROOT
+
+
+DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
+DEFAULT_CHAT_MODEL = "qwen2.5:7b-instruct"
+DEFAULT_EMBED_MODEL = "nomic-embed-text"
+DEFAULT_RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+DEFAULT_FILE_MCP_ROOTS = "data,docs,benchmarks,tests,README.md,pyproject.toml"
+
 
 class AppConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -29,30 +38,31 @@ class AppConfig(BaseModel):
     file_mcp_roots: list[Path] = Field(default_factory=list, alias="FILE_MCP_ROOTS")
 
 
-
 def load_config(env_file: str | Path = ".env") -> AppConfig:
-    load_dotenv(dotenv_path=env_file, override=True)
-    base_dir = Path(env_file).resolve().parent
+    env_path = Path(env_file).expanduser()
+    if not env_path.is_absolute():
+        env_path = PROJECT_ROOT / env_path
+    env_path = env_path.resolve()
+
+    load_dotenv(dotenv_path=env_path, override=True)
+    base_dir = env_path.parent
 
     data = {
-        "OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL"),
-        "CHAT_MODEL": os.getenv("CHAT_MODEL"),
-        "EMBED_MODEL": os.getenv("EMBED_MODEL"),
-        "QDRANT_PATH": os.getenv("QDRANT_PATH"),
-        "SQLITE_PATH": os.getenv("SQLITE_PATH"),
+        "OLLAMA_BASE_URL": _env("OLLAMA_BASE_URL", DEFAULT_OLLAMA_BASE_URL),
+        "CHAT_MODEL": _env("CHAT_MODEL", DEFAULT_CHAT_MODEL),
+        "EMBED_MODEL": _env("EMBED_MODEL", DEFAULT_EMBED_MODEL),
+        "QDRANT_PATH": _resolve_path(_env("QDRANT_PATH"), base_dir, DEFAULT_QDRANT_PATH),
+        "SQLITE_PATH": _resolve_path(_env("SQLITE_PATH"), base_dir, DEFAULT_SQLITE_PATH),
         "TOP_K": os.getenv("TOP_K", "5"),
         "CHUNK_SIZE": os.getenv("CHUNK_SIZE", "900"),
         "CHUNK_OVERLAP": os.getenv("CHUNK_OVERLAP", "120"),
-        "DEBUG": os.getenv("DEBUG", "false"),
-        "USE_RERANKER": os.getenv("USE_RERANKER", "true"),
-        "RERANKER_MODEL": os.getenv
-            ("RERANKER_MODEL", 
-            "cross-encoder/ms-marco-MiniLM-L-6-v2",
-            ),
+        "DEBUG": _parse_bool_env("DEBUG", False),
+        "USE_RERANKER": _parse_bool_env("USE_RERANKER", True),
+        "RERANKER_MODEL": _env("RERANKER_MODEL", DEFAULT_RERANKER_MODEL),
         "RERANK_CANDIDATES": os.getenv("RERANK_CANDIDATES", "8"),
-        "FILE_MCP_ENABLED": os.getenv("FILE_MCP_ENABLED", "true"),
+        "FILE_MCP_ENABLED": _parse_bool_env("FILE_MCP_ENABLED", True),
         "FILE_MCP_ROOTS": _parse_path_list(
-            os.getenv("FILE_MCP_ROOTS", "data,docs,benchmarks,tests,README.md,pyproject.toml"),
+            _env("FILE_MCP_ROOTS", DEFAULT_FILE_MCP_ROOTS),
             base_dir=base_dir,
         ),
     }
@@ -83,6 +93,36 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
         FILE_MCP_ENABLED=config.file_mcp_enabled,
         FILE_MCP_ROOTS=config.file_mcp_roots,
     )
+
+
+def _env(name: str, default: str | None = None) -> str | None:
+    value = os.getenv(name)
+    if value is None or value.strip() == "":
+        return default
+    return value
+
+
+def _parse_bool_env(name: str, default: bool) -> bool:
+    raw = _env(name)
+    if raw is None:
+        return default
+
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes", "y", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "n", "off"}:
+        return False
+    return default
+
+
+def _resolve_path(raw: str | None, base_dir: Path, default: Path) -> Path:
+    if raw is None:
+        return default
+
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        path = base_dir / path
+    return path.resolve()
 
 
 def _parse_path_list(raw: str, base_dir: Path) -> list[Path]:

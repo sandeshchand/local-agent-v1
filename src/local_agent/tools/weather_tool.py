@@ -59,10 +59,26 @@ class CurrentWeatherTool:
     def _location_candidates(self, location: str) -> list[str]:
         candidates = [location]
         parts = location.split()
+
+        if len(parts) > 1:
+            for split_at in range(len(parts) - 1, 0, -1):
+                candidates.append(" ".join(parts[:split_at]))
+
         if parts and len(parts[-1]) >= 5:
             shortened_parts = [*parts[:-1], parts[-1][:-1]]
             candidates.append(" ".join(shortened_parts))
-        return list(dict.fromkeys(candidate for candidate in candidates if candidate))
+
+        for word_index, word in enumerate(parts):
+            if len(word) < 5:
+                continue
+            for transposed_word in self._adjacent_transpositions(word):
+                transposed_parts = [*parts]
+                transposed_parts[word_index] = transposed_word
+                candidates.append(" ".join(transposed_parts))
+                if len(parts) > 1 and word_index == 0:
+                    candidates.append(transposed_word)
+
+        return list(dict.fromkeys(candidate for candidate in candidates if candidate))[:30]
 
     def _looks_like_location_match(
         self,
@@ -76,9 +92,32 @@ class CurrentWeatherTool:
         original = self._compact_location(original_location)
         candidate_compact = self._compact_location(candidate)
         place_compact = self._compact_location(place_name)
+        place_label_compact = self._compact_location(self._place_label(place))
+        candidate_tokens = [
+            self._compact_location(token)
+            for token in candidate.split()
+            if len(self._compact_location(token)) >= 3
+        ]
         if place_compact.startswith(candidate_compact) or candidate_compact.startswith(place_compact):
             return True
-        return SequenceMatcher(None, original, place_compact).ratio() >= 0.78
+        if place_compact and (place_compact in candidate_compact or place_compact in original):
+            return True
+        if candidate_tokens and all(token in place_label_compact for token in candidate_tokens):
+            return True
+        return (
+            SequenceMatcher(None, original, place_label_compact).ratio() >= 0.78
+            or SequenceMatcher(None, candidate_compact, place_compact).ratio() >= 0.78
+        )
+
+    def _adjacent_transpositions(self, word: str) -> list[str]:
+        candidates: list[str] = []
+        for index in range(len(word) - 1):
+            if word[index].lower() == word[index + 1].lower():
+                continue
+            chars = list(word)
+            chars[index], chars[index + 1] = chars[index + 1], chars[index]
+            candidates.append("".join(chars))
+        return candidates
 
     def _compact_location(self, value: str) -> str:
         return re.sub(r"[^a-z0-9]+", "", value.lower())

@@ -50,6 +50,21 @@ class FakeSession:
                         ]
                     }
                 )
+            if name.lower() in {"kathmandu", "kathmandu nepal"}:
+                return FakeResponse(
+                    {
+                        "results": [
+                            {
+                                "name": "Kathmandu",
+                                "admin1": "Bagmati Province",
+                                "country": "Nepal",
+                                "latitude": 27.70,
+                                "longitude": 85.32,
+                                "timezone": "Asia/Kathmandu",
+                            }
+                        ]
+                    }
+                )
             return FakeResponse(
                 {
                     "results": [
@@ -102,6 +117,10 @@ def main() -> None:
     assert typo_output["location"] == "Stuttgart, Baden-Wurttemberg, Germany"
     assert "stuttgat" in session.names
     assert "stuttga" in session.names
+
+    kathmandu_typo_output = json.loads(tool("Kathamndu Nepal"))
+    assert kathmandu_typo_output["location"] == "Kathmandu, Bagmati Province, Nepal"
+    assert "Kathmandu Nepal" in session.names
 
     planner = Planner(chat_client=ChatClientStub())
     plan = planner.plan("What is the current weather in Berlin?")

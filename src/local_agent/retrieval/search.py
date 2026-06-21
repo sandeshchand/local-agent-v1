@@ -167,6 +167,8 @@ class RetrievalService:
         else:
             chunks = self.sqlite_store.list_chunks_for_retrieval(doc_id=doc_id)
        
+        if not chunks:
+            return []
         
         tokenized_corpus = [tokenize(chunk["text"]) for chunk in chunks]
         bm25 = BM25Okapi(tokenized_corpus)

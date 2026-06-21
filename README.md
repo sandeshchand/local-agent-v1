@@ -77,13 +77,13 @@ ollama pull qwen2.5:7b-instruct
 ollama pull nomic-embed-text
 ```
 
-Create local config.
+Create local config when you want to override defaults or point at an existing index.
 
 ```powershell
 copy .env.example .env
 ```
 
-Common `.env` values:
+If `.env` is missing, the app uses local defaults under `var/`. Common `.env` values:
 
 ```env
 OLLAMA_BASE_URL=http://127.0.0.1:11434
@@ -93,6 +93,13 @@ QDRANT_PATH=./var/qdrant
 SQLITE_PATH=./var/sqlite/app.db
 TOP_K=3
 DEBUG=true
+```
+
+To reuse an older local index, point the paths at the existing files:
+
+```env
+QDRANT_PATH=./qdrant_data_old
+SQLITE_PATH=./app.old.db
 ```
 
 ## Ingest And Ask

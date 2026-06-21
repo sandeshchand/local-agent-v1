@@ -19,13 +19,15 @@ class QdrantStore:
             self.client = QdrantClient(path=str(self.storage_path))
         return self.client
 
+    def close(self) -> None:
+        if self.client is not None:
+            self.client.close()
+            self.client = None
+
     def initialize_collection(self, vector_size: int) -> None:
         client = self.connect()
 
-        collections = client.get_collections().collections
-        collection_names = {collection.name for collection in collections}
-
-        if self.collection_name not in collection_names:
+        if not self.collection_exists():
             client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config=VectorParams(
@@ -38,6 +40,12 @@ class QdrantStore:
         client = self.connect()
         collections = client.get_collections().collections
         return isinstance(collections, list)
+
+    def collection_exists(self) -> bool:
+        client = self.connect()
+        collections = client.get_collections().collections
+        collection_names = {collection.name for collection in collections}
+        return self.collection_name in collection_names
 
     def upsert_test_vector(
         self,
@@ -81,6 +89,9 @@ class QdrantStore:
         client.upsert(collection_name=self.collection_name, points=points)
 
     def search(self, query_vector: list[float], limit: int = 5,doc_id:str = None):
+        if not self.collection_exists():
+            return _EmptyQueryResult()
+
         client = self.connect()
         query_filter = None
         
@@ -102,3 +113,7 @@ class QdrantStore:
             query_filter=query_filter,
             with_payload=True,
         )
+
+
+class _EmptyQueryResult:
+    points: list[Any] = []

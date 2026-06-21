@@ -1,10 +1,20 @@
 from __future__ import annotations
 
+import sys
+
 from local_agent.app.bootstrap import bootstrap_app
 from local_agent.app.cli import build_parser, run_ask, run_ingest, run_list_docs, run_list_memory, run_remember
 
 
+def _configure_console_output() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main() ->None:
+    _configure_console_output()
+
     parser= build_parser()
     args = parser.parse_args()
 

@@ -47,6 +47,8 @@ COMPILE_TARGETS = [
     "src/local_agent/retrieval/search.py",
     "src/local_agent/storage/sqlite_store.py",
     "scripts/smoke_memory.py",
+    "scripts/smoke_config.py",
+    "scripts/smoke_empty_index.py",
     "scripts/smoke_sqlite_threading.py",
     "scripts/smoke_document_library.py",
     "scripts/smoke_feedback_analytics.py",
@@ -63,6 +65,7 @@ COMPILE_TARGETS = [
     "scripts/query_visual_world.py",
     "scripts/benchmark_latency.py",
     "scripts/eval_rag_quality.py",
+    "tests/test_config.py",
     "tests/test_paths.py",
 ]
 
@@ -121,6 +124,8 @@ def main() -> None:
             *COMPILE_TARGETS,
         ],
     )
+    run_step("Config smoke", [sys.executable, "scripts/smoke_config.py"])
+    run_step("Empty index smoke", [sys.executable, "scripts/smoke_empty_index.py"])
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])
     run_step("SQLite threading smoke", [sys.executable, "scripts/smoke_sqlite_threading.py"])
     run_step("Document library smoke", [sys.executable, "scripts/smoke_document_library.py"])
