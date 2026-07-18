@@ -36,7 +36,7 @@ class AnswerCleaningMixin:
         answer = re.sub(r"\bAbstract\b\s*", "", answer, flags=re.IGNORECASE)
         answer = self._normalize_answer_citations(answer, max_citation=max_citation)
         answer = self._dedupe_repeated_spans(answer)
-        answer = re.sub(r"\s+", " ", answer)
+        answer = self._normalize_answer_layout(answer)
         return answer.strip()
     def _repair_mojibake(self, text: str) -> str:
         if not text:
@@ -115,6 +115,41 @@ class AnswerCleaningMixin:
             deduped.append(sentence)
             previous_key = key
         return " ".join(deduped)
+    def _normalize_answer_layout(self, answer: str) -> str:
+        answer = answer.replace("\r\n", "\n").replace("\r", "\n")
+        answer = re.sub(r":\s*\u2022\s*", ": ", answer)
+        answer = re.sub(r"\s*\u2022\s*", "; ", answer)
+        compact = re.sub(r"\s+", " ", answer).strip()
+        bullet_answer = self._format_inline_bullets(compact)
+        if bullet_answer:
+            return bullet_answer
+        return compact
+    def _format_inline_bullets(self, answer: str) -> str:
+        match = re.match(r"^(?P<prefix>.+):\s+-\s+(?P<body>.+)$", answer)
+        if not match and answer.startswith("- "):
+            parts = self._split_inline_bullet_parts(answer[2:])
+            return self._join_bullet_parts("", parts)
+        if not match:
+            return ""
+
+        prefix = match.group("prefix").strip()
+        body = match.group("body").strip()
+        parts = self._split_inline_bullet_parts(body)
+        return self._join_bullet_parts(prefix, parts)
+    def _split_inline_bullet_parts(self, text: str) -> list[str]:
+        parts = [
+            part.strip(" -")
+            for part in re.split(r"\s+-\s+(?=[A-Z0-9`'\"(])", text)
+            if part.strip(" -")
+        ]
+        return parts
+    def _join_bullet_parts(self, prefix: str, parts: list[str]) -> str:
+        if not parts:
+            return ""
+        if len(parts) == 1:
+            return f"{prefix}: {parts[0]}" if prefix else f"- {parts[0]}"
+        bullets = "\n".join(f"- {part}" for part in parts)
+        return f"{prefix}:\n{bullets}" if prefix else bullets
     def _strip_context_leakage(self, answer: str) -> str:
         answer = re.sub(r"(?im)^\s*(?:Title|Section|Page|Score|Text)\s*:\s*.*$", "", answer)
         answer = re.sub(

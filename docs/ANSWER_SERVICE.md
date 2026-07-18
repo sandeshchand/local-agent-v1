@@ -324,6 +324,7 @@ These methods prevent:
 - citation ranges that do not map to retrieved items
 - “context does not contain enough information” mixed with real answer content
 - answers that omit the focused entity
+- inline bullet leakage such as `Because: - item - item`; these are normalized into readable bullet lists
 
 ## Query Understanding Helpers
 
