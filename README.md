@@ -19,6 +19,7 @@ This repo is not treated as a toy demo. The engineering target is a production-r
 - Read-only weather tool for current weather questions.
 - Web UI with trace view, source inspection, feedback, eval drafts, tool visibility, and system status.
 - Gold QA evaluation and regression commands for quality control.
+- Runtime backup and restore tooling for local SQLite and Qdrant state.
 
 ## Architecture
 
@@ -207,6 +208,20 @@ The web UI also has a `System` workspace tab for SQLite, Qdrant, Ollama model, e
 
 Reset the local index only when parsing, chunking, or storage is inconsistent. See [docs/CHUNKING.md](docs/CHUNKING.md) and [docs/REGRESSION.md](docs/REGRESSION.md) before resetting.
 
+Back up local runtime state before large ingest, parser, chunking, or storage changes:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py --env-file .env backup
+```
+
+Restore from a backup only after stopping the web server:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py --env-file .env restore --backup-path var\backups\local_agent_backup_YYYYMMDD_HHMMSS --force
+```
+
+Detailed steps: [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md)
+
 ## Production Readiness
 
 Already implemented:
@@ -219,13 +234,14 @@ Already implemented:
 - guarded tool execution,
 - read-only local file/database connectors,
 - system health/status endpoint and UI panel,
+- local runtime backup and restore tooling,
 - documented architecture and subsystem behavior.
 
 Required before real production use:
 
 - authentication and user/session isolation,
 - secrets management outside `.env` for deployed environments,
-- backup and restore plan for SQLite and Qdrant data,
+- scheduled off-machine backups and deployment rollback policy,
 - deployment/container strategy,
 - monitoring and alerting,
 - stronger permission model for any future write/delete tools,
@@ -263,6 +279,7 @@ Evaluation, UI, and roadmap:
 - [docs/EVALUATION.md](docs/EVALUATION.md)
 - [docs/REGRESSION.md](docs/REGRESSION.md)
 - [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
+- [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md)
 - [docs/UI_TRACE_VIEW.md](docs/UI_TRACE_VIEW.md)
 - [docs/FEEDBACK_ANALYTICS.md](docs/FEEDBACK_ANALYTICS.md)
 - [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)

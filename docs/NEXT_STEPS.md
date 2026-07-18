@@ -22,36 +22,12 @@ Implemented:
 - MCP-style File and SQLite connectors.
 - UI trace view, compact source box, feedback, eval drafts, document library, and tools panel.
 - System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
+- Runtime backup and restore for local SQLite and Qdrant state.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
-## 1. Commit The Current Cleanup Work
+## 1. Run Full RAG Regression
 
-Goal: save the answer-cleanup improvement before starting a new performance or architecture change.
-
-Current uncommitted work should include:
-
-- answer mojibake cleanup,
-- repeated-span cleanup,
-- evidence text cleanup,
-- answer-cleaning smoke test,
-- updated regression command,
-- this roadmap update.
-
-Before committing, run:
-
-```cmd
-venv\Scripts\python.exe scripts\run_regression.py --skip-rag
-```
-
-Suggested commit message:
-
-```text
-fix: clean answer text and add regression coverage
-```
-
-## 2. Run Full RAG Regression
-
-Goal: confirm the answer-cleanup change did not reduce retrieval quality.
+Goal: confirm the current production-hardening changes did not reduce retrieval quality.
 
 Run:
 
@@ -65,7 +41,20 @@ Pass rules:
 - important individual items should stay above `7/10`,
 - failed items should be inspected in the UI trace before changing retrieval logic.
 
-If the full run passes, push the cleanup commit.
+If the full run passes, commit and push the current branch before starting another behavior change.
+
+## 2. Add Memory-Specific Multi-Turn Evals
+
+Goal: verify memory improves follow-up behavior without becoming unsupported PDF evidence.
+
+Add small eval cases for:
+
+- user preference remembered across turns,
+- follow-up question using short-term context,
+- PDF answer that must ignore unrelated memory,
+- memory redaction or sensitive-text filtering behavior.
+
+Keep memory evals separate from gold PDF QA because they test orchestration behavior, not document evidence.
 
 ## 3. Measure Performance Baseline
 

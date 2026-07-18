@@ -20,6 +20,7 @@ The project has strong local foundations:
 - repeatable evaluation,
 - trace visibility,
 - system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools.
+- local backup and restore tooling for SQLite and Qdrant runtime state.
 
 The project is ready for serious local iteration and controlled demos. It still needs deployment, security, monitoring, and broader benchmark coverage before production use.
 
@@ -51,7 +52,7 @@ Data ingestion
 - Add ingestion status tracking for each document.
 - Record parser version and chunking version for each indexed document.
 - Add safe reingestion workflow for changed PDFs.
-- Add backup and restore process for `var/sqlite/app.db` and `var/qdrant/`.
+- Keep the local backup and restore process tested for `var/sqlite/app.db` and `var/qdrant/`.
 
 ### Repository Structure
 
@@ -121,7 +122,7 @@ Data ingestion
 - Keep health checks for web, SQLite, Qdrant, Ollama, and model availability visible in the UI/API.
 - Add monitoring for latency, failed retrievals, failed tool calls, and eval regressions.
 - Add process control so only one local Qdrant path owner runs at a time.
-- Add backup, restore, and rollback instructions.
+- Keep backup and restore instructions current, and add rollback instructions for deployed environments.
 
 ## Minimum Production Gate
 
@@ -145,11 +146,12 @@ It should also have:
 
 1. Add memory-specific multi-turn eval tests.
 2. Add a production deployment document.
-3. Add backup and restore instructions.
-4. Add broader gold QA for new daily PDFs.
-5. Add stronger tool approval audit views.
-6. Add UI controls to inspect and delete long-term memory.
+3. Add broader gold QA for new daily PDFs.
+4. Add stronger tool approval audit views.
+5. Add UI controls to inspect and delete long-term memory.
+6. Add scheduled/off-machine backup policy for deployed environments.
 
 Completed from this list:
 
 - Health-check and system-status UI/API endpoints.
+- Local SQLite and Qdrant backup/restore script, smoke test, and documentation.

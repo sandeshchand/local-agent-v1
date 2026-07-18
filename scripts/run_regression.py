@@ -20,6 +20,8 @@ COMPILE_TARGETS = [
     "src/local_agent/app/web.py",
     "src/local_agent/app/api_models.py",
     "src/local_agent/llm/ollama_client.py",
+    "src/local_agent/operations/__init__.py",
+    "src/local_agent/operations/runtime_backup.py",
     "src/local_agent/tools/tool_registry.py",
     "src/local_agent/tools/weather_tool.py",
     "src/local_agent/tools/file_mcp.py",
@@ -48,6 +50,7 @@ COMPILE_TARGETS = [
     "src/local_agent/retrieval/search.py",
     "src/local_agent/storage/sqlite_store.py",
     "scripts/smoke_memory.py",
+    "scripts/runtime_state.py",
     "scripts/smoke_answer_cleaning.py",
     "scripts/smoke_answer_fact_coverage.py",
     "scripts/smoke_answer_generation_budget.py",
@@ -56,6 +59,7 @@ COMPILE_TARGETS = [
     "scripts/smoke_empty_index.py",
     "scripts/smoke_sqlite_threading.py",
     "scripts/smoke_system_status.py",
+    "scripts/smoke_runtime_backup.py",
     "scripts/smoke_document_library.py",
     "scripts/smoke_feedback_analytics.py",
     "scripts/smoke_eval_candidates.py",
@@ -137,6 +141,7 @@ def main() -> None:
     run_step("Config smoke", [sys.executable, "scripts/smoke_config.py"])
     run_step("Empty index smoke", [sys.executable, "scripts/smoke_empty_index.py"])
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])
+    run_step("Runtime backup smoke", [sys.executable, "scripts/smoke_runtime_backup.py"])
     run_step("SQLite threading smoke", [sys.executable, "scripts/smoke_sqlite_threading.py"])
     run_step("System status smoke", [sys.executable, "scripts/smoke_system_status.py"])
     run_step("Document library smoke", [sys.executable, "scripts/smoke_document_library.py"])
