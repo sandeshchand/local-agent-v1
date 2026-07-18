@@ -49,6 +49,8 @@ class EvidenceFactMixin:
                 score = self._sentence_relevance_score(sentence, query_terms)
                 score += self._focus_phrase_score(sentence, focus_phrases)
                 score += sum(2 for term in intent_terms if term in sentence.lower())
+                if self._looks_like_concrete_example_fact(sentence, query_terms, intent_terms):
+                    score += 5
                 if context_relevance > 0 and self._looks_like_structured_fact(sentence):
                     score += min(6, context_relevance)
                 if score > 0:
@@ -197,8 +199,27 @@ class EvidenceFactMixin:
                 "braces",
                 "replace",
                 "mean by",
+                "simulate",
+                "simulation",
+                "simulator",
+                "world",
             ]
         )
+    def _looks_like_concrete_example_fact(
+        self,
+        sentence: str,
+        query_terms: set[str],
+        intent_terms: list[str],
+    ) -> bool:
+        sentence_lower = sentence.lower()
+        if not any(
+            marker in sentence_lower
+            for marker in ["such as", "including", "includes", "for example", "e.g.", "like "]
+        ):
+            return False
+        if any(term in sentence_lower for term in query_terms | set(intent_terms)):
+            return True
+        return self._contains_distinctive_identifier(sentence)
     def _is_high_signal_sentence(self, sentence: str) -> bool:
         sentence_lower = sentence.lower()
         return any(
@@ -212,6 +233,8 @@ class EvidenceFactMixin:
                 "(3)",
                 "such as",
                 "include",
+                "including",
+                "for example",
                 "limitation",
                 "challenge",
                 "approach",

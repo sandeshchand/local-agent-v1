@@ -148,6 +148,8 @@ _extract_evidence_facts_with_llm()
 
 This gives the answer prompt a compact fact list before the full context while avoiding a separate LLM call when the deterministic evidence is already strong.
 
+The deterministic fact builder also gives extra weight to concrete example sentences such as `including`, `such as`, `for example`, `e.g.`, or `like ...` when those sentences match the query intent. This protects exact fact coverage for future PDFs where an important named example appears after a broader capability sentence.
+
 ## Candidate Answer Priority
 
 After the first LLM answer, `answer_from_context()` computes many generic candidate answers.

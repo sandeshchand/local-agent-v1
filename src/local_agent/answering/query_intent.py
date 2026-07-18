@@ -332,7 +332,23 @@ Focused answer:
         if {"different", "earlier", "previous"} & query_terms:
             terms.extend(["different", "previous", "earlier", "unlike", "improvement"])
         if {"capabilities", "capability", "simulate", "simulation", "simulator", "world"} & query_terms:
-            terms.extend(["capability", "ability", "simulate", "simulation", "environment", "world", "consistency", "coherence"])
+            terms.extend([
+                "capability",
+                "ability",
+                "simulate",
+                "simulation",
+                "physical",
+                "digital",
+                "environment",
+                "environments",
+                "scenario",
+                "scenarios",
+                "world",
+                "consistency",
+                "coherence",
+                "example",
+                "examples",
+            ])
         return list(dict.fromkeys(terms))
     def _query_intent_terms(self, query: str) -> list[str]:
         q = query.lower()
