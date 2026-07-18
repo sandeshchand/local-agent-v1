@@ -103,3 +103,16 @@ Recommended order for future performance improvements:
 6. Add ingestion batching and parallel parsing for large PDF sets.
 
 Do not optimize by removing verification or answer repair first. Those protect answer quality.
+
+## Evidence Selection Optimization
+
+The first measured baseline showed evidence selection as the slowest stage for the sampled Sora questions. The reason was that every expanded retrieval result was sent to the local LLM evidence judge.
+
+The current evidence judge now uses a deterministic prefilter before LLM judging:
+
+- keep the strongest top retrieval anchors,
+- score the remaining chunks by query overlap, intent terms, retrieval score, and context role,
+- send only the best candidates to the LLM judge,
+- fall back to deterministic evidence ranking if the LLM judge selects nothing.
+
+This keeps answer verification and repair intact while reducing unnecessary LLM calls.

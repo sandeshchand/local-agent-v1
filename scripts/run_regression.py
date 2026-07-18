@@ -48,6 +48,7 @@ COMPILE_TARGETS = [
     "src/local_agent/storage/sqlite_store.py",
     "scripts/smoke_memory.py",
     "scripts/smoke_answer_cleaning.py",
+    "scripts/smoke_evidence_prefilter.py",
     "scripts/smoke_config.py",
     "scripts/smoke_empty_index.py",
     "scripts/smoke_sqlite_threading.py",
@@ -126,6 +127,7 @@ def main() -> None:
         ],
     )
     run_step("Answer cleaning smoke", [sys.executable, "scripts/smoke_answer_cleaning.py"])
+    run_step("Evidence prefilter smoke", [sys.executable, "scripts/smoke_evidence_prefilter.py"])
     run_step("Config smoke", [sys.executable, "scripts/smoke_config.py"])
     run_step("Empty index smoke", [sys.executable, "scripts/smoke_empty_index.py"])
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])

@@ -23,8 +23,9 @@ class JudgedEvidence:
 
 
 class EvidenceJudge:
-    def __init__(self, chat_client) -> None:
+    def __init__(self, chat_client, max_llm_judgments: int = 10) -> None:
         self.chat_client = chat_client
+        self.max_llm_judgments = max(1, max_llm_judgments)
 
     def judge_chunk(self, query: str, item: dict) -> JudgedEvidence:
         text = (item.get("text") or "")[:1200]
@@ -107,7 +108,13 @@ Return only valid JSON:
     ) -> tuple[list[dict], list[JudgedEvidence]]:
         judgments: list[JudgedEvidence] = []
 
-        for item in results:
+        judge_candidates = self._prefilter_judgment_candidates(
+            query=query,
+            results=results,
+            max_items=max_items,
+        )
+
+        for item in judge_candidates:
             judgments.append(self.judge_chunk(query, item))
 
         selected: list[dict] = []
@@ -136,7 +143,88 @@ Return only valid JSON:
         selected.sort(key=lambda item: self._relevance_score(query, item), reverse=True)
         selected = selected[:max_items]
 
+        if not selected:
+            selected = self._heuristic_fallback(query, results, max_items=max_items)
+
         return selected, judgments
+
+    def _prefilter_judgment_candidates(
+        self,
+        query: str,
+        results: list[dict],
+        max_items: int,
+    ) -> list[dict]:
+        if len(results) <= self.max_llm_judgments:
+            return results
+
+        target_count = min(len(results), max(self.max_llm_judgments, max_items))
+        candidates: list[dict] = []
+        seen_keys: set[str] = set()
+
+        def add_item(item: dict) -> None:
+            key = self._item_key(item)
+            if key in seen_keys:
+                return
+            seen_keys.add(key)
+            candidates.append(item)
+
+        # Keep the strongest retriever/reranker anchors, then fill by cheap
+        # query/evidence relevance so late but clearly matching chunks survive.
+        for item in results[: min(3, target_count)]:
+            add_item(item)
+
+        scored = sorted(
+            enumerate(results),
+            key=lambda pair: (
+                self._prefilter_score(query, pair[1]),
+                -pair[0],
+            ),
+            reverse=True,
+        )
+        for _, item in scored:
+            add_item(item)
+            if len(candidates) >= target_count:
+                break
+
+        return candidates
+
+    def _prefilter_score(self, query: str, item: dict) -> float:
+        score = float(self._relevance_score(query, item))
+        score += float(item.get("reranker_score") or 0.0) * 2
+        score += float(item.get("hybrid_score") or item.get("score") or 0.0) * 20
+
+        if item.get("source") == "parent_context":
+            score += 2
+        if item.get("neighbor_role") == "anchor":
+            score += 1
+
+        evidence_text = self._evidence_text(item)
+        if self._has_query_overlap(query, item):
+            score += 3
+        if any(marker in evidence_text for marker in ["include", "includes", "such as", "limitation", "challenge", "because"]):
+            score += 1
+        return score
+
+    def _heuristic_fallback(self, query: str, results: list[dict], max_items: int) -> list[dict]:
+        scored = [
+            (self._prefilter_score(query, item), index, item)
+            for index, item in enumerate(results)
+        ]
+        scored.sort(key=lambda row: (row[0], -row[1]), reverse=True)
+
+        selected: list[dict] = []
+        seen_keys: set[str] = set()
+        for score, _, item in scored:
+            if score <= 0:
+                continue
+            key = self._item_key(item)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            selected.append(item)
+            if len(selected) >= max_items:
+                break
+        return selected
 
     def _query_overlap_count(self, query: str, item: dict) -> int:
         query_terms = self._query_terms(query)
@@ -241,6 +329,9 @@ Return only valid JSON:
                 item.get("text") or "",
             ]
         ).lower()
+
+    def _item_key(self, item: dict) -> str:
+        return str(item.get("chunk_id") or item.get("id") or id(item))
 
     def _intent_terms(self, query_lower: str) -> list[str]:
         terms: list[str] = []
