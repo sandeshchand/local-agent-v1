@@ -18,7 +18,8 @@ The project has strong local foundations:
 - MCP-style read-only local connectors,
 - feedback capture,
 - repeatable evaluation,
-- trace visibility.
+- trace visibility,
+- system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools.
 
 The project is ready for serious local iteration and controlled demos. It still needs deployment, security, monitoring, and broader benchmark coverage before production use.
 
@@ -104,7 +105,7 @@ Data ingestion
 - Keep answer, sources, trace, tools, and feedback visible without crowding.
 - Make failure states clear and actionable.
 - Keep eval drafts and feedback review understandable to non-engineers.
-- Add admin-style views for evaluation reports and system health.
+- Keep admin-style views for evaluation reports and system health understandable and actionable.
 
 ### Security And Privacy
 
@@ -117,7 +118,7 @@ Data ingestion
 ### Deployment And Operations
 
 - Add a deployment plan: local service, container, or managed host.
-- Add health checks for web, SQLite, Qdrant, Ollama, and model availability.
+- Keep health checks for web, SQLite, Qdrant, Ollama, and model availability visible in the UI/API.
 - Add monitoring for latency, failed retrievals, failed tool calls, and eval regressions.
 - Add process control so only one local Qdrant path owner runs at a time.
 - Add backup, restore, and rollback instructions.
@@ -145,6 +146,10 @@ It should also have:
 1. Add memory-specific multi-turn eval tests.
 2. Add a production deployment document.
 3. Add backup and restore instructions.
-4. Add health-check and system-status UI/API endpoints.
-5. Add broader gold QA for new daily PDFs.
-6. Add stronger tool approval audit views.
+4. Add broader gold QA for new daily PDFs.
+5. Add stronger tool approval audit views.
+6. Add UI controls to inspect and delete long-term memory.
+
+Completed from this list:
+
+- Health-check and system-status UI/API endpoints.

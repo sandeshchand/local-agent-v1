@@ -260,6 +260,109 @@ button:disabled {
   color: #fde68a;
 }
 
+.system-summary {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.system-components {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.system-component {
+  border: 1px solid #26384f;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 10px;
+}
+
+.system-component.ok {
+  border-left: 3px solid #22c55e;
+}
+
+.system-component.warn {
+  border-left: 3px solid #f59e0b;
+}
+
+.system-component.error {
+  border-left: 3px solid #ef4444;
+}
+
+.system-component-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.system-component-top strong {
+  color: #f8fafc;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.system-pill {
+  flex: 0 0 auto;
+  border: 1px solid #475569;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #cbd5e1;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.system-pill.ok {
+  border-color: #22c55e;
+  color: #bbf7d0;
+}
+
+.system-pill.warn,
+.system-pill.degraded {
+  border-color: #f59e0b;
+  color: #fde68a;
+}
+
+.system-pill.error {
+  border-color: #ef4444;
+  color: #fecaca;
+}
+
+.system-component-message {
+  margin: 0 0 7px;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.system-detail-grid {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 5px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.system-detail-grid span {
+  color: #94a3b8;
+}
+
+.system-detail-grid strong {
+  color: #e5e7eb;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
 .main-content {
   display: flex;
   flex-direction: column;
@@ -636,7 +739,7 @@ textarea {
 
 .workspace-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
   border: 1px solid #26384f;
   border-radius: 8px;

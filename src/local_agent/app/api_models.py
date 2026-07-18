@@ -192,6 +192,20 @@ class HealthResponse(BaseModel):
     status: str
 
 
+class SystemComponentStatus(BaseModel):
+    name: str
+    status: Literal["ok", "warn", "error"]
+    message: str
+    duration_ms: float = 0.0
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class SystemStatusResponse(BaseModel):
+    status: Literal["ok", "degraded", "error"]
+    components: list[SystemComponentStatus]
+    summary: dict[str, Any] = Field(default_factory=dict)
+
+
 class ToolItem(BaseModel):
     name: str
     description: str

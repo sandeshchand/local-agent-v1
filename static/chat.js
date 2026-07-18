@@ -1177,6 +1177,88 @@ async function loadTools() {
   }
 }
 
+function renderSystemStatus(payload) {
+  const summary = document.getElementById("system-summary");
+  const container = document.getElementById("system-components");
+  if (!container) return;
+
+  const components = Array.isArray(payload?.components) ? payload.components : [];
+  const overall = payload?.status || "unknown";
+  const counts = payload?.summary || {};
+
+  if (summary) {
+    summary.innerHTML = "";
+    const top = createElement("div", "system-component-top");
+    top.appendChild(createElement("strong", "", "Runtime status"));
+    top.appendChild(createElement("span", `system-pill ${overall}`, overall));
+    summary.appendChild(top);
+    summary.appendChild(
+      createElement(
+        "div",
+        "",
+        `${formatValue(counts.ok_count)} ok, ${formatValue(counts.warn_count)} warning, ${formatValue(counts.error_count)} error - ${formatValue(counts.document_count)} documents - ${formatValue(counts.tool_count)} tools`
+      )
+    );
+  }
+
+  container.innerHTML = "";
+  if (!components.length) {
+    container.appendChild(createElement("div", "muted", "No system components reported."));
+    return;
+  }
+
+  components.forEach((component) => {
+    const item = createElement("article", `system-component ${component.status || "warn"}`);
+    const top = createElement("div", "system-component-top");
+    top.appendChild(createElement("strong", "", component.name || "Component"));
+    top.appendChild(createElement("span", `system-pill ${component.status || "warn"}`, component.status || "warn"));
+    item.appendChild(top);
+    item.appendChild(createElement("p", "system-component-message", component.message || ""));
+
+    const details = component.details || {};
+    const detailEntries = Object.entries(details).filter(([, value]) => value !== undefined && value !== null && value !== "");
+    if (component.duration_ms) {
+      detailEntries.unshift(["duration_ms", component.duration_ms]);
+    }
+
+    if (detailEntries.length) {
+      const grid = createElement("div", "system-detail-grid");
+      detailEntries.slice(0, 6).forEach(([key, value]) => {
+        const label = key.replace(/_/g, " ");
+        const displayValue = Array.isArray(value)
+          ? shortText(value.join(", "), 120)
+          : shortText(formatValue(value), 120);
+        grid.appendChild(createElement("span", "", label));
+        grid.appendChild(createElement("strong", "", displayValue));
+      });
+      item.appendChild(grid);
+    }
+
+    container.appendChild(item);
+  });
+}
+
+async function loadSystemStatus() {
+  const summary = document.getElementById("system-summary");
+  const container = document.getElementById("system-components");
+  if (summary) {
+    summary.textContent = "Checking system status...";
+  }
+
+  try {
+    const status = await fetchJSON("/api/system/status");
+    renderSystemStatus(status);
+  } catch (error) {
+    if (summary) {
+      summary.textContent = "Could not load system status.";
+    }
+    if (container) {
+      container.innerHTML = "";
+      container.appendChild(createElement("div", "error-text", `System status error: ${error.message}`));
+    }
+  }
+}
+
 function renderDocuments(payload, append = false) {
   const container = document.getElementById("documents-list");
   const summary = document.getElementById("document-summary");
@@ -1354,6 +1436,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("send-btn");
   const refreshDocsBtn = document.getElementById("refresh-docs-btn");
   const refreshToolsBtn = document.getElementById("refresh-tools-btn");
+  const refreshSystemBtn = document.getElementById("refresh-system-btn");
   const refreshTracesBtn = document.getElementById("refresh-traces-btn");
   const refreshEvalCandidatesBtn = document.getElementById("refresh-eval-candidates-btn");
   const feedbackFilterBtns = document.querySelectorAll(".feedback-filter-btn");
@@ -1376,12 +1459,17 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshToolsBtn.addEventListener("click", loadTools);
   }
 
+  if (refreshSystemBtn) {
+    refreshSystemBtn.addEventListener("click", loadSystemStatus);
+  }
+
   if (refreshTracesBtn) {
     refreshTracesBtn.addEventListener("click", () => {
       loadRecentTraces();
       loadFeedbackSummary();
       loadFeedbackItems();
       loadEvalCandidates();
+      loadSystemStatus();
     });
   }
 
@@ -1424,6 +1512,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadDocuments();
   loadTools();
+  loadSystemStatus();
   loadRecentTraces();
   loadFeedbackSummary();
   loadFeedbackItems();

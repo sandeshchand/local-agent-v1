@@ -146,6 +146,17 @@ user query
 -> trace saved
 ```
 
+System status:
+
+```text
+UI System tab or GET /api/system/status
+-> SQLite health and document count
+-> Qdrant health and collection check
+-> Ollama chat and embedding model availability
+-> tool registry count and approval summary
+-> overall ok/degraded/error status
+```
+
 ## Packaging Direction
 
 The project uses a `src/` layout.
@@ -235,7 +246,7 @@ Status: started.
 
 - Add `deploy/` with process, environment, and health-check docs.
 - Add deployment-specific config examples.
-- Add production health endpoints for app, SQLite, Qdrant, Ollama, and model availability.
+- Production health endpoints for app, SQLite, Qdrant, Ollama, and model availability are started through `/health` and `/api/system/status`.
 
 ## Rules For Future Changes
 

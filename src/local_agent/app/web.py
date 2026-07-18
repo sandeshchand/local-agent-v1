@@ -26,6 +26,7 @@ from local_agent.app.api_models import (
     IngestFileResult,
     IngestPathRequest,
     IngestPathResponse,
+    SystemStatusResponse,
     TraceDetail,
     TraceFeedbackItem,
     TraceFeedbackRequest,
@@ -44,6 +45,7 @@ from local_agent.evaluation.eval_candidates import (
 )
 from local_agent.evaluation.eval_runner import load_gold_eval_item, run_candidate_eval
 from local_agent.app.paths import EVAL_CANDIDATES_PATH, EVAL_OUTPUT_DIR, GOLD_EVAL_PATH, STATIC_DIR, TEMPLATES_DIR
+from local_agent.app.system_status import build_system_status
 from local_agent.ingestion.file_loader import discover_pdf_files
 from local_agent.ingestion.pipeline import IngestionPipeline
 from local_agent.storage.sqlite_store import SQLiteStore
@@ -159,6 +161,11 @@ def index(request: Request):
 @app.get("/health", response_model=HealthResponse)
 def health():
     return HealthResponse(status="ok")
+
+
+@app.get("/api/system/status", response_model=SystemStatusResponse)
+def system_status(check_models: bool = True):
+    return SystemStatusResponse(**build_system_status(get_deps(), check_models=check_models))
 
 
 @app.get("/api/tools", response_model=list[ToolItem])

@@ -21,6 +21,7 @@ Implemented:
 - Read-only weather tool.
 - MCP-style File and SQLite connectors.
 - UI trace view, compact source box, feedback, eval drafts, document library, and tools panel.
+- System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
 ## 1. Commit The Current Cleanup Work

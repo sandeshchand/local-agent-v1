@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=16" />
+  <link rel="stylesheet" href="/static/style.css?v=17" />
 </head>
 <body>
   <div class="app-shell">
@@ -92,6 +92,7 @@
         <div class="workspace-tabs" role="tablist" aria-label="Workspace views">
           <button type="button" class="workspace-tab active" data-workspace-tab="trace" aria-selected="true">Trace</button>
           <button type="button" class="workspace-tab" data-workspace-tab="tools" aria-selected="false">Tools</button>
+          <button type="button" class="workspace-tab" data-workspace-tab="system" aria-selected="false">System</button>
           <button type="button" class="workspace-tab" data-workspace-tab="history" aria-selected="false">History</button>
           <button type="button" class="workspace-tab" data-workspace-tab="feedback" aria-selected="false">Feedback</button>
           <button type="button" class="workspace-tab" data-workspace-tab="evals" aria-selected="false">Evals</button>
@@ -159,6 +160,17 @@
           </section>
         </div>
 
+        <div class="workspace-tab-panel" data-workspace-panel="system">
+          <section class="trace-shell system-status-shell">
+            <div class="trace-panel-header compact">
+              <h2>System</h2>
+              <button id="refresh-system-btn" type="button" class="secondary-btn">Refresh</button>
+            </div>
+            <div id="system-summary" class="system-summary muted">Loading system status...</div>
+            <div id="system-components" class="system-components"></div>
+          </section>
+        </div>
+
         <div class="workspace-tab-panel" data-workspace-panel="history">
           <section class="trace-shell recent-traces-shell">
             <div class="trace-panel-header compact">
@@ -204,6 +216,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=16"></script>
+  <script src="/static/chat.js?v=17"></script>
 </body>
 </html>

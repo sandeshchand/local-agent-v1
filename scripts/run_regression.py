@@ -16,6 +16,7 @@ COMPILE_TARGETS = [
     "src/local_agent/app/bootstrap.py",
     "src/local_agent/app/cli.py",
     "src/local_agent/app/main.py",
+    "src/local_agent/app/system_status.py",
     "src/local_agent/app/web.py",
     "src/local_agent/app/api_models.py",
     "src/local_agent/llm/ollama_client.py",
@@ -54,6 +55,7 @@ COMPILE_TARGETS = [
     "scripts/smoke_config.py",
     "scripts/smoke_empty_index.py",
     "scripts/smoke_sqlite_threading.py",
+    "scripts/smoke_system_status.py",
     "scripts/smoke_document_library.py",
     "scripts/smoke_feedback_analytics.py",
     "scripts/smoke_eval_candidates.py",
@@ -136,6 +138,7 @@ def main() -> None:
     run_step("Empty index smoke", [sys.executable, "scripts/smoke_empty_index.py"])
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])
     run_step("SQLite threading smoke", [sys.executable, "scripts/smoke_sqlite_threading.py"])
+    run_step("System status smoke", [sys.executable, "scripts/smoke_system_status.py"])
     run_step("Document library smoke", [sys.executable, "scripts/smoke_document_library.py"])
     run_step("Feedback analytics smoke", [sys.executable, "scripts/smoke_feedback_analytics.py"])
     run_step("Feedback eval candidate smoke", [sys.executable, "scripts/smoke_eval_candidates.py"])

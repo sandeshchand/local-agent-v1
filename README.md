@@ -17,7 +17,7 @@ This repo is not treated as a toy demo. The engineering target is a production-r
 - Tool-call guardrails with `allow`, `deny`, and `needs_approval`.
 - MCP-style read-only File and SQLite connectors.
 - Read-only weather tool for current weather questions.
-- Web UI with trace view, source inspection, feedback, eval drafts, and tool visibility.
+- Web UI with trace view, source inspection, feedback, eval drafts, tool visibility, and system status.
 - Gold QA evaluation and regression commands for quality control.
 
 ## Architecture
@@ -195,6 +195,16 @@ local-agent ask --query "What is the current weather in Berlin?"
 local-agent list-memory
 ```
 
+Useful health endpoints:
+
+```text
+GET /health
+GET /api/system/status
+GET /api/system/status?check_models=false
+```
+
+The web UI also has a `System` workspace tab for SQLite, Qdrant, Ollama model, embedding model, and tool-registry status.
+
 Reset the local index only when parsing, chunking, or storage is inconsistent. See [docs/CHUNKING.md](docs/CHUNKING.md) and [docs/REGRESSION.md](docs/REGRESSION.md) before resetting.
 
 ## Production Readiness
@@ -208,6 +218,7 @@ Already implemented:
 - answer verification and repair,
 - guarded tool execution,
 - read-only local file/database connectors,
+- system health/status endpoint and UI panel,
 - documented architecture and subsystem behavior.
 
 Required before real production use:
