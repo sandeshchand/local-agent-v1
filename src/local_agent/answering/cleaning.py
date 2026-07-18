@@ -5,6 +5,7 @@ import re
 
 class AnswerCleaningMixin:
     def _clean_final_answer(self, answer: str, max_citation: int | None = None) -> str:
+        answer = self._repair_mojibake(answer)
         answer = re.sub(r"\[child chunk \d+ \| page [^\]]+\]\s*", "", answer)
         answer = re.sub(r"\b\d+\s+(?=\[child chunk)", "", answer)
         answer = self._strip_context_leakage(answer)
@@ -34,8 +35,86 @@ class AnswerCleaningMixin:
         answer = answer.replace("remain- ing", "remaining")
         answer = re.sub(r"\bAbstract\b\s*", "", answer, flags=re.IGNORECASE)
         answer = self._normalize_answer_citations(answer, max_citation=max_citation)
+        answer = self._dedupe_repeated_spans(answer)
         answer = re.sub(r"\s+", " ", answer)
         return answer.strip()
+    def _repair_mojibake(self, text: str) -> str:
+        if not text:
+            return text
+
+        best = self._replace_common_mojibake(text)
+        if not self._looks_like_mojibake(best):
+            return best
+
+        for encoding in ["cp1252", "latin-1"]:
+            try:
+                candidate = text.encode(encoding).decode("utf-8")
+            except UnicodeError:
+                continue
+            candidate = self._replace_common_mojibake(candidate)
+            if self._mojibake_score(candidate) < self._mojibake_score(best):
+                best = candidate
+        return best
+    def _replace_common_mojibake(self, text: str) -> str:
+        replacements = {
+            "\u00e2\u20ac\u2122": "'",
+            "\u00e2\u0080\u0099": "'",
+            "\u00e2\u20ac\u02dc": "'",
+            "\u00e2\u0080\u0098": "'",
+            "\u00e2\u20ac\u0153": '"',
+            "\u00e2\u0080\u009c": '"',
+            "\u00e2\u20ac\ufffd": '"',
+            "\u00e2\u0080\u009d": '"',
+            "\u00e2\u20ac\u201c": "-",
+            "\u00e2\u0080\u0093": "-",
+            "\u00e2\u20ac\u201d": "-",
+            "\u00e2\u0080\u0094": "-",
+            "\u00e2\u20ac\u00a6": "...",
+            "\u00e2\u0080\u00a6": "...",
+            "\u00c2\u00b0": "\u00b0",
+            "\u00c2\u00b7": "-",
+            "\u00c2\u00a0": " ",
+            "\u00c2": "",
+        }
+        for source, target in replacements.items():
+            text = text.replace(source, target)
+        return text
+    def _looks_like_mojibake(self, text: str) -> bool:
+        return self._mojibake_score(text) > 0
+    def _mojibake_score(self, text: str) -> int:
+        markers = [
+            "\u00e2",
+            "\u00c2",
+            "\u00c3",
+            "\u0080",
+            "\u0098",
+            "\u0099",
+            "\u009c",
+            "\u009d",
+        ]
+        return sum(text.count(marker) for marker in markers)
+    def _dedupe_repeated_spans(self, answer: str) -> str:
+        previous = None
+        while previous != answer:
+            previous = answer
+            answer = re.sub(
+                r"\b((?:[A-Za-z0-9][A-Za-z0-9'\u2019.-]*\s+){3,}[A-Za-z0-9][A-Za-z0-9'\u2019.-]*)(?:\s+\1\b)+",
+                r"\1",
+                answer,
+                flags=re.IGNORECASE,
+            )
+
+        sentences = re.split(r"(?<=[.!?])\s+", answer)
+        deduped: list[str] = []
+        previous_key = ""
+        for sentence in sentences:
+            key = re.sub(r"\[\d+\]", "", sentence).strip().lower()
+            key = re.sub(r"\W+", " ", key).strip()
+            if key and key == previous_key:
+                continue
+            deduped.append(sentence)
+            previous_key = key
+        return " ".join(deduped)
     def _strip_context_leakage(self, answer: str) -> str:
         answer = re.sub(r"(?im)^\s*(?:Title|Section|Page|Score|Text)\s*:\s*.*$", "", answer)
         answer = re.sub(

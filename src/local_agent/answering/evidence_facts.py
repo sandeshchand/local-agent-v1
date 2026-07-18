@@ -289,6 +289,7 @@ class EvidenceFactMixin:
             results.append(part)
         return results
     def _clean_text(self, text: str) -> str:
+        text = self._repair_mojibake(text)
         text = text.replace("\r\n", "\n").replace("\r", "\n")
         abstract_match = re.search(r"\bAbstract\b", text[:800], flags=re.IGNORECASE)
         if abstract_match:

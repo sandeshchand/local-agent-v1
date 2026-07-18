@@ -47,6 +47,7 @@ COMPILE_TARGETS = [
     "src/local_agent/retrieval/search.py",
     "src/local_agent/storage/sqlite_store.py",
     "scripts/smoke_memory.py",
+    "scripts/smoke_answer_cleaning.py",
     "scripts/smoke_config.py",
     "scripts/smoke_empty_index.py",
     "scripts/smoke_sqlite_threading.py",
@@ -124,6 +125,7 @@ def main() -> None:
             *COMPILE_TARGETS,
         ],
     )
+    run_step("Answer cleaning smoke", [sys.executable, "scripts/smoke_answer_cleaning.py"])
     run_step("Config smoke", [sys.executable, "scripts/smoke_config.py"])
     run_step("Empty index smoke", [sys.executable, "scripts/smoke_empty_index.py"])
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])
