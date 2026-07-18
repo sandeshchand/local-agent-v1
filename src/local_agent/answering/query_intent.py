@@ -103,6 +103,9 @@ class QueryIntentMixin:
         ]
         return len(missed_intent_terms) >= 2
     def _focused_rewrite(self, query: str, draft_answer: str, results: list[dict]) -> str:
+        if self._should_skip_focused_rewrite(query, draft_answer, results):
+            return draft_answer
+
         facts = self._build_evidence_fact_list(query, results, max_facts=16)
         context = build_context(results, max_chars_per_chunk=1200)
         prompt = f"""
@@ -143,6 +146,29 @@ Focused answer:
             query,
             self._clean_final_answer(self._remove_mixed_abstention(rewritten)),
         )
+    def _should_skip_focused_rewrite(self, query: str, draft_answer: str, results: list[dict]) -> bool:
+        if not results or not draft_answer:
+            return False
+
+        candidate = self._clean_final_answer(
+            self._remove_mixed_abstention(draft_answer),
+            max_citation=len(results),
+        )
+        if not candidate or self._is_insufficient_answer(candidate):
+            return False
+        if not re.search(r"\[\d+\]", candidate):
+            return False
+        if self._has_raw_context_leak(candidate):
+            return False
+        if self._looks_unfocused(query, candidate):
+            return False
+        if self._misses_intent_shape(query, candidate):
+            return False
+        if self._looks_under_specific(candidate, results):
+            return False
+        if self._answer_misses_focus_phrase(query, candidate):
+            return False
+        return True
     def _looks_under_specific(self, answer: str, results: list[dict]) -> bool:
         answer_lower = answer.lower()
         evidence_text = " ".join((item.get("text") or "") for item in results)

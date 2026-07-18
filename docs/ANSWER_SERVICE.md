@@ -67,10 +67,11 @@ Flow:
 ```text
 retrieved results
 -> single-source filtering when needed
+-> deterministic evidence facts
 -> build retrieval prompt
 -> ask local LLM
 -> remove mixed abstention
--> focused rewrite
+-> focused rewrite only when the first answer is weak, unfocused, under-specific, or citation-unsafe
 -> run generic extractive answer candidates
 -> choose a better candidate when LLM answer is weak or incomplete
 -> citation cleanup
@@ -79,6 +80,12 @@ retrieved results
 ```
 
 The method intentionally combines LLM output with deterministic extractive repair. This is because local LLM answers can vary between runs and can miss small required facts even when retrieval found them.
+
+For performance, the answer path avoids unnecessary LLM calls:
+
+- deterministic evidence facts are built before the prompt,
+- LLM fact extraction is used only when deterministic facts are empty or insufficient,
+- focused rewrite is skipped when the first answer is already cited, focused, specific enough, and free of raw context leakage.
 
 ### `repair_answer()`
 
@@ -127,19 +134,19 @@ That means memory can remind the agent of project policy, but PDF facts must sti
 
 ### Evidence Facts
 
-Before answering, the service tries:
-
-```python
-_extract_evidence_facts_with_llm()
-```
-
-If that fails or is insufficient, it uses:
+Before answering, the service first builds deterministic facts:
 
 ```python
 _build_evidence_fact_list()
 ```
 
-This gives the answer prompt a compact fact list before the full context.
+If deterministic facts are empty or insufficient, it falls back to:
+
+```python
+_extract_evidence_facts_with_llm()
+```
+
+This gives the answer prompt a compact fact list before the full context while avoiding a separate LLM call when the deterministic evidence is already strong.
 
 ## Candidate Answer Priority
 

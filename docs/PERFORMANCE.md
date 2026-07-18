@@ -116,3 +116,14 @@ The current evidence judge now uses a deterministic prefilter before LLM judging
 - fall back to deterministic evidence ranking if the LLM judge selects nothing.
 
 This keeps answer verification and repair intact while reducing unnecessary LLM calls.
+
+## Answer Generation Optimization
+
+After evidence selection was optimized, the next slowest stage was answer generation. The answer path now avoids two common sources of extra latency:
+
+- deterministic evidence facts are built before the retrieval prompt,
+- LLM fact extraction is used only when deterministic facts are empty or insufficient,
+- focused rewrite is skipped when the first generated answer is already cited, focused, specific enough, and free of raw context leakage,
+- retrieval prompt context is slightly tighter per chunk to reduce prompt size while keeping evidence facts and citations available.
+
+This keeps the quality layers intact. Verification and answer repair still run after generation, and weak answers can still be rewritten or replaced by deterministic extractive answers.

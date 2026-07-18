@@ -13,10 +13,12 @@ class AnswerPromptMixin:
         memory_context: str = "",
         tool_context: str = "",
     ) -> str:
-        context = build_context(results)
-        evidence_facts = self._extract_evidence_facts_with_llm(query, context)
-        if self._is_insufficient_answer(evidence_facts):
-            evidence_facts = self._build_evidence_fact_list(query, results)
+        context = build_context(results, max_chars_per_chunk=1400)
+        evidence_facts = self._build_evidence_fact_list(query, results)
+        if self._facts_need_llm_help(evidence_facts):
+            llm_facts = self._extract_evidence_facts_with_llm(query, context)
+            if not self._facts_need_llm_help(llm_facts):
+                evidence_facts = llm_facts
         answer_shape = self._infer_answer_shape(query)
 
         return f"""
@@ -141,3 +143,10 @@ Evidence facts:
         except Exception:
             return ""
         return facts
+    def _facts_need_llm_help(self, evidence_facts: str) -> bool:
+        normalized = evidence_facts.strip().lower()
+        return (
+            not normalized
+            or "no directly matching facts" in normalized
+            or self._is_insufficient_answer(evidence_facts)
+        )
