@@ -203,7 +203,7 @@ def run_eval(eval_path: Path, output_path: Path) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate multi-document RAG answer quality.")
     parser.add_argument("--eval-file", default="benchmarks/gold_qa/eval_multi_doc_rag.json")
-    parser.add_argument("--output", default="eval/rag_quality_report.json")
+    parser.add_argument("--output", default="var/logs/rag_quality_report.json")
     parser.add_argument(
         "--ids",
         default="",
@@ -225,13 +225,17 @@ def main() -> None:
 
     if args.ids:
         source_path = Path(args.eval_file)
+        output_path = Path(args.output)
         selected_ids = {item.strip() for item in args.ids.split(",") if item.strip()}
         source_items = json.loads(source_path.read_text(encoding="utf-8"))
         filtered_items = [item for item in source_items if item.get("id") in selected_ids]
-        temp_path = Path("eval/.tmp_selected_eval.json")
+        temp_path = output_path.parent / ".tmp_selected_eval.json"
+        temp_path.parent.mkdir(parents=True, exist_ok=True)
         temp_path.write_text(json.dumps(filtered_items, indent=2), encoding="utf-8")
-        report = run_eval(temp_path, Path(args.output))
-        temp_path.unlink(missing_ok=True)
+        try:
+            report = run_eval(temp_path, output_path)
+        finally:
+            temp_path.unlink(missing_ok=True)
     else:
         report = run_eval(Path(args.eval_file), Path(args.output))
     print(f"Average RAG quality score: {report['average_score']}/10")

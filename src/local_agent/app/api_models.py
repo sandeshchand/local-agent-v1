@@ -192,6 +192,32 @@ class HealthResponse(BaseModel):
     status: str
 
 
+class MemoryItem(BaseModel):
+    memory_id: int
+    session_id: str
+    scope: str
+    kind: str
+    content: str
+    source: str
+    importance: float
+    access_count: int = 0
+    created_at: str
+    updated_at: str
+    last_accessed_at: str | None = None
+
+
+class MemoryListResponse(BaseModel):
+    total: int
+    session_id: str
+    include_global: bool
+    items: list[MemoryItem]
+
+
+class MemoryDeleteResponse(BaseModel):
+    deleted: bool
+    item: MemoryItem
+
+
 class SystemComponentStatus(BaseModel):
     name: str
     status: Literal["ok", "warn", "error"]
@@ -212,5 +238,28 @@ class ToolItem(BaseModel):
     requires_approval: bool = False
     source: str = "local"
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ToolAuditItem(BaseModel):
+    trace_id: int
+    session_id: str
+    query: str
+    created_at: str
+    tool_name: str
+    tool_source: str = "unknown"
+    tool_category: str = "local_read"
+    status: str
+    reason: str = ""
+    requires_approval: bool = False
+    approved: bool = False
+    executed: bool = False
+    success: bool | None = None
+    policy_name: str = ""
+    duration_ms: float = 0.0
+
+
+class ToolAuditResponse(BaseModel):
+    summary: dict[str, int] = Field(default_factory=dict)
+    items: list[ToolAuditItem]
 
 

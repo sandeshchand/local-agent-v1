@@ -45,13 +45,13 @@ This avoids changing the whole system blindly.
 Run a quick latency benchmark:
 
 ```powershell
-venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output eval\latency_benchmark_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output var\logs\latency_benchmark_report.json
 ```
 
 Run selected questions:
 
 ```powershell
-venv\Scripts\python.exe scripts\benchmark_latency.py --ids docker_watchtower_features,sora_world_simulator --output eval\latency_targeted_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --ids docker_watchtower_features,sora_world_simulator --output var\logs\latency_targeted_report.json
 ```
 
 Use a specific environment file:

@@ -39,6 +39,27 @@ def main() -> None:
     assert "digital environments" in answer
     assert "[1]" in answer
 
+    definition_results = [
+        {
+            "chunk_id": "beta-tool-1",
+            "title": "BetaTool Technical Note",
+            "section_title": "Overview",
+            "page_number": 2,
+            "text": (
+                "BetaTool is a workflow automation library released by Acme in 2025. "
+                "It creates tasks from natural-language prompts and exports reports up to 10 pages long."
+            ),
+        }
+    ]
+    definition_answer = service.answer_from_context(
+        "What is BetaTool?",
+        definition_results,
+    )
+
+    assert "BetaTool is a workflow automation library" in definition_answer
+    assert "Acme" in definition_answer
+    assert "[1]" in definition_answer
+
     print("Answer fact coverage smoke test passed.")
 
 

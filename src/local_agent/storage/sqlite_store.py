@@ -342,6 +342,26 @@ class SQLiteStore:
         return [self._memory_row_to_dict(row) for row in rows]
 
     @_locked
+    def delete_memory_item(self, memory_id: int) -> dict[str, Any] | None:
+        conn = self.connect()
+        row = conn.execute(
+            """
+            SELECT memory_id, session_id, scope, kind, content, source, importance,
+                   access_count, created_at, updated_at, last_accessed_at
+            FROM memory_items
+            WHERE memory_id = ?
+            """,
+            (memory_id,),
+        ).fetchone()
+        if row is None:
+            return None
+
+        item = self._memory_row_to_dict(row)
+        conn.execute("DELETE FROM memory_items WHERE memory_id = ?", (memory_id,))
+        conn.commit()
+        return item
+
+    @_locked
     def touch_memory_items(self, memory_ids: list[int]) -> None:
         if not memory_ids:
             return
@@ -522,6 +542,21 @@ class SQLiteStore:
             LIMIT ?
             """,
             (limit,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    @_locked
+    def list_trace_audit_rows(self, limit: int = 50) -> list[dict[str, Any]]:
+        conn = self.connect()
+        bounded_limit = max(1, min(int(limit), 200))
+        rows = conn.execute(
+            """
+            SELECT trace_id, session_id, query, steps_json, tool_results_json, created_at
+            FROM traces
+            ORDER BY trace_id DESC
+            LIMIT ?
+            """,
+            (bounded_limit,),
         ).fetchall()
         return [dict(row) for row in rows]
 

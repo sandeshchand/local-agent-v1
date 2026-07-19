@@ -391,6 +391,8 @@ function addAssistantResponse(answer, traceId, citations = [], options = {}) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
   loadTrace(traceId);
   loadRecentTraces();
+  loadToolAudit();
+  loadMemory();
 }
 
 async function approveAndRun(query, toolName, button) {
@@ -1177,6 +1179,224 @@ async function loadTools() {
   }
 }
 
+function toolAuditTone(event) {
+  const status = String(event.status || "").toLowerCase();
+  if (status === "allow" && event.approved) return "approved";
+  if (status === "allow") return "allow";
+  if (status === "needs_approval") return "needs-approval";
+  if (status === "deny") return "deny";
+  return "unknown";
+}
+
+function renderToolAudit(payload) {
+  const summary = document.getElementById("tool-audit-summary");
+  const container = document.getElementById("tool-audit-list");
+  if (!container) return;
+
+  const items = Array.isArray(payload?.items) ? payload.items : [];
+  const counts = payload?.summary || {};
+
+  if (summary) {
+    summary.innerHTML = "";
+    const grid = createElement("div", "tool-audit-summary-grid");
+    [
+      ["Total", counts.total_count],
+      ["Allowed", counts.allow_count],
+      ["Needs approval", counts.needs_approval_count],
+      ["Denied", counts.deny_count],
+      ["Approved", counts.approved_count],
+      ["Executed", counts.executed_count],
+    ].forEach(([label, value]) => {
+      const item = createElement("div", "tool-audit-summary-item");
+      item.appendChild(createElement("span", "", label));
+      item.appendChild(createElement("strong", "", formatValue(value)));
+      grid.appendChild(item);
+    });
+    summary.appendChild(grid);
+  }
+
+  container.innerHTML = "";
+  if (!items.length) {
+    container.appendChild(createElement("div", "muted", "No guarded tool calls found in recent traces."));
+    return;
+  }
+
+  items.forEach((event) => {
+    const tone = toolAuditTone(event);
+    const item = createElement("article", `tool-audit-item ${tone}`);
+
+    const top = createElement("div", "tool-audit-top");
+    const title = createElement("strong", "", event.tool_name || "unknown_tool");
+    title.title = event.tool_name || "";
+    top.appendChild(title);
+    top.appendChild(createElement("span", `tool-audit-status ${tone}`, event.status || "unknown"));
+    item.appendChild(top);
+
+    const meta = createElement("div", "tool-meta-row");
+    meta.appendChild(createElement("span", "tool-approval-pill", event.tool_category || "tool"));
+    meta.appendChild(createElement("span", `tool-source-pill ${event.tool_source || "local"}`, event.tool_source || "unknown"));
+    meta.appendChild(
+      createElement(
+        "span",
+        event.requires_approval ? "tool-approval-pill warn" : "tool-approval-pill ok",
+        event.requires_approval ? "approval required" : "no approval"
+      )
+    );
+    if (event.approved) {
+      meta.appendChild(createElement("span", "tool-approval-pill ok", "approved"));
+    }
+    item.appendChild(meta);
+
+    item.appendChild(createElement("p", "", shortText(event.query, 140)));
+
+    const details = createElement("div", "tool-audit-details");
+    renderKeyValues(details, {
+      trace: `#${event.trace_id}`,
+      executed: event.executed,
+      success: event.success,
+      reason: event.reason,
+      time: event.created_at,
+    });
+    item.appendChild(details);
+
+    const actions = createElement("div", "feedback-review-actions");
+    const openButton = createElement("button", "feedback-action-btn", "Open trace");
+    openButton.type = "button";
+    openButton.addEventListener("click", () => loadTrace(event.trace_id));
+    actions.appendChild(openButton);
+    item.appendChild(actions);
+
+    container.appendChild(item);
+  });
+}
+
+async function loadToolAudit() {
+  const summary = document.getElementById("tool-audit-summary");
+  const container = document.getElementById("tool-audit-list");
+  if (summary) {
+    summary.textContent = "Loading tool audit...";
+  }
+
+  try {
+    const payload = await fetchJSON("/api/tools/audit?limit=50");
+    renderToolAudit(payload);
+  } catch (error) {
+    if (summary) {
+      summary.textContent = "Could not load tool audit.";
+    }
+    if (container) {
+      container.innerHTML = "";
+      container.appendChild(createElement("div", "error-text", `Tool audit error: ${error.message}`));
+    }
+  }
+}
+
+function memoryKindLabel(kind) {
+  return String(kind || "memory").replace(/_/g, " ");
+}
+
+function renderMemory(payload) {
+  const summary = document.getElementById("memory-summary");
+  const container = document.getElementById("memory-list");
+  if (!container) return;
+
+  const items = Array.isArray(payload?.items) ? payload.items : [];
+  if (summary) {
+    summary.textContent = `${items.length} memory item${items.length === 1 ? "" : "s"} for session ${payload?.session_id || "default"}`;
+  }
+
+  container.innerHTML = "";
+  if (!items.length) {
+    container.appendChild(createElement("div", "muted", "No long-term memory found."));
+    return;
+  }
+
+  items.forEach((memory) => {
+    const item = createElement("article", "memory-item");
+    const top = createElement("div", "memory-item-top");
+    top.appendChild(createElement("strong", "", memoryKindLabel(memory.kind)));
+    top.appendChild(createElement("span", `memory-scope-pill ${memory.scope || "global"}`, memory.scope || "global"));
+    item.appendChild(top);
+
+    item.appendChild(createElement("p", "", memory.content || ""));
+
+    const meta = createElement("div", "memory-meta-row");
+    meta.appendChild(createElement("span", "", `#${memory.memory_id}`));
+    meta.appendChild(createElement("span", "", memory.source || "manual"));
+    meta.appendChild(createElement("span", "", `importance ${formatValue(memory.importance)}`));
+    meta.appendChild(createElement("span", "", `access ${formatValue(memory.access_count)}`));
+    item.appendChild(meta);
+
+    const time = createElement("div", "memory-time-row");
+    time.appendChild(createElement("span", "", `updated ${formatValue(memory.updated_at)}`));
+    item.appendChild(time);
+
+    const actions = createElement("div", "feedback-review-actions");
+    const deleteButton = createElement("button", "memory-delete-btn", "Delete");
+    deleteButton.type = "button";
+    deleteButton.addEventListener("click", () => deleteMemoryItem(memory.memory_id, deleteButton));
+    actions.appendChild(deleteButton);
+    item.appendChild(actions);
+
+    container.appendChild(item);
+  });
+}
+
+async function loadMemory() {
+  const summary = document.getElementById("memory-summary");
+  const container = document.getElementById("memory-list");
+  const sessionInput = document.getElementById("memory-session-id");
+  const includeGlobal = document.getElementById("memory-include-global");
+  const params = new URLSearchParams({
+    session_id: sessionInput?.value.trim() || "default",
+    include_global: includeGlobal?.checked ? "true" : "false",
+    limit: "80",
+  });
+
+  if (summary) {
+    summary.textContent = "Loading memory...";
+  }
+
+  try {
+    const payload = await fetchJSON(`/api/memory?${params.toString()}`);
+    renderMemory(payload);
+  } catch (error) {
+    if (summary) {
+      summary.textContent = "Could not load memory.";
+    }
+    if (container) {
+      container.innerHTML = "";
+      container.appendChild(createElement("div", "error-text", `Memory error: ${error.message}`));
+    }
+  }
+}
+
+async function deleteMemoryItem(memoryId, button) {
+  if (!memoryId) return;
+  if (!window.confirm(`Delete memory #${memoryId}?`)) return;
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Deleting...";
+  }
+
+  try {
+    await fetchJSON(`/api/memory/${encodeURIComponent(memoryId)}`, {
+      method: "DELETE",
+    });
+    await loadMemory();
+  } catch (error) {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Delete";
+    }
+    const summary = document.getElementById("memory-summary");
+    if (summary) {
+      summary.textContent = `Delete failed: ${error.message}`;
+    }
+  }
+}
+
 function renderSystemStatus(payload) {
   const summary = document.getElementById("system-summary");
   const container = document.getElementById("system-components");
@@ -1436,6 +1656,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("send-btn");
   const refreshDocsBtn = document.getElementById("refresh-docs-btn");
   const refreshToolsBtn = document.getElementById("refresh-tools-btn");
+  const refreshToolAuditBtn = document.getElementById("refresh-tool-audit-btn");
+  const refreshMemoryBtn = document.getElementById("refresh-memory-btn");
   const refreshSystemBtn = document.getElementById("refresh-system-btn");
   const refreshTracesBtn = document.getElementById("refresh-traces-btn");
   const refreshEvalCandidatesBtn = document.getElementById("refresh-eval-candidates-btn");
@@ -1459,6 +1681,14 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshToolsBtn.addEventListener("click", loadTools);
   }
 
+  if (refreshToolAuditBtn) {
+    refreshToolAuditBtn.addEventListener("click", loadToolAudit);
+  }
+
+  if (refreshMemoryBtn) {
+    refreshMemoryBtn.addEventListener("click", loadMemory);
+  }
+
   if (refreshSystemBtn) {
     refreshSystemBtn.addEventListener("click", loadSystemStatus);
   }
@@ -1470,6 +1700,8 @@ document.addEventListener("DOMContentLoaded", () => {
       loadFeedbackItems();
       loadEvalCandidates();
       loadSystemStatus();
+      loadToolAudit();
+      loadMemory();
     });
   }
 
@@ -1497,6 +1729,15 @@ document.addEventListener("DOMContentLoaded", () => {
     toolSearch.addEventListener("input", applyToolSearch);
   }
 
+  const memorySessionInput = document.getElementById("memory-session-id");
+  const memoryIncludeGlobal = document.getElementById("memory-include-global");
+  if (memorySessionInput) {
+    memorySessionInput.addEventListener("change", loadMemory);
+  }
+  if (memoryIncludeGlobal) {
+    memoryIncludeGlobal.addEventListener("change", loadMemory);
+  }
+
   if (ingestBtn) {
     ingestBtn.addEventListener("click", ingestPath);
   }
@@ -1512,6 +1753,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadDocuments();
   loadTools();
+  loadToolAudit();
+  loadMemory();
   loadSystemStatus();
   loadRecentTraces();
   loadFeedbackSummary();

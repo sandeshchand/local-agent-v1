@@ -193,6 +193,236 @@ button:disabled {
   margin-top: 10px;
 }
 
+.tool-audit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-audit-summary {
+  margin-bottom: 10px;
+}
+
+.tool-audit-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.tool-audit-summary-item {
+  border: 1px solid #26384f;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 8px;
+}
+
+.tool-audit-summary-item span {
+  display: block;
+  color: #94a3b8;
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+
+.tool-audit-summary-item strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 15px;
+}
+
+.tool-audit-item {
+  border: 1px solid #26384f;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 10px;
+}
+
+.tool-audit-item.allow,
+.tool-audit-item.approved {
+  border-left: 3px solid #22c55e;
+}
+
+.tool-audit-item.needs-approval {
+  border-left: 3px solid #f59e0b;
+}
+
+.tool-audit-item.deny {
+  border-left: 3px solid #ef4444;
+}
+
+.tool-audit-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.tool-audit-top strong {
+  color: #f8fafc;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.tool-audit-status {
+  flex: 0 0 auto;
+  border: 1px solid #475569;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #cbd5e1;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tool-audit-status.allow,
+.tool-audit-status.approved {
+  border-color: #22c55e;
+  color: #bbf7d0;
+}
+
+.tool-audit-status.needs-approval {
+  border-color: #f59e0b;
+  color: #fde68a;
+}
+
+.tool-audit-status.deny {
+  border-color: #ef4444;
+  color: #fecaca;
+}
+
+.tool-audit-item p {
+  margin: 8px 0;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.tool-audit-details {
+  border-top: 1px solid #26384f;
+  padding-top: 8px;
+}
+
+.memory-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.memory-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #cbd5e1;
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.memory-checkbox input {
+  width: auto;
+}
+
+.memory-summary {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 9px 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.memory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.memory-item {
+  border: 1px solid #26384f;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 10px;
+}
+
+.memory-item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.memory-item-top strong {
+  color: #f8fafc;
+  font-size: 13px;
+  line-height: 1.35;
+  text-transform: capitalize;
+  overflow-wrap: anywhere;
+}
+
+.memory-scope-pill {
+  flex: 0 0 auto;
+  border: 1px solid #475569;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #cbd5e1;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.memory-scope-pill.global {
+  border-color: #38bdf8;
+  color: #bae6fd;
+}
+
+.memory-scope-pill.session {
+  border-color: #14b8a6;
+  color: #99f6e4;
+}
+
+.memory-item p {
+  margin: 0 0 8px;
+  color: #e5e7eb;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.memory-meta-row,
+.memory-time-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.memory-delete-btn {
+  border: 1px solid #7f1d1d;
+  border-radius: 999px;
+  background: #2a1111;
+  color: #fecaca;
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.memory-delete-btn:hover {
+  border-color: #ef4444;
+  background: #451a1a;
+}
+
 .tool-list-item {
   border: 1px solid #334155;
   border-radius: 8px;
@@ -739,7 +969,7 @@ textarea {
 
 .workspace-tabs {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
   gap: 6px;
   border: 1px solid #26384f;
   border-radius: 8px;

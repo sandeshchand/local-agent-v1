@@ -88,6 +88,16 @@ Useful fields:
 
 Blocked tools are not executed and do not create a `tool_result`.
 
+## Tool Audit
+
+Saved traces are also summarized through:
+
+```text
+GET /api/tools/audit
+```
+
+The web UI has an `Audit` workspace tab that shows recent guardrail decisions, tool categories, approval status, execution status, and links back to the original trace.
+
 ## Design Rules
 
 Do:
@@ -117,11 +127,11 @@ venv\Scripts\python.exe scripts\smoke_memory.py
 Run targeted RAG eval after wiring changes:
 
 ```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_features,docker_watchtower_features,ml_crfs,sora_world_simulator --output eval\rag_quality_guardrails_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_features,docker_watchtower_features,ml_crfs,sora_world_simulator --output var\logs\rag_quality_guardrails_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
 ## Next Improvements
 
 1. Add file-operation categories before write/delete tools are introduced.
 2. Strengthen path policy before wiring writable File MCP tools.
-3. Add audit views for approved tool executions.
+3. Add stronger policy rules for any future write/delete tools.

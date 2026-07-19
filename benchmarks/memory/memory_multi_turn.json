@@ -1,0 +1,135 @@
+[
+  {
+    "id": "project_rule_auto_capture",
+    "description": "Explicit project rule should be captured as durable memory and retrieved later.",
+    "session_id": "memory-eval-project-rule",
+    "setup": [
+      {
+        "role": "user",
+        "content": "Keep in mind we should not use document-specific hardcoded keywords and must keep RAG behavior general purpose."
+      }
+    ],
+    "query": "What project rule should guide RAG optimization?",
+    "must_include": [
+      "hardcoded keywords",
+      "general purpose"
+    ],
+    "must_not_include": [],
+    "required_kinds": [
+      "project_decision"
+    ],
+    "forbidden_kinds": [],
+    "expected_sections": [
+      "[LONG-TERM MEMORY]",
+      "[RECENT SESSION]"
+    ]
+  },
+  {
+    "id": "short_term_follow_up",
+    "description": "Recent conversation should support follow-up questions inside the same session.",
+    "session_id": "memory-eval-short-term",
+    "setup": [
+      {
+        "role": "user",
+        "content": "Yesterday we discussed that the deployment document should cover startup, health checks, and rollback."
+      },
+      {
+        "role": "assistant",
+        "content": "Yes, the deployment document should cover startup, health checks, backup, restore, and rollback."
+      }
+    ],
+    "query": "What did we decide about the deployment document?",
+    "must_include": [
+      "startup",
+      "health checks",
+      "rollback"
+    ],
+    "must_not_include": [],
+    "required_kinds": [
+      "short_term"
+    ],
+    "forbidden_kinds": [],
+    "expected_sections": [
+      "[RECENT SESSION]"
+    ]
+  },
+  {
+    "id": "user_preference_capture",
+    "description": "User preference should be captured and ranked as relevant memory.",
+    "session_id": "memory-eval-user-preference",
+    "setup": [
+      {
+        "role": "user",
+        "content": "Remember I prefer short and direct explanations in the UI."
+      }
+    ],
+    "query": "How should you write UI explanations for me?",
+    "must_include": [
+      "short and direct"
+    ],
+    "must_not_include": [],
+    "required_kinds": [
+      "user_preference"
+    ],
+    "forbidden_kinds": [],
+    "expected_sections": [
+      "[LONG-TERM MEMORY]"
+    ]
+  },
+  {
+    "id": "task_status_for_next_step",
+    "description": "Next-step memory should be classified as task status and retrieved for planning.",
+    "session_id": "memory-eval-task-status",
+    "setup": [
+      {
+        "role": "user",
+        "content": "Next step is to improve guardrail audit visibility before adding external MCP tools."
+      }
+    ],
+    "query": "What is the next step for MCP and guardrails?",
+    "must_include": [
+      "guardrail audit visibility",
+      "external MCP"
+    ],
+    "must_not_include": [],
+    "required_kinds": [
+      "task_status"
+    ],
+    "forbidden_kinds": [],
+    "expected_sections": [
+      "[LONG-TERM MEMORY]",
+      "[RECENT SESSION]"
+    ]
+  },
+  {
+    "id": "sensitive_short_term_redaction",
+    "description": "Sensitive-looking text should not leak through short-term or long-term memory context.",
+    "session_id": "memory-eval-sensitive",
+    "setup": [
+      {
+        "role": "user",
+        "content": "Remember my API key is sk_memory_eval_secret_1234567890abcdef."
+      }
+    ],
+    "query": "What memory do you have about the API key?",
+    "must_include": [
+      "REDACTED_SECRET"
+    ],
+    "must_not_include": [
+      "sk_memory_eval_secret_1234567890abcdef"
+    ],
+    "required_kinds": [
+      "short_term"
+    ],
+    "forbidden_kinds": [
+      "project_decision",
+      "user_preference",
+      "task_status",
+      "evaluation_result",
+      "known_issue"
+    ],
+    "expected_sections": [
+      "[RECENT SESSION]"
+    ]
+  }
+]

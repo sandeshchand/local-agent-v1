@@ -145,13 +145,13 @@ Run focused checks after orchestration changes:
 
 ```cmd
 venv\Scripts\python.exe -m py_compile agent\orchestrator.py
-venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_features,docker_watchtower_features,ml_crfs,sora_world_simulator,smoldocling_doctags,intro_seven_day_challenge,ai_money_no_quit_job --output eval\rag_quality_orchestration_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_features,docker_watchtower_features,ml_crfs,sora_world_simulator,smoldocling_doctags,intro_seven_day_challenge,ai_money_no_quit_job --output var\logs\rag_quality_orchestration_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
 Run the full benchmark before a push:
 
 ```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output var\logs\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
 ## Next Improvements
@@ -159,6 +159,6 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_
 Good next orchestration improvements:
 
 1. Add multi-step `retrieve_then_tool` tests.
-2. Add audit views for approved tool executions.
-3. Add a route-confidence metric from document routing.
-4. Add UI trace inspection so users can see routing, evidence, retry, guardrail, and verifier decisions.
+2. Add a route-confidence metric from document routing.
+3. Add per-project memory namespaces for long-running sessions.
+4. Keep expanding UI trace inspection when new orchestration step types are added.

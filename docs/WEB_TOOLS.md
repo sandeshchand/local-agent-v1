@@ -84,7 +84,7 @@ venv\Scripts\python.exe scripts\smoke_weather_tool.py
 Run targeted RAG eval after planner changes:
 
 ```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_features,docker_watchtower_features,ml_crfs,sora_world_simulator --output eval\rag_quality_weather_tool_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_features,docker_watchtower_features,ml_crfs,sora_world_simulator --output var\logs\rag_quality_weather_tool_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
 ## Next Web/MCP Tools

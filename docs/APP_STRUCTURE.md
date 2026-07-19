@@ -16,6 +16,7 @@ Keep these in `src/local_agent/app/`:
 - `cli.py`: command-line interface.
 - `web.py`: FastAPI routes and web entrypoint.
 - `api_models.py`: request/response models for the web API.
+- `tool_audit.py`: read-only audit projection from saved trace/tool steps.
 
 These files are close to application startup, user interfaces, or runtime composition.
 

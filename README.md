@@ -13,11 +13,11 @@ This repo is not treated as a toy demo. The engineering target is a production-r
 - Document routing to reduce wrong-document answers in large collections.
 - Evidence-grounded answer generation with citations.
 - Answer verification, repair, and retrieval retry when quality fails.
-- Short-term conversation memory and long-term project/user memory.
+- Short-term conversation memory and long-term project/user memory with UI management.
 - Tool-call guardrails with `allow`, `deny`, and `needs_approval`.
 - MCP-style read-only File and SQLite connectors.
 - Read-only weather tool for current weather questions.
-- Web UI with trace view, source inspection, feedback, eval drafts, tool visibility, and system status.
+- Web UI with trace view, source inspection, feedback, eval drafts, tool visibility, tool audit, and system status.
 - Gold QA evaluation and regression commands for quality control.
 - Runtime backup and restore tooling for local SQLite and Qdrant state.
 
@@ -164,16 +164,22 @@ Run compile and smoke checks only:
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```
 
+Run the memory quality benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\eval_memory_quality.py --output var\logs\memory_quality_report.json --fail-under-average 9 --fail-under-item 9
+```
+
 Run the full RAG benchmark:
 
 ```powershell
-venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output var\logs\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
 Run a quick latency benchmark:
 
 ```powershell
-venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output eval\latency_benchmark_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output var\logs\latency_benchmark_report.json
 ```
 
 Quality rules:
@@ -232,6 +238,8 @@ Already implemented:
 - feedback collection,
 - answer verification and repair,
 - guarded tool execution,
+- tool audit API and UI panel,
+- memory management API and UI panel,
 - read-only local file/database connectors,
 - system health/status endpoint and UI panel,
 - local runtime backup and restore tooling,
@@ -270,9 +278,11 @@ Retrieval and answers:
 Tools, guardrails, and memory:
 
 - [docs/GUARDRAILS.md](docs/GUARDRAILS.md)
+- [docs/TOOL_AUDIT.md](docs/TOOL_AUDIT.md)
 - [docs/MCP.md](docs/MCP.md)
 - [docs/WEB_TOOLS.md](docs/WEB_TOOLS.md)
 - [docs/MEMORY.md](docs/MEMORY.md)
+- [docs/MEMORY_UI.md](docs/MEMORY_UI.md)
 
 Evaluation, UI, and roadmap:
 

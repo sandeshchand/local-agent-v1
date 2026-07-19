@@ -17,6 +17,7 @@ COMPILE_TARGETS = [
     "src/local_agent/app/cli.py",
     "src/local_agent/app/main.py",
     "src/local_agent/app/system_status.py",
+    "src/local_agent/app/tool_audit.py",
     "src/local_agent/app/web.py",
     "src/local_agent/app/api_models.py",
     "src/local_agent/llm/ollama_client.py",
@@ -28,6 +29,7 @@ COMPILE_TARGETS = [
     "src/local_agent/tools/sqlite_mcp.py",
     "src/local_agent/tools/mcp_adapter.py",
     "src/local_agent/evaluation/eval_candidates.py",
+    "src/local_agent/evaluation/memory_eval.py",
     "src/local_agent/evaluation/eval_runner.py",
     "src/local_agent/answering/service.py",
     "src/local_agent/answering/prompts.py",
@@ -50,6 +52,9 @@ COMPILE_TARGETS = [
     "src/local_agent/retrieval/search.py",
     "src/local_agent/storage/sqlite_store.py",
     "scripts/smoke_memory.py",
+    "scripts/smoke_memory_api.py",
+    "scripts/eval_memory_quality.py",
+    "scripts/smoke_memory_eval.py",
     "scripts/runtime_state.py",
     "scripts/smoke_answer_cleaning.py",
     "scripts/smoke_answer_fact_coverage.py",
@@ -67,6 +72,7 @@ COMPILE_TARGETS = [
     "scripts/smoke_eval_candidate_run.py",
     "scripts/smoke_feedback_issue_tags.py",
     "scripts/smoke_guardrails.py",
+    "scripts/smoke_tool_audit.py",
     "scripts/smoke_file_mcp.py",
     "scripts/smoke_mcp_adapter.py",
     "scripts/smoke_sqlite_mcp.py",
@@ -116,7 +122,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--output",
-        default="eval/rag_quality_regression_report.json",
+        default="var/logs/rag_quality_regression_report.json",
         help="Output path for the RAG eval report.",
     )
     return parser
@@ -141,6 +147,8 @@ def main() -> None:
     run_step("Config smoke", [sys.executable, "scripts/smoke_config.py"])
     run_step("Empty index smoke", [sys.executable, "scripts/smoke_empty_index.py"])
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])
+    run_step("Memory API smoke", [sys.executable, "scripts/smoke_memory_api.py"])
+    run_step("Memory eval smoke", [sys.executable, "scripts/smoke_memory_eval.py"])
     run_step("Runtime backup smoke", [sys.executable, "scripts/smoke_runtime_backup.py"])
     run_step("SQLite threading smoke", [sys.executable, "scripts/smoke_sqlite_threading.py"])
     run_step("System status smoke", [sys.executable, "scripts/smoke_system_status.py"])
@@ -151,6 +159,7 @@ def main() -> None:
     run_step("Eval candidate run smoke", [sys.executable, "scripts/smoke_eval_candidate_run.py"])
     run_step("Feedback issue tag smoke", [sys.executable, "scripts/smoke_feedback_issue_tags.py"])
     run_step("Guardrails smoke", [sys.executable, "scripts/smoke_guardrails.py"])
+    run_step("Tool audit smoke", [sys.executable, "scripts/smoke_tool_audit.py"])
     run_step("File MCP smoke", [sys.executable, "scripts/smoke_file_mcp.py"])
     run_step("MCP adapter smoke", [sys.executable, "scripts/smoke_mcp_adapter.py"])
     run_step("SQLite MCP smoke", [sys.executable, "scripts/smoke_sqlite_mcp.py"])

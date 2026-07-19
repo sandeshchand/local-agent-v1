@@ -48,10 +48,12 @@ Use this during small edits when the RAG pipeline is not touched.
 Run the full multi-document RAG benchmark:
 
 ```cmd
-venv\Scripts\python.exe scripts\run_regression.py --full --output eval\rag_quality_report.json
+venv\Scripts\python.exe scripts\run_regression.py --full --output var\logs\rag_quality_report.json
 ```
 
 Use this before bigger pushes, retrieval changes, answer-service changes, or ingestion/chunking changes.
+
+When using local Qdrant path mode, stop the web server before running the full benchmark. Only one process can own the local Qdrant folder at a time. If the benchmark says the storage folder is already accessed, stop old `uvicorn`, `run_regression.py`, or `eval_rag_quality.py` processes and run the command again.
 
 Detailed scoring notes are in:
 
@@ -64,7 +66,7 @@ docs/EVALUATION.md
 Run this when you are working on performance:
 
 ```cmd
-venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output eval\latency_benchmark_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output var\logs\latency_benchmark_report.json
 ```
 
 This is separate from the default regression runner because it depends on real model speed and machine load. Use it to compare before and after reports when changing retrieval, reranking, planner behavior, model settings, or context size.

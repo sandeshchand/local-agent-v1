@@ -1,6 +1,6 @@
 # UI Trace View
 
-The web UI includes a right-side workspace for trace inspection, recent runs, feedback review, and eval drafts.
+The web UI includes a right-side workspace for trace inspection, tools, tool audit, memory, system status, recent runs, feedback review, and eval drafts.
 
 It helps debug answer quality without opening JSON reports manually.
 
@@ -9,6 +9,10 @@ It helps debug answer quality without opening JSON reports manually.
 The workspace uses tabs so the important panels do not stack below the fold:
 
 - `Trace` shows the selected answer trace,
+- `Tools` shows registered local and MCP-style tools,
+- `Audit` shows recent guarded tool calls,
+- `Memory` shows long-term memory records,
+- `System` shows runtime health,
 - `History` shows recent traces,
 - `Feedback` shows feedback analytics and review actions,
 - `Evals` shows feedback-derived eval drafts.
@@ -38,6 +42,21 @@ The right-side workspace includes a visible Tools tab:
 - local and MCP tools are shown together,
 - the tool list can be searched,
 - read-only tools and approval-required tools are visibly labeled.
+
+The workspace also includes a Tool Audit tab:
+
+- audit rows are loaded from `/api/tools/audit`,
+- each row shows guardrail status, tool category, source, approval, execution, and success,
+- each row links back to the full trace,
+- the audit is read-only and does not approve or execute tools.
+
+The workspace includes a Memory tab:
+
+- memory rows are loaded from `/api/memory`,
+- users can filter by session id,
+- global memory can be included or hidden,
+- stale or wrong long-term memory items can be deleted,
+- memory remains guidance and is not treated as PDF citation evidence.
 
 The left sidebar also includes a scalable Library panel:
 
@@ -126,13 +145,15 @@ Feedback is also metadata. It does not change answer behavior during the same re
 Run:
 
 ```cmd
-venv\Scripts\python.exe -m py_compile app\web.py app\api_models.py storage\sqlite_store.py
+venv\Scripts\python.exe -m py_compile src\local_agent\app\web.py src\local_agent\app\api_models.py src\local_agent\storage\sqlite_store.py
 venv\Scripts\python.exe scripts\smoke_feedback_analytics.py
 venv\Scripts\python.exe scripts\smoke_feedback_issue_tags.py
 venv\Scripts\python.exe scripts\smoke_eval_candidates.py
 venv\Scripts\python.exe scripts\smoke_eval_candidate_review.py
 venv\Scripts\python.exe scripts\smoke_eval_candidate_run.py
 venv\Scripts\python.exe scripts\smoke_tool_approval_ui.py
+venv\Scripts\python.exe scripts\smoke_tool_audit.py
+venv\Scripts\python.exe scripts\smoke_memory_api.py
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```
 

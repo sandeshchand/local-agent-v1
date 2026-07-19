@@ -4,6 +4,8 @@ The project is now beyond the early prototype stage. Multi-document PDF RAG, rou
 
 The next work should focus on production hardening: keep answer quality high, measure latency, improve only the slowest stages, and grow evaluation coverage for more PDFs.
 
+For the next focused session, see [docs/TOMORROW_PLAN.md](TOMORROW_PLAN.md).
+
 ## Current Stable State
 
 Implemented:
@@ -16,8 +18,11 @@ Implemented:
 - Answer verification, answer repair, and one retrieval retry path.
 - Answer cleanup for raw chunk leakage, invalid citations, mojibake text, and repeated spans.
 - Short-term and long-term memory.
+- Memory multi-turn eval for project rules, preferences, task status, follow-up context, and sensitive-text redaction.
+- Memory management API and UI tab for inspecting/deleting long-term memory.
 - Tool-call guardrails with `allow`, `deny`, and `needs_approval`.
 - Request-scoped approval for approval-required tools.
+- Tool audit API and UI tab for guardrail/tool execution visibility.
 - Read-only weather tool.
 - MCP-style File and SQLite connectors.
 - UI trace view, compact source box, feedback, eval drafts, document library, and tools panel.
@@ -32,7 +37,7 @@ Goal: confirm the current production-hardening changes did not reduce retrieval 
 Run:
 
 ```cmd
-venv\Scripts\python.exe scripts\run_regression.py --full --output eval\rag_quality_report.json
+venv\Scripts\python.exe scripts\run_regression.py --full --output var\logs\rag_quality_report.json
 ```
 
 Pass rules:
@@ -43,18 +48,19 @@ Pass rules:
 
 If the full run passes, commit and push the current branch before starting another behavior change.
 
-## 2. Add Memory-Specific Multi-Turn Evals
+## 2. Add Production Deployment Documentation
 
-Goal: verify memory improves follow-up behavior without becoming unsupported PDF evidence.
+Goal: make the repo easier to operate outside a development terminal.
 
-Add small eval cases for:
+Create `docs/DEPLOYMENT.md` covering:
 
-- user preference remembered across turns,
-- follow-up question using short-term context,
-- PDF answer that must ignore unrelated memory,
-- memory redaction or sensitive-text filtering behavior.
-
-Keep memory evals separate from gold PDF QA because they test orchestration behavior, not document evidence.
+- startup command,
+- `.env` values,
+- health checks,
+- logs,
+- backup/restore,
+- rollback,
+- one-server ownership for local Qdrant path mode.
 
 ## 3. Measure Performance Baseline
 
@@ -63,7 +69,7 @@ Goal: measure latency before optimizing anything.
 Run:
 
 ```cmd
-venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output eval\latency_baseline_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output var\logs\latency_baseline_report.json
 ```
 
 Then inspect:
@@ -94,7 +100,7 @@ After each optimization, run:
 
 ```cmd
 venv\Scripts\python.exe scripts\run_regression.py
-venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output eval\latency_after_change_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output var\logs\latency_after_change_report.json
 ```
 
 ## 5. Expand Gold QA
@@ -119,7 +125,7 @@ Next guardrail tasks:
 
 - add file-operation categories,
 - add explicit path allowlists for writable tools,
-- add audit views for approved tool executions,
+- extend audit filters if the trace volume grows,
 - keep approval request-scoped unless there is a real user/session permission model.
 
 Important rule: memory and tools can guide the agent, but PDF answers must still come from retrieved PDF evidence and citations.
