@@ -23,7 +23,8 @@ The project has strong local foundations:
 - trace visibility,
 - tool-audit visibility,
 - system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools,
-- local backup and restore tooling for SQLite and Qdrant runtime state.
+- local backup and restore tooling for SQLite and Qdrant runtime state,
+- local deployment documentation.
 
 The project is ready for serious local iteration and controlled demos. It still needs deployment, security, monitoring, and broader benchmark coverage before production use.
 
@@ -121,7 +122,7 @@ Data ingestion
 
 ### Deployment And Operations
 
-- Add a deployment plan: local service, container, or managed host.
+- Keep the local deployment plan current, and add container/service-manager deployment when needed.
 - Keep health checks for web, SQLite, Qdrant, Ollama, and model availability visible in the UI/API.
 - Add monitoring for latency, failed retrievals, failed tool calls, and eval regressions.
 - Add process control so only one local Qdrant path owner runs at a time.
@@ -147,10 +148,10 @@ It should also have:
 
 ## Near-Term Priorities
 
-1. Add a production deployment document.
-2. Run full RAG and latency baselines after the latest UI/API additions.
-3. Add broader gold QA for new daily PDFs.
-4. Add scheduled/off-machine backup policy for deployed environments.
+1. Optimize answer-generation latency without reducing RAG quality.
+2. Add broader gold QA for new daily PDFs.
+3. Add scheduled/off-machine backup policy for deployed environments.
+4. Add authentication and user/session isolation design.
 
 Completed from this list:
 
@@ -159,3 +160,5 @@ Completed from this list:
 - Memory multi-turn eval, benchmark cases, smoke test, and short-term redaction.
 - Tool audit API, UI tab, category labels, and smoke test.
 - Memory management API, UI tab, delete control, and smoke test.
+- Local deployment guide covering startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
+- Evidence-selection fast path with latency improvement from `16527.31 ms` average to `5170.94 ms` average on the 5-query baseline.

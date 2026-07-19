@@ -104,9 +104,69 @@ Recommended order for future performance improvements:
 
 Do not optimize by removing verification or answer repair first. Those protect answer quality.
 
-## Evidence Selection Optimization
+## Baseline Before Evidence Fast Path
 
-The first measured baseline showed evidence selection as the slowest stage for the sampled Sora questions. The reason was that every expanded retrieval result was sent to the local LLM evidence judge.
+Latest baseline command:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output var\logs\latency_baseline_report.json
+```
+
+Result:
+
+- sample size: `5` queries,
+- average latency: `16527.31 ms`,
+- p50 latency: `13063.21 ms`,
+- p95 latency: `26323.34 ms`,
+- slowest query: `sora_what_is` at `28980.54 ms`.
+
+Trace timing showed that memory and planning are already cheap. Most time is in the retrieval action:
+
+- evidence selection: about `7.7s` to `10.9s` per sampled query,
+- answer generation: about `4.1s` to `11.1s`,
+- retrieval search: normally below `300ms`, except first-run model/cache overhead.
+
+This baseline made evidence-selection LLM work the first optimization target.
+
+## After Evidence Fast Path
+
+Latest command:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output var\logs\latency_evidence_fast_path_report.json
+```
+
+Result:
+
+- sample size: `5` queries,
+- average latency: `5170.94 ms`,
+- p50 latency: `3801.24 ms`,
+- p95 latency: `8643.61 ms`,
+- slowest query: `sora_what_is` at `9353.06 ms`.
+
+Quality gate after the change:
+
+```powershell
+venv\Scripts\python.exe scripts\run_regression.py --full --output var\logs\rag_quality_evidence_fast_path_report.json
+```
+
+Result:
+
+- average RAG quality: `9.47/10`,
+- passed: `44/45`,
+- full regression passed the configured gate.
+
+Trace timing after the change:
+
+- evidence selection: about `1.75ms` to `2.45ms`,
+- answer generation: about `2.99s` to `5.58s`,
+- first-query retrieval/model warmup can still be several seconds.
+
+Next optimization target: reduce answer-generation latency and first-query retrieval/model warmup without reducing answer quality.
+
+## Existing Evidence Selection Optimization
+
+An earlier baseline showed evidence selection as the slowest stage for sampled Sora questions. The first fix added a deterministic prefilter so every expanded retrieval result is not sent to the local LLM evidence judge.
 
 The current evidence judge now uses a deterministic prefilter before LLM judging:
 
@@ -115,11 +175,11 @@ The current evidence judge now uses a deterministic prefilter before LLM judging
 - send only the best candidates to the LLM judge,
 - fall back to deterministic evidence ranking if the LLM judge selects nothing.
 
-This keeps answer verification and repair intact while reducing unnecessary LLM calls.
+The current evidence judge also has a high-confidence deterministic fast path for supported answer shapes such as definition, list/feature, limitation, how/mechanism, why/explanation, and usage questions. If deterministic signals are not strong enough, it falls back to the LLM judge.
 
-## Answer Generation Optimization
+## Existing Answer Generation Optimization
 
-After evidence selection was optimized, the next slowest stage was answer generation. The answer path now avoids two common sources of extra latency:
+Answer generation is also a major cost. The answer path already avoids two common sources of extra latency:
 
 - deterministic evidence facts are built before the retrieval prompt,
 - LLM fact extraction is used only when deterministic facts are empty or insufficient,

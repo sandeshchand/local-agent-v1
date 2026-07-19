@@ -41,7 +41,7 @@ def make_item(index: int, text: str) -> dict:
 
 def main() -> None:
     chat_client = CountingChatClient()
-    judge = EvidenceJudge(chat_client, max_llm_judgments=6)
+    judge = EvidenceJudge(chat_client, max_llm_judgments=6, enable_fast_path=False)
     results = [
         make_item(index, f"General background about video generation item {index}.")
         for index in range(12)
@@ -64,6 +64,32 @@ def main() -> None:
     assert len(judgments) == 6
     assert "chunk-10" in judged_ids
     assert "chunk-10" in selected_ids
+
+    fast_chat_client = CountingChatClient()
+    fast_judge = EvidenceJudge(fast_chat_client, max_llm_judgments=6)
+    fast_results = [
+        make_item(1, "AlphaTool overview and related background."),
+        make_item(
+            2,
+            "AlphaTool key features include monitoring pipelines, restarting jobs, and showing resource metrics.",
+        ),
+        make_item(
+            3,
+            "AlphaTool also helps teams inspect logs and review failed tasks from one interface.",
+        ),
+        make_item(4, "A general introduction to unrelated automation platforms."),
+    ]
+
+    fast_selected, fast_judgments = fast_judge.select_evidence(
+        "What are the key features of AlphaTool?",
+        fast_results,
+        max_items=3,
+    )
+
+    assert fast_chat_client.calls == 0
+    assert fast_judgments
+    assert any("fast path" in judgment.reason for judgment in fast_judgments)
+    assert any("monitoring pipelines" in item["text"] for item in fast_selected)
 
     print("Evidence prefilter smoke test passed.")
 

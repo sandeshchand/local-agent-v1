@@ -23,9 +23,15 @@ class JudgedEvidence:
 
 
 class EvidenceJudge:
-    def __init__(self, chat_client, max_llm_judgments: int = 10) -> None:
+    def __init__(
+        self,
+        chat_client,
+        max_llm_judgments: int = 10,
+        enable_fast_path: bool = True,
+    ) -> None:
         self.chat_client = chat_client
         self.max_llm_judgments = max(1, max_llm_judgments)
+        self.enable_fast_path = enable_fast_path
 
     def judge_chunk(self, query: str, item: dict) -> JudgedEvidence:
         text = (item.get("text") or "")[:1200]
@@ -114,6 +120,15 @@ Return only valid JSON:
             max_items=max_items,
         )
 
+        if self.enable_fast_path:
+            fast_selected, fast_judgments = self._high_confidence_selection(
+                query=query,
+                results=judge_candidates,
+                max_items=max_items,
+            )
+            if fast_selected:
+                return fast_selected, fast_judgments
+
         for item in judge_candidates:
             judgments.append(self.judge_chunk(query, item))
 
@@ -147,6 +162,228 @@ Return only valid JSON:
             selected = self._heuristic_fallback(query, results, max_items=max_items)
 
         return selected, judgments
+
+    def _high_confidence_selection(
+        self,
+        query: str,
+        results: list[dict],
+        max_items: int,
+    ) -> tuple[list[dict], list[JudgedEvidence]]:
+        shape = self._fast_path_shape(query)
+        if not shape or not results:
+            return [], []
+
+        query_terms = self._query_terms(query)
+        intent_terms = self._intent_terms(query.lower())
+        scored: list[tuple[float, int, dict, EvidenceLabel, str]] = []
+
+        for index, item in enumerate(results):
+            evidence_text = self._evidence_text(item)
+            overlap = self._query_overlap_count(query, item)
+            intent_hits = sum(1 for term in intent_terms if term in evidence_text)
+            directness = self._directness_score(shape, evidence_text)
+            relevance = self._relevance_score(query, item)
+
+            if query_terms and overlap == 0 and intent_hits < 2:
+                continue
+            if directness <= 0 and intent_hits < 2:
+                continue
+
+            score = float(relevance)
+            score += float(directness * 3)
+            score += float(intent_hits * 2)
+            score += float(overlap * 2)
+            score += min(8.0, float(item.get("reranker_score") or 0.0) * 2)
+            score += min(6.0, float(item.get("hybrid_score") or item.get("score") or 0.0) * 20)
+            if self._is_speculative_or_secondary(evidence_text):
+                score -= 4
+
+            label: EvidenceLabel = "SUPPORTING_DETAIL"
+            if shape == "definition" and directness >= 6:
+                label = "DEFINITIVE"
+            elif directness >= 4 or relevance >= 8:
+                label = "MAIN_ANSWER"
+
+            threshold = self._fast_path_threshold(shape)
+            if score >= threshold:
+                scored.append((score, -index, item, label, f"{shape}; score={round(score, 2)}"))
+
+        if not scored:
+            return [], []
+
+        scored.sort(reverse=True, key=lambda row: (row[0], row[1]))
+        top_score = scored[0][0]
+        min_score = max(self._fast_path_threshold(shape), top_score * 0.45)
+
+        selected: list[dict] = []
+        judgments: list[JudgedEvidence] = []
+        seen_keys: set[str] = set()
+
+        for score, _, item, label, reason in scored:
+            if score < min_score and len(selected) >= min(3, max_items):
+                continue
+            key = self._item_key(item)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            selected.append(item)
+            judgments.append(
+                JudgedEvidence(
+                    item=item,
+                    label=label,
+                    reason=f"High-confidence deterministic evidence fast path: {reason}.",
+                )
+            )
+            if len(selected) >= max_items:
+                break
+
+        if not self._fast_path_is_sufficient(shape, selected, query):
+            return [], []
+
+        selected.sort(key=lambda item: self._relevance_score(query, item), reverse=True)
+        return selected[:max_items], judgments
+
+    def _fast_path_shape(self, query: str) -> str:
+        q = query.lower().strip()
+        if any(phrase in q for phrase in ["compare", "across documents", "both papers", "each document"]):
+            return ""
+        if q.startswith("what is") or q.startswith("define ") or "definition of" in q:
+            return "definition"
+        if any(term in q for term in ["limitation", "limitations", "challenge", "risk", "weakness", "constraint"]):
+            return "limitation"
+        if any(term in q for term in ["feature", "features", "capability", "capabilities", "approaches", "types", "kinds", "steps", "setup"]):
+            return "list"
+        if q.startswith("how"):
+            return "mechanism"
+        if q.startswith("why"):
+            return "explanation"
+        if any(term in q for term in ["used for", "useful for", "purpose"]):
+            return "usage"
+        return ""
+
+    def _fast_path_threshold(self, shape: str) -> float:
+        return {
+            "definition": 14.0,
+            "limitation": 13.0,
+            "list": 13.0,
+            "mechanism": 14.0,
+            "explanation": 14.0,
+            "usage": 13.0,
+        }.get(shape, 99.0)
+
+    def _fast_path_is_sufficient(self, shape: str, selected: list[dict], query: str) -> bool:
+        if not selected:
+            return False
+        if shape == "definition":
+            return any(self._directness_score(shape, self._evidence_text(item)) >= 2 for item in selected)
+        if shape in {"list", "limitation"}:
+            if len(selected) >= 2:
+                return True
+            evidence_text = self._evidence_text(selected[0])
+            return self._directness_score(shape, evidence_text) >= 3
+        if shape in {"mechanism", "explanation", "usage"}:
+            evidence_text = " ".join(self._evidence_text(item) for item in selected[:2])
+            intent_hits = sum(1 for term in self._intent_terms(query.lower()) if term in evidence_text)
+            return intent_hits >= 2 or self._directness_score(shape, evidence_text) >= 5
+        return False
+
+    def _directness_score(self, shape: str, evidence_text: str) -> int:
+        markers_by_shape = {
+            "definition": [
+                " is a ",
+                " is an ",
+                " are a ",
+                " are an ",
+                " refers to ",
+                " means ",
+                " known as ",
+                " called ",
+                " defined as ",
+                " released by ",
+                " released in ",
+            ],
+            "limitation": [
+                "limitation",
+                "limitations",
+                "challenge",
+                "challenges",
+                "constraint",
+                "failure",
+                "fails",
+                "struggle",
+                "issue",
+                "risk",
+                "cannot",
+                "does not",
+            ],
+            "list": [
+                "include",
+                "includes",
+                "including",
+                "features include",
+                "key features",
+                "consists of",
+                "types",
+                "steps",
+                "first",
+                "then",
+                "finally",
+                "such as",
+            ],
+            "mechanism": [
+                "using",
+                "uses",
+                "through",
+                "by ",
+                "turn",
+                "convert",
+                "transform",
+                "generate",
+                "process",
+                "pipeline",
+                "model",
+                "input",
+                "output",
+            ],
+            "explanation": [
+                "because",
+                "due to",
+                "therefore",
+                "as a result",
+                "helps",
+                "allows",
+                "enables",
+                "shows",
+                "demonstrates",
+                "capability",
+                "ability",
+            ],
+            "usage": [
+                "used for",
+                "useful for",
+                "helps",
+                "allows",
+                "enables",
+                "purpose",
+                "application",
+                "applications",
+            ],
+        }
+        markers = markers_by_shape.get(shape, [])
+        return sum(1 for marker in markers if marker in evidence_text)
+
+    def _is_speculative_or_secondary(self, evidence_text: str) -> bool:
+        return any(
+            marker in evidence_text
+            for marker in [
+                "we speculate",
+                "may ",
+                "might ",
+                "likely ",
+                "reverse engineering",
+                "possible ",
+            ]
+        )
 
     def _prefilter_judgment_candidates(
         self,
