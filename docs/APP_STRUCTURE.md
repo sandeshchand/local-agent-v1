@@ -16,6 +16,7 @@ Keep these in `src/local_agent/app/`:
 - `cli.py`: command-line interface.
 - `web.py`: FastAPI routes and web entrypoint.
 - `api_models.py`: request/response models for the web API.
+- `tool_audit.py`: read-only audit projection from saved trace/tool steps.
 
 These files are close to application startup, user interfaces, or runtime composition.
 
@@ -37,6 +38,9 @@ src/local_agent/tools/
 src/local_agent/evaluation/
   eval_candidates.py
   eval_runner.py
+
+src/local_agent/operations/
+  runtime_backup.py
 ```
 
 The old mixed app modules were removed after internal imports were updated. New code should import from the new packages directly.
@@ -49,6 +53,7 @@ Use these imports in new code:
 from local_agent.llm import OllamaChatClient, OllamaEmbeddingClient
 from local_agent.tools import ToolRegistry, CurrentWeatherTool
 from local_agent.evaluation.eval_runner import run_candidate_eval
+from local_agent.operations import backup_runtime_state, restore_runtime_state
 ```
 
 Avoid adding new business logic to `app`. If a file is not about startup, CLI, web API, configuration, or dependency wiring, it probably belongs in a domain package.
@@ -62,4 +67,5 @@ This separation makes the system easier to scale:
 - `tools` owns guarded external/local capabilities,
 - `llm` owns model-provider clients,
 - `evaluation` owns quality scoring and eval drafts,
+- `operations` owns operator workflows such as local backup and restore,
 - `app` wires the product together.

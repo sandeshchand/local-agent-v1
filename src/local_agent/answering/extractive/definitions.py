@@ -69,7 +69,7 @@ class DefinitionUsageExtractorMixin:
             anchors = self._entity_anchor_positions(lower, entity_terms)
             for anchor in anchors[:4]:
                 window = self._window_around(text, anchor, before=120, after=760)
-                sentences = self._split_sentences(window)
+                sentences = self._split_definition_sentences(window)
                 selected: list[str] = []
                 for sentence in sentences:
                     sentence_lower = sentence.lower()
@@ -94,7 +94,26 @@ class DefinitionUsageExtractorMixin:
                     )
                     detail_match = bool(selected) and any(
                         marker in sentence_lower
-                        for marker in ["instead of", "interface", "features include", "view", "monitor", "helps", "allows"]
+                        for marker in [
+                            "instead of",
+                            "interface",
+                            "features include",
+                            "view",
+                            "monitor",
+                            "helps",
+                            "allows",
+                            "trained",
+                            "generate",
+                            "creates",
+                            "created",
+                            "can ",
+                            "capable",
+                            "designed",
+                            "developed",
+                            "released",
+                            "supports",
+                            "used for",
+                        ]
                     )
                     if relation_match or class_match or detail_match:
                         selected.append(sentence)
@@ -109,7 +128,27 @@ class DefinitionUsageExtractorMixin:
                 score = self._sentence_relevance_score(excerpt, self._query_terms(query))
                 score += 8 if self._matches_entity_terms(excerpt_lower, entity_terms) else 0
                 score += sum(4 for marker in [" is ", " are ", "refers to", "means"] if marker in excerpt_lower)
-                score += sum(2 for marker in ["tool", "interface", "helps", "allows"] if marker in excerpt_lower)
+                score += sum(
+                    4
+                    for marker in [
+                        "model",
+                        "tool",
+                        "library",
+                        "system",
+                        "framework",
+                        "algorithm",
+                        "method",
+                        "platform",
+                        "service",
+                    ]
+                    if marker in excerpt_lower
+                )
+                score += sum(2 for marker in ["interface", "helps", "allows", "released by", "released in", "developed by", "created by", "built by"] if marker in excerpt_lower)
+                flexible_entity = r"\s*[-_]?\s*".join(re.escape(term) for term in entity_terms)
+                if flexible_entity and re.search(rf"\b{flexible_entity}\s+(?:is|are)\s+(?:a|an|the)\b", excerpt_lower):
+                    score += 18
+                if any(marker in excerpt_lower for marker in ["compared to", "distinguished by", "previous video", "previous model"]):
+                    score -= 8
                 candidates.append((score, -index, excerpt))
 
         if not candidates:
@@ -117,6 +156,15 @@ class DefinitionUsageExtractorMixin:
         candidates.sort(reverse=True)
         citation = -candidates[0][1]
         return self._clean_final_answer(f"{candidates[0][2]} [{citation}]")
+    def _split_definition_sentences(self, text: str) -> list[str]:
+        normalized = re.sub(r"\s+", " ", text).strip()
+        sentences: list[str] = []
+        for part in re.split(r"(?<=[.!?])\s+", normalized):
+            part = part.strip()
+            if len(part) <= 40:
+                continue
+            sentences.append(part)
+        return sentences
     def _used_for_extractive_answer(self, query: str, results: list[dict]) -> str:
         q = query.lower()
         if not any(phrase in q for phrase in ["used for", "useful for", "useful"]):

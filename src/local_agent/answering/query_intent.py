@@ -28,8 +28,12 @@ class QueryIntentMixin:
             entity = match.group(1).strip(" '\"“”‘’")
             if entity.lower() in {"the article", "article", "it", "this", "that"}:
                 continue
+            entity_terms = self._entity_terms(entity)
+            if not entity_terms:
+                continue
             if pattern.startswith("(?i)^what\\s+is") or pattern.startswith("(?i)^what\\s+are"):
-                if len(self._entity_terms(entity)) < 2:
+                generic_single_terms = {"thing", "point", "idea", "concept", "topic", "subject"}
+                if len(entity_terms) < 2 and entity_terms[0] in generic_single_terms:
                     continue
             return re.sub(r"\s+", " ", entity)
         return ""

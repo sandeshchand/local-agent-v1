@@ -149,8 +149,8 @@ def diagnose(report: dict[str, Any], threshold: float) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Diagnose RAG eval failures by generic failure category.")
-    parser.add_argument("--report", default="eval/rag_quality_report.json")
-    parser.add_argument("--output", default="eval/rag_failure_diagnosis.json")
+    parser.add_argument("--report", default="var/logs/rag_quality_report.json")
+    parser.add_argument("--output", default="var/logs/rag_failure_diagnosis.json")
     parser.add_argument("--threshold", type=float, default=8.0)
     args = parser.parse_args()
 

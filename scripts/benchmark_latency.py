@@ -147,7 +147,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--output",
-        default="eval/latency_benchmark_report.json",
+        default="var/logs/latency_benchmark_report.json",
         help="JSON report output path.",
     )
     parser.add_argument(

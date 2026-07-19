@@ -8,6 +8,7 @@ There are three useful evaluation layers:
 
 - RAG answer quality eval: checks the final answer, citations, routing, verifier status, and drift.
 - Retrieval eval: checks whether retrieval returned the expected pages and keywords before answer generation.
+- Memory eval: checks multi-turn memory retrieval, preference capture, task-status recall, and sensitive-text redaction.
 - Regression runner: runs compile checks, smoke tests, and a focused RAG quality gate before commits.
 
 ## Gold QA File
@@ -66,7 +67,7 @@ planner -> document router -> retrieval -> evidence judge -> answer service -> v
 Run the full eval:
 
 ```cmd
-venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output var\logs\rag_quality_report.json
 ```
 
 Run selected items:
@@ -118,9 +119,9 @@ eval/
 Examples:
 
 ```text
-eval/rag_quality_report.json
-eval/rag_quality_batch_1_report.json
-eval/rag_quality_regression_report.json
+var/logs/rag_quality_report.json
+var/logs/rag_quality_batch_1_report.json
+var/logs/rag_quality_regression_report.json
 ```
 
 ## Retrieval Eval
@@ -156,6 +157,45 @@ Important retrieval report fields:
 - `routed_docs`
 - `retrieval_query`
 
+## Memory Eval
+
+The memory eval dataset is:
+
+```text
+benchmarks/memory/memory_multi_turn.json
+```
+
+The script is:
+
+```text
+scripts/eval_memory_quality.py
+```
+
+It uses a temporary SQLite database and evaluates the memory layer directly. It does not call the LLM, Qdrant, or PDF retrieval path, so it is fast and deterministic.
+
+The current cases check:
+
+- explicit project-rule capture,
+- short-term follow-up context,
+- user-preference capture,
+- task-status recall for next-step planning,
+- redaction of sensitive-looking short-term text.
+
+Run:
+
+```cmd
+venv\Scripts\python.exe scripts\eval_memory_quality.py --output var\logs\memory_quality_report.json --fail-under-average 9 --fail-under-item 9
+```
+
+Memory scoring is out of 10:
+
+- `5.0` required memory content from `must_include`.
+- `2.0` safety score from `must_not_include`.
+- `2.0` memory kind correctness from required and forbidden kinds.
+- `1.0` expected memory-context sections.
+
+Memory eval is separate from RAG eval. Memory can guide preferences and process, but PDF factual answers must still come from retrieved document chunks and citations.
+
 ## Regression Runner
 
 The standard command is:
@@ -168,6 +208,7 @@ It runs:
 
 - Python compile checks,
 - memory smoke,
+- memory eval smoke,
 - SQLite threading smoke,
 - document library smoke,
 - feedback/eval candidate smoke tests,
@@ -186,7 +227,7 @@ venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 Full RAG benchmark:
 
 ```cmd
-venv\Scripts\python.exe scripts\run_regression.py --full --output eval\rag_quality_report.json
+venv\Scripts\python.exe scripts\run_regression.py --full --output var\logs\rag_quality_report.json
 ```
 
 ## How We Use Eval Results

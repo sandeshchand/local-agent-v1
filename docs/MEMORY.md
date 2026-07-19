@@ -20,6 +20,8 @@ conversation_turns
 
 It is used to keep local chat continuity, such as what the user just asked or what the assistant just answered.
 
+Short-term memory redacts sensitive-looking values before saving conversation turns. This prevents tokens, API keys, emails, phone numbers, and long secret-like strings from being injected into future memory context.
+
 Important methods:
 
 ```python
@@ -102,6 +104,14 @@ This is handled by:
 ```python
 _is_sensitive(text)
 ```
+
+Short-term conversation turns use:
+
+```python
+_redact_sensitive_text(text)
+```
+
+This keeps the recent conversation useful while replacing sensitive values with placeholders such as `[REDACTED_SECRET]`.
 
 ## 5. Relevant Memory Retrieval
 
@@ -215,6 +225,71 @@ It verifies:
 - relevant memory retrieval returns the right project rules
 - formatted memory context contains long-term memory
 
+## 10. Memory Eval
+
+File:
+
+```text
+benchmarks/memory/memory_multi_turn.json
+```
+
+Runner:
+
+```text
+scripts/eval_memory_quality.py
+```
+
+Run:
+
+```cmd
+venv\Scripts\python.exe scripts\eval_memory_quality.py --output var\logs\memory_quality_report.json --fail-under-average 9 --fail-under-item 9
+```
+
+This eval is deterministic and does not call the LLM. It checks:
+
+- project-rule capture,
+- short-term follow-up context,
+- user-preference capture,
+- task-status recall,
+- sensitive short-term redaction.
+
+## 11. Memory UI And API
+
+Files:
+
+```text
+src/local_agent/app/web.py
+src/local_agent/app/api_models.py
+src/local_agent/storage/sqlite_store.py
+templates/index.html
+static/chat.js
+static/style.css
+```
+
+The web UI has a `Memory` workspace tab for long-term memory management.
+
+It supports:
+
+- listing long-term memory records,
+- filtering by session id,
+- including or excluding global memories,
+- deleting stale or wrong long-term memory items.
+
+The API endpoints are:
+
+```text
+GET /api/memory?session_id=default&include_global=true&limit=50
+DELETE /api/memory/{memory_id}
+```
+
+Deleting a memory item removes only that long-term memory row. It does not remove PDF chunks, traces, feedback, eval candidates, or short-term conversation turns.
+
+More UI details are in:
+
+```text
+docs/MEMORY_UI.md
+```
+
 ## Current Design Choice
 
 This implementation uses local SQLite and lexical relevance ranking first.
@@ -223,8 +298,8 @@ That is intentional. It is deterministic, fast, inspectable, and does not add a 
 
 ## Next Improvements
 
-1. Add memory-specific eval tests for multi-turn behavior.
-2. Add an optional vector index for semantic memory retrieval.
-3. Add a small UI panel to inspect/delete memory items.
-4. Add memory decay or archiving for stale task-status items.
-5. Add per-project memory namespaces if the app is used across multiple projects.
+1. Add an optional vector index for semantic memory retrieval.
+2. Add memory decay or archiving for stale task-status items.
+3. Add per-project memory namespaces if the app is used across multiple projects.
+4. Add bulk export/archive controls if memory volume grows.
+5. Expand memory evals when new memory categories are added.

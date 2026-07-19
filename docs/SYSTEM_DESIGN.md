@@ -2,7 +2,7 @@
 
 This document describes the target production structure for the local agentic RAG system.
 
-The current application now uses a production-style `src/local_agent` package layout. Remaining production work is mainly around deployment, backup/restore, health checks, and optional deeper domain refactoring.
+The current application now uses a production-style `src/local_agent` package layout. Remaining production work is mainly around deployment, rollback, monitoring, and optional deeper domain refactoring.
 
 ## Current Layout Diagnosis
 
@@ -28,12 +28,13 @@ What is good:
 - regression and eval scripts exist,
 - latency benchmark and per-trace performance timings exist,
 - local runtime data is mostly ignored by `.gitignore`,
+- local runtime backup and restore tooling exists,
 - the app can be installed with `pip install -e .`.
 
 What should improve:
 
 - web assets are still top-level instead of owned by the web package,
-- deployment, backup, restore, and health-check structure is not formal yet,
+- deployment and rollback structure is not formal yet,
 - a deeper domain refactor could later split `app`, `agent`, and `storage` into clearer `api`, `application`, `infrastructure`, and `tools` packages.
 
 ## Target Production Layout
@@ -54,6 +55,7 @@ local-agent-v1/
       storage/
       tools/
       observability/
+      operations/
   tests/
     unit/
     integration/
@@ -86,6 +88,7 @@ This target layout gives each concern a clear owner:
 - `src/local_agent/llm`: model/provider clients,
 - `src/local_agent/tools`: tool registry, web tools, and MCP-style connectors,
 - `src/local_agent/evaluation`: gold QA scoring, feedback eval candidates, and eval runs,
+- `src/local_agent/operations`: local operational workflows such as runtime backup and restore,
 - `tests`: automated tests only,
 - `benchmarks/gold_qa`: versioned evaluation datasets,
 - `data/raw`: user/source documents,
@@ -144,6 +147,28 @@ user query
 -> tool execution if allowed
 -> answer from tool output
 -> trace saved
+```
+
+System status:
+
+```text
+UI System tab or GET /api/system/status
+-> SQLite health and document count
+-> Qdrant health and collection check
+-> Ollama chat and embedding model availability
+-> tool registry count and approval summary
+-> overall ok/degraded/error status
+```
+
+Runtime backup:
+
+```text
+operator command
+-> load configured runtime paths
+-> SQLite online backup API
+-> copy Qdrant local directory without runtime lock files
+-> write backup metadata
+-> optional inspect or restore command
 ```
 
 ## Packaging Direction
@@ -223,19 +248,22 @@ Status: completed.
 
 ### Phase 4: Separate Runtime State
 
-Status: started.
+Status: completed for local runtime paths and local backup/restore.
 
 - New default SQLite path is `var/sqlite/app.db`.
 - New default Qdrant path is `var/qdrant/`.
 - New web startup log path is `var/logs/`.
 - Keep `.env.example` aligned with these paths.
-- Document backup and restore.
+- Runtime backup and restore are implemented in `src/local_agent/operations/runtime_backup.py`.
+- Operator commands live in `scripts/runtime_state.py`.
+- Detailed instructions live in [docs/BACKUP_RESTORE.md](BACKUP_RESTORE.md).
 
 ### Phase 5: Deployment Shape
 
 - Add `deploy/` with process, environment, and health-check docs.
 - Add deployment-specific config examples.
-- Add production health endpoints for app, SQLite, Qdrant, Ollama, and model availability.
+- Production health endpoints for app, SQLite, Qdrant, Ollama, and model availability are started through `/health` and `/api/system/status`.
+- Add deployment rollback policy and scheduled/off-machine backup policy.
 
 ## Rules For Future Changes
 

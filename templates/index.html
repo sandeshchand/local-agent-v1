@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=16" />
+  <link rel="stylesheet" href="/static/style.css?v=19" />
 </head>
 <body>
   <div class="app-shell">
@@ -92,6 +92,9 @@
         <div class="workspace-tabs" role="tablist" aria-label="Workspace views">
           <button type="button" class="workspace-tab active" data-workspace-tab="trace" aria-selected="true">Trace</button>
           <button type="button" class="workspace-tab" data-workspace-tab="tools" aria-selected="false">Tools</button>
+          <button type="button" class="workspace-tab" data-workspace-tab="audit" aria-selected="false">Audit</button>
+          <button type="button" class="workspace-tab" data-workspace-tab="memory" aria-selected="false">Memory</button>
+          <button type="button" class="workspace-tab" data-workspace-tab="system" aria-selected="false">System</button>
           <button type="button" class="workspace-tab" data-workspace-tab="history" aria-selected="false">History</button>
           <button type="button" class="workspace-tab" data-workspace-tab="feedback" aria-selected="false">Feedback</button>
           <button type="button" class="workspace-tab" data-workspace-tab="evals" aria-selected="false">Evals</button>
@@ -159,6 +162,52 @@
           </section>
         </div>
 
+        <div class="workspace-tab-panel" data-workspace-panel="audit">
+          <section class="trace-shell tool-audit-shell">
+            <div class="trace-panel-header compact">
+              <h2>Tool Audit</h2>
+              <button id="refresh-tool-audit-btn" type="button" class="secondary-btn">Refresh</button>
+            </div>
+            <div id="tool-audit-summary" class="tool-audit-summary muted">Loading tool audit...</div>
+            <div id="tool-audit-list" class="tool-audit-list"></div>
+          </section>
+        </div>
+
+        <div class="workspace-tab-panel" data-workspace-panel="memory">
+          <section class="trace-shell memory-shell">
+            <div class="trace-panel-header compact">
+              <h2>Memory</h2>
+              <button id="refresh-memory-btn" type="button" class="secondary-btn">Refresh</button>
+            </div>
+            <div class="memory-controls">
+              <input
+                id="memory-session-id"
+                class="compact-input"
+                type="text"
+                value="default"
+                aria-label="Memory session id"
+              />
+              <label class="memory-checkbox">
+                <input id="memory-include-global" type="checkbox" checked />
+                <span>Global</span>
+              </label>
+            </div>
+            <div id="memory-summary" class="memory-summary muted">Loading memory...</div>
+            <div id="memory-list" class="memory-list"></div>
+          </section>
+        </div>
+
+        <div class="workspace-tab-panel" data-workspace-panel="system">
+          <section class="trace-shell system-status-shell">
+            <div class="trace-panel-header compact">
+              <h2>System</h2>
+              <button id="refresh-system-btn" type="button" class="secondary-btn">Refresh</button>
+            </div>
+            <div id="system-summary" class="system-summary muted">Loading system status...</div>
+            <div id="system-components" class="system-components"></div>
+          </section>
+        </div>
+
         <div class="workspace-tab-panel" data-workspace-panel="history">
           <section class="trace-shell recent-traces-shell">
             <div class="trace-panel-header compact">
@@ -204,6 +253,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=16"></script>
+  <script src="/static/chat.js?v=19"></script>
 </body>
 </html>

@@ -18,7 +18,12 @@ The project has strong local foundations:
 - MCP-style read-only local connectors,
 - feedback capture,
 - repeatable evaluation,
-- trace visibility.
+- memory-specific multi-turn evaluation,
+- memory management UI/API,
+- trace visibility,
+- tool-audit visibility,
+- system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools,
+- local backup and restore tooling for SQLite and Qdrant runtime state.
 
 The project is ready for serious local iteration and controlled demos. It still needs deployment, security, monitoring, and broader benchmark coverage before production use.
 
@@ -50,7 +55,7 @@ Data ingestion
 - Add ingestion status tracking for each document.
 - Record parser version and chunking version for each indexed document.
 - Add safe reingestion workflow for changed PDFs.
-- Add backup and restore process for `var/sqlite/app.db` and `var/qdrant/`.
+- Keep the local backup and restore process tested for `var/sqlite/app.db` and `var/qdrant/`.
 
 ### Repository Structure
 
@@ -95,8 +100,8 @@ Data ingestion
 
 - Keep memory as guidance, not evidence.
 - Continue filtering sensitive text before storing memory.
-- Add memory-specific multi-turn eval tests.
-- Add UI controls to inspect and delete long-term memory.
+- Keep memory-specific multi-turn eval tests passing.
+- Keep UI controls for inspecting and deleting long-term memory.
 - Consider semantic memory retrieval only after lexical behavior is stable.
 
 ### UI And Product Experience
@@ -104,7 +109,7 @@ Data ingestion
 - Keep answer, sources, trace, tools, and feedback visible without crowding.
 - Make failure states clear and actionable.
 - Keep eval drafts and feedback review understandable to non-engineers.
-- Add admin-style views for evaluation reports and system health.
+- Keep admin-style views for evaluation reports and system health understandable and actionable.
 
 ### Security And Privacy
 
@@ -117,10 +122,10 @@ Data ingestion
 ### Deployment And Operations
 
 - Add a deployment plan: local service, container, or managed host.
-- Add health checks for web, SQLite, Qdrant, Ollama, and model availability.
+- Keep health checks for web, SQLite, Qdrant, Ollama, and model availability visible in the UI/API.
 - Add monitoring for latency, failed retrievals, failed tool calls, and eval regressions.
 - Add process control so only one local Qdrant path owner runs at a time.
-- Add backup, restore, and rollback instructions.
+- Keep backup and restore instructions current, and add rollback instructions for deployed environments.
 
 ## Minimum Production Gate
 
@@ -128,7 +133,7 @@ Before calling this production-ready, the project should pass:
 
 ```powershell
 venv\Scripts\python.exe scripts\run_regression.py
-venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output var\logs\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
 It should also have:
@@ -142,9 +147,15 @@ It should also have:
 
 ## Near-Term Priorities
 
-1. Add memory-specific multi-turn eval tests.
-2. Add a production deployment document.
-3. Add backup and restore instructions.
-4. Add health-check and system-status UI/API endpoints.
-5. Add broader gold QA for new daily PDFs.
-6. Add stronger tool approval audit views.
+1. Add a production deployment document.
+2. Run full RAG and latency baselines after the latest UI/API additions.
+3. Add broader gold QA for new daily PDFs.
+4. Add scheduled/off-machine backup policy for deployed environments.
+
+Completed from this list:
+
+- Health-check and system-status UI/API endpoints.
+- Local SQLite and Qdrant backup/restore script, smoke test, and documentation.
+- Memory multi-turn eval, benchmark cases, smoke test, and short-term redaction.
+- Tool audit API, UI tab, category labels, and smoke test.
+- Memory management API, UI tab, delete control, and smoke test.

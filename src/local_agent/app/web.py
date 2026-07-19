@@ -26,6 +26,11 @@ from local_agent.app.api_models import (
     IngestFileResult,
     IngestPathRequest,
     IngestPathResponse,
+    MemoryDeleteResponse,
+    MemoryItem,
+    MemoryListResponse,
+    SystemStatusResponse,
+    ToolAuditResponse,
     TraceDetail,
     TraceFeedbackItem,
     TraceFeedbackRequest,
@@ -44,6 +49,8 @@ from local_agent.evaluation.eval_candidates import (
 )
 from local_agent.evaluation.eval_runner import load_gold_eval_item, run_candidate_eval
 from local_agent.app.paths import EVAL_CANDIDATES_PATH, EVAL_OUTPUT_DIR, GOLD_EVAL_PATH, STATIC_DIR, TEMPLATES_DIR
+from local_agent.app.system_status import build_system_status
+from local_agent.app.tool_audit import build_tool_audit
 from local_agent.ingestion.file_loader import discover_pdf_files
 from local_agent.ingestion.pipeline import IngestionPipeline
 from local_agent.storage.sqlite_store import SQLiteStore
@@ -161,10 +168,27 @@ def health():
     return HealthResponse(status="ok")
 
 
+@app.get("/api/system/status", response_model=SystemStatusResponse)
+def system_status(check_models: bool = True):
+    return SystemStatusResponse(**build_system_status(get_deps(), check_models=check_models))
+
+
 @app.get("/api/tools", response_model=list[ToolItem])
 def list_tools():
     tools = get_deps().tool_registry.list_tools()
     return [ToolItem(**tool.model_dump()) for tool in tools]
+
+
+@app.get("/api/tools/audit", response_model=ToolAuditResponse)
+def tool_audit(limit: int = 50):
+    bounded_limit = min(max(limit, 1), 200)
+    return ToolAuditResponse(
+        **build_tool_audit(
+            get_sqlite_store(),
+            get_deps().tool_registry,
+            limit=bounded_limit,
+        )
+    )
 
 
 @app.get("/api/documents", response_model=list[DocumentItem])
@@ -196,6 +220,35 @@ def list_library_documents(
         query=query,
         items=[DocumentItem(**doc) for doc in docs],
     )
+
+
+@app.get("/api/memory", response_model=MemoryListResponse)
+def list_memory(
+    session_id: str = "default",
+    include_global: bool = True,
+    limit: int = 50,
+):
+    bounded_limit = min(max(limit, 1), 200)
+    normalized_session_id = session_id.strip() or "default"
+    rows = get_sqlite_store().list_memory_items(
+        session_id=normalized_session_id,
+        include_global=include_global,
+        limit=bounded_limit,
+    )
+    return MemoryListResponse(
+        total=len(rows),
+        session_id=normalized_session_id,
+        include_global=include_global,
+        items=[MemoryItem(**row) for row in rows],
+    )
+
+
+@app.delete("/api/memory/{memory_id}", response_model=MemoryDeleteResponse)
+def delete_memory(memory_id: int):
+    row = get_sqlite_store().delete_memory_item(memory_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Memory item {memory_id} not found.")
+    return MemoryDeleteResponse(deleted=True, item=MemoryItem(**row))
 
 
 @app.get("/api/traces", response_model=list[TraceSummary])

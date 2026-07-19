@@ -199,8 +199,8 @@ From the UI:
 From eval reports:
 
 ```text
-eval/rag_quality_report.json
-eval/rag_quality_batch_1_report.json
+var/logs/rag_quality_report.json
+var/logs/rag_quality_batch_1_report.json
 ```
 
 Look at:

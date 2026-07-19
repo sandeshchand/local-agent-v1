@@ -83,14 +83,14 @@ class MemoryManager:
         self.sqlite_store.insert_conversation_turn(
             session_id=session_id,
             role="user",
-            content=content,
+            content=self._redact_sensitive_text(content),
         )
 
     def save_assistant_turn(self, session_id: str, content: str) -> None:
         self.sqlite_store.insert_conversation_turn(
             session_id=session_id,
             role="assistant",
-            content=content,
+            content=self._redact_sensitive_text(content),
         )
 
     def remember(
@@ -332,3 +332,32 @@ class MemoryManager:
         if re.search(r"\b[A-Fa-f0-9]{32,}\b", text):
             return True
         return False
+
+    def _redact_sensitive_text(self, text: str) -> str:
+        redacted = text
+        redacted = re.sub(
+            r"\b(?:sk|pk|ghp|gho|hf)_[A-Za-z0-9_=-]{8,}\b",
+            "[REDACTED_SECRET]",
+            redacted,
+        )
+        redacted = re.sub(
+            r"(?i)\b(api key|apikey|token|password|secret|private key)\s*(?:is|=|:)\s*\S+",
+            r"\1 is [REDACTED_SECRET]",
+            redacted,
+        )
+        redacted = re.sub(
+            r"\b[A-Fa-f0-9]{32,}\b",
+            "[REDACTED_SECRET]",
+            redacted,
+        )
+        redacted = re.sub(
+            r"\b[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}\b",
+            "[REDACTED_EMAIL]",
+            redacted,
+        )
+        redacted = re.sub(
+            r"\b(?:\+?\d[\s-]?){9,}\b",
+            "[REDACTED_PHONE]",
+            redacted,
+        )
+        return redacted

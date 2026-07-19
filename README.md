@@ -13,12 +13,13 @@ This repo is not treated as a toy demo. The engineering target is a production-r
 - Document routing to reduce wrong-document answers in large collections.
 - Evidence-grounded answer generation with citations.
 - Answer verification, repair, and retrieval retry when quality fails.
-- Short-term conversation memory and long-term project/user memory.
+- Short-term conversation memory and long-term project/user memory with UI management.
 - Tool-call guardrails with `allow`, `deny`, and `needs_approval`.
 - MCP-style read-only File and SQLite connectors.
 - Read-only weather tool for current weather questions.
-- Web UI with trace view, source inspection, feedback, eval drafts, and tool visibility.
+- Web UI with trace view, source inspection, feedback, eval drafts, tool visibility, tool audit, and system status.
 - Gold QA evaluation and regression commands for quality control.
+- Runtime backup and restore tooling for local SQLite and Qdrant state.
 
 ## Architecture
 
@@ -163,16 +164,22 @@ Run compile and smoke checks only:
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```
 
+Run the memory quality benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\eval_memory_quality.py --output var\logs\memory_quality_report.json --fail-under-average 9 --fail-under-item 9
+```
+
 Run the full RAG benchmark:
 
 ```powershell
-venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output eval\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output var\logs\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
 Run a quick latency benchmark:
 
 ```powershell
-venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output eval\latency_benchmark_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output var\logs\latency_benchmark_report.json
 ```
 
 Quality rules:
@@ -195,7 +202,31 @@ local-agent ask --query "What is the current weather in Berlin?"
 local-agent list-memory
 ```
 
+Useful health endpoints:
+
+```text
+GET /health
+GET /api/system/status
+GET /api/system/status?check_models=false
+```
+
+The web UI also has a `System` workspace tab for SQLite, Qdrant, Ollama model, embedding model, and tool-registry status.
+
 Reset the local index only when parsing, chunking, or storage is inconsistent. See [docs/CHUNKING.md](docs/CHUNKING.md) and [docs/REGRESSION.md](docs/REGRESSION.md) before resetting.
+
+Back up local runtime state before large ingest, parser, chunking, or storage changes:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py --env-file .env backup
+```
+
+Restore from a backup only after stopping the web server:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py --env-file .env restore --backup-path var\backups\local_agent_backup_YYYYMMDD_HHMMSS --force
+```
+
+Detailed steps: [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md)
 
 ## Production Readiness
 
@@ -207,14 +238,18 @@ Already implemented:
 - feedback collection,
 - answer verification and repair,
 - guarded tool execution,
+- tool audit API and UI panel,
+- memory management API and UI panel,
 - read-only local file/database connectors,
+- system health/status endpoint and UI panel,
+- local runtime backup and restore tooling,
 - documented architecture and subsystem behavior.
 
 Required before real production use:
 
 - authentication and user/session isolation,
 - secrets management outside `.env` for deployed environments,
-- backup and restore plan for SQLite and Qdrant data,
+- scheduled off-machine backups and deployment rollback policy,
 - deployment/container strategy,
 - monitoring and alerting,
 - stronger permission model for any future write/delete tools,
@@ -243,15 +278,18 @@ Retrieval and answers:
 Tools, guardrails, and memory:
 
 - [docs/GUARDRAILS.md](docs/GUARDRAILS.md)
+- [docs/TOOL_AUDIT.md](docs/TOOL_AUDIT.md)
 - [docs/MCP.md](docs/MCP.md)
 - [docs/WEB_TOOLS.md](docs/WEB_TOOLS.md)
 - [docs/MEMORY.md](docs/MEMORY.md)
+- [docs/MEMORY_UI.md](docs/MEMORY_UI.md)
 
 Evaluation, UI, and roadmap:
 
 - [docs/EVALUATION.md](docs/EVALUATION.md)
 - [docs/REGRESSION.md](docs/REGRESSION.md)
 - [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
+- [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md)
 - [docs/UI_TRACE_VIEW.md](docs/UI_TRACE_VIEW.md)
 - [docs/FEEDBACK_ANALYTICS.md](docs/FEEDBACK_ANALYTICS.md)
 - [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
