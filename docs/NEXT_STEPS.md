@@ -29,25 +29,29 @@ Implemented:
 - System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
 - Runtime backup and restore for local SQLite and Qdrant state.
 - Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
+- Answer-generation fast path for high-confidence citation-backed extractive answers.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
-## 1. Optimize Answer Generation Latency
+## 1. Optimize First-Query Retrieval/Model Warmup
 
-Goal: reduce the new largest latency stage without weakening answer quality.
+Goal: reduce the remaining slow first query without weakening answer quality.
 
-Evidence selection has already been optimized with a safe high-confidence fast path:
+Evidence selection and answer generation have already been optimized with safe high-confidence fast paths:
 
 - average latency improved from `16527.31 ms` to `5170.94 ms`,
-- p95 latency improved from `26323.34 ms` to `8643.61 ms`,
+- answer fast path improved the latest 5-query average to `2208.78 ms`,
+- p50 latency improved to `237.74 ms`,
 - evidence selection dropped to about `1.75ms` to `2.45ms`,
-- full RAG quality passed at `9.47/10`.
+- fast-path answer generation is about `6ms` to `20ms` on the sampled high-confidence questions,
+- full RAG quality passed at `9.39/10`.
 
-Next change should inspect answer-generation prompts and context size. Good candidates:
+Next change should inspect first-query retrieval and model warmup. Good candidates:
 
-- skip LLM answer generation when a deterministic extractive answer is already complete,
-- reduce prompt context for simple definition/list questions,
-- keep citations and verifier intact,
-- re-run full RAG quality after any answer-generation shortcut.
+- warm reranker/model components at startup or benchmark start,
+- cache repeated document-routing or query-embedding work,
+- inspect why `sora_what_is` still spends several seconds in retrieval/model warmup,
+- keep citations, verification, and repair intact,
+- re-run full RAG quality after any retrieval/warmup shortcut.
 
 ## 2. Optimize One Slow Stage
 

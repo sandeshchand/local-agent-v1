@@ -162,7 +162,44 @@ Trace timing after the change:
 - answer generation: about `2.99s` to `5.58s`,
 - first-query retrieval/model warmup can still be several seconds.
 
-Next optimization target: reduce answer-generation latency and first-query retrieval/model warmup without reducing answer quality.
+This made answer generation the next optimization target.
+
+## After Answer Generation Fast Path
+
+Latest command:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output var\logs\latency_answer_generation_fast_path_final_report.json
+```
+
+Result:
+
+- sample size: `5` queries,
+- average latency: `2208.78 ms`,
+- p50 latency: `237.74 ms`,
+- p95 latency: `8155.22 ms`,
+- slowest query: `sora_what_is` at `10132.03 ms`.
+
+Quality gate after the change:
+
+```powershell
+venv\Scripts\python.exe scripts\run_regression.py --full --output var\logs\rag_quality_answer_generation_fast_path_final2_report.json
+```
+
+Result:
+
+- average RAG quality: `9.39/10`,
+- passed: `44/45` at `>= 8/10`,
+- no item fell below the configured `7/10` item gate,
+- full regression passed.
+
+Trace timing after the change:
+
+- evidence selection: about `1.85ms` to `2.94ms`,
+- fast-path answer generation for four sampled Sora questions: about `6.78ms` to `19.99ms`,
+- `sora_what_is` still uses normal LLM generation and first-query retrieval/model warmup.
+
+Next optimization target: reduce first-query retrieval/model warmup and improve the remaining definition path without reducing answer quality.
 
 ## Existing Evidence Selection Optimization
 
@@ -181,6 +218,7 @@ The current evidence judge also has a high-confidence deterministic fast path fo
 
 Answer generation is also a major cost. The answer path already avoids two common sources of extra latency:
 
+- high-confidence extractive answers can return before LLM generation,
 - deterministic evidence facts are built before the retrieval prompt,
 - LLM fact extraction is used only when deterministic facts are empty or insufficient,
 - focused rewrite is skipped when the first generated answer is already cited, focused, specific enough, and free of raw context leakage,

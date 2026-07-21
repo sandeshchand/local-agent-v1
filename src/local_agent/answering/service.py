@@ -34,6 +34,15 @@ class AnswerService(
         tool_context: str = "",
     ) -> str:
         results = self._single_source_results(query, results)
+        fast_answer = self._extractive_fast_path_answer(
+            query=query,
+            results=results,
+            memory_context=memory_context,
+            tool_context=tool_context,
+        )
+        if fast_answer:
+            return fast_answer
+
         prompt = self.build_retrieval_prompt(
             query=query,
             results=results,
@@ -178,6 +187,210 @@ class AnswerService(
             return self._generic_extractive_fallback(query, results)
 
         return self._ensure_focus_entity_mentioned(query, self._clean_final_answer(answer, max_citation=len(results)))
+    def _extractive_fast_path_answer(
+        self,
+        query: str,
+        results: list[dict],
+        memory_context: str = "",
+        tool_context: str = "",
+    ) -> str:
+        if not results or tool_context.strip():
+            return ""
+        if not self._is_extractively_answerable_query(query):
+            return ""
+
+        for candidate in self._extractive_fast_path_candidates(query, results):
+            candidate = self._finalize_extractive_candidate(query, candidate, results)
+            if self._is_high_confidence_extractive_answer(query, candidate, results):
+                return candidate
+        return ""
+    def _is_extractively_answerable_query(self, query: str) -> bool:
+        q = query.lower()
+        return bool(
+            self._definition_query_entity(query)
+            or self._is_list_question(query)
+            or self._is_explanation_question(query)
+            or q.startswith("how")
+            or any(
+                term in q
+                for term in [
+                    "feature",
+                    "features",
+                    "capability",
+                    "capabilities",
+                    "limitation",
+                    "limitations",
+                    "weakness",
+                    "used for",
+                    "useful",
+                    "mean by",
+                    "pipeline",
+                    "formula",
+                    "example",
+                    "setup",
+                    "commands",
+                    "reason",
+                    "main message",
+                    "simulator",
+                    "simulation",
+                    "simulate",
+                ]
+            )
+        )
+    def _extractive_fast_path_candidates(self, query: str, results: list[dict]) -> list[str]:
+        candidates: list[str] = []
+
+        source_window_answer = self._source_window_answer(query, results)
+        if source_window_answer:
+            candidates.append(source_window_answer)
+
+        best_practices_answer = self._best_practices_extractive_answer(query, results)
+        if best_practices_answer:
+            candidates.append(best_practices_answer)
+
+        if self._should_use_capability_extractive_answer(query, results):
+            capability_answer = self._capability_extractive_answer(query, results)
+            if capability_answer:
+                candidates.append(capability_answer)
+
+        for builder in [
+            self._limitation_extractive_answer,
+            self._definition_extractive_answer,
+            self._used_for_extractive_answer,
+            self._config_file_purpose_answer,
+            self._meaning_extractive_answer,
+            self._pipeline_extractive_answer,
+            self._challenge_steps_answer,
+            self._command_usefulness_answer,
+            self._example_extractive_answer,
+            self._why_extractive_answer,
+            self._list_extractive_answer,
+            self._mechanism_extractive_answer,
+            self._focused_entity_extractive_answer,
+        ]:
+            candidate = builder(query, results)
+            if candidate:
+                candidates.append(candidate)
+        return candidates
+    def _finalize_extractive_candidate(self, query: str, candidate: str, results: list[dict]) -> str:
+        if not candidate:
+            return ""
+        candidate = self._augment_feature_answer_with_intro(query, candidate, results)
+        candidate = self._clean_final_answer(candidate, max_citation=len(results))
+        return self._ensure_focus_entity_mentioned(query, candidate)
+    def _is_high_confidence_extractive_answer(
+        self,
+        query: str,
+        candidate: str,
+        results: list[dict],
+    ) -> bool:
+        if not candidate or self._is_insufficient_answer(candidate):
+            return False
+        if self._has_raw_context_leak(candidate):
+            return False
+        if self._contains_unrequested_code(candidate, query):
+            return False
+        if self._is_practice_challenge_query(query) and not self._has_practice_challenge_coverage(candidate):
+            return False
+        if self._looks_unfocused(query, candidate):
+            return False
+        if self._misses_intent_shape(query, candidate):
+            return False
+        if self._answer_misses_focus_phrase(query, candidate):
+            return False
+        citation_numbers = [int(match) for match in re.findall(r"\[(\d+)\]", candidate)]
+        if not citation_numbers:
+            return False
+        if any(number < 1 or number > len(results) for number in citation_numbers):
+            return False
+
+        is_command_query = self._is_command_or_server_query(query)
+        if is_command_query and not self._has_command_answer_coverage(candidate):
+            return False
+
+        candidate_lower = candidate.lower()
+        query_terms = self._query_terms(query)
+        distinctive_query_terms = {
+            term
+            for term in query_terms
+            if len(term) >= 4 and term not in {"document", "article", "paper"}
+        }
+        if distinctive_query_terms and not any(term in candidate_lower for term in distinctive_query_terms):
+            focus_phrases = self._focus_phrases(query)
+            if not focus_phrases or self._focus_phrase_score(candidate, focus_phrases) == 0:
+                return False
+
+        if self._looks_under_specific(candidate, results) and not is_command_query:
+            return False
+
+        word_count = len(re.findall(r"\b\w+\b", candidate))
+        if self._is_list_question(query):
+            return len(citation_numbers) >= 1 and word_count >= 14
+        if self._is_explanation_question(query) or query.lower().startswith("how"):
+            return word_count >= 18
+        return word_count >= 8
+    def _contains_unrequested_code(self, candidate: str, query: str) -> bool:
+        if self._should_keep_code_fact(query, candidate):
+            return False
+        for sentence in self._split_sentences(candidate):
+            if self._looks_like_code_or_metadata_fact(sentence) and not self._should_keep_code_fact(query, sentence):
+                return True
+        code_markers = [
+            "import ",
+            "plt.",
+            "np.",
+            "sklearn",
+            "random_state",
+            "fit_predict",
+            "xlabel",
+            "ylabel",
+            "show()",
+        ]
+        candidate_lower = candidate.lower()
+        return sum(1 for marker in code_markers if marker in candidate_lower) >= 2
+    def _is_command_or_server_query(self, query: str) -> bool:
+        q = query.lower()
+        return any(term in q for term in ["command", "setup", "install", "run", "start", "server"])
+    def _has_command_answer_coverage(self, candidate: str) -> bool:
+        candidate_lower = candidate.lower()
+        has_command = bool(
+            re.search(
+                r"\b(?:python\s+-m\s+[-\w.]+(?:\s+\d+)?|docker\s+run\b|pip\s+install\b|uv\s+run\b|npm\s+install\b|brew\s+install\b)",
+                candidate,
+                flags=re.IGNORECASE,
+            )
+        )
+        utility_markers = [
+            "useful",
+            "test",
+            "web application",
+            "web server",
+            "http server",
+            "share",
+            "local network",
+            "browser",
+            "localhost",
+        ]
+        return has_command and sum(1 for marker in utility_markers if marker in candidate_lower) >= 2
+    def _is_practice_challenge_query(self, query: str) -> bool:
+        return bool(
+            re.search(
+                r"\b\d+\s*[- ]?\s*day\s+[^?]*challenge\b|\bpractice\w*\s+[^?]*challenge\b",
+                query.lower(),
+            )
+        )
+    def _has_practice_challenge_coverage(self, candidate: str) -> bool:
+        candidate_lower = candidate.lower()
+        has_day_steps = bool(re.search(r"\bday(?:s)?\s+\d", candidate_lower))
+        practice_markers = [
+            "practice",
+            "mirror",
+            "friend",
+            "feedback",
+            "real life",
+        ]
+        marker_hits = sum(1 for marker in practice_markers if marker in candidate_lower)
+        return has_day_steps and marker_hits >= 2
     def repair_answer(
         self,
         query: str,

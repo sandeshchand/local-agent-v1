@@ -34,7 +34,7 @@ def main() -> None:
     ]
 
     answer = service.answer_from_context(
-        "What are the key features of LazyDocker?",
+        "Summarize this Docker document.",
         results,
     )
 
@@ -43,6 +43,18 @@ def main() -> None:
     assert "terminal UI" in answer
     assert "logs" in answer
     assert "[1]" in answer
+
+    fast_chat_client = CountingChatClient()
+    fast_service = AnswerService(chat_client=fast_chat_client)
+    fast_answer = fast_service.answer_from_context(
+        "What are the key features of LazyDocker?",
+        results,
+    )
+
+    assert fast_chat_client.calls == 0
+    assert "LazyDocker" in fast_answer
+    assert "logs" in fast_answer
+    assert "[1]" in fast_answer
 
     print("Answer generation budget smoke test passed.")
 
