@@ -29,35 +29,45 @@ Implemented:
 - System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
 - Runtime backup and restore for local SQLite and Qdrant state.
 - Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
+- Answer-generation fast path for high-confidence citation-backed extractive answers.
+- Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
+- Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
+- Narrow low-value social/article metadata filtering so valid technical terms can use the answer fast path.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
-## 1. Optimize Answer Generation Latency
+## 1. Broaden Latency Coverage Across Document Families
 
-Goal: reduce the new largest latency stage without weakening answer quality.
+Goal: confirm performance improvements generalize beyond the first five Sora questions.
 
-Evidence selection has already been optimized with a safe high-confidence fast path:
+Evidence selection, answer generation, and retrieval/model warmup have already been optimized with safe high-confidence paths:
 
 - average latency improved from `16527.31 ms` to `5170.94 ms`,
-- p95 latency improved from `26323.34 ms` to `8643.61 ms`,
+- answer fast path improved the latest 5-query average to `2208.78 ms`,
+- retrieval warmup produced a best warmed 5-query average of `199.51 ms`,
+- the latest repeated warmed sample had `240.19 ms` p50 and `1694.8 ms` average because one question correctly fell back to normal LLM answer generation,
+- the low-value fast-path fix improved the latest warmed 5-query sample to `227.06 ms` average and `248.38 ms` p95,
 - evidence selection dropped to about `1.75ms` to `2.45ms`,
-- full RAG quality passed at `9.47/10`.
+- fast-path answer generation is about `6ms` to `20ms` on the sampled high-confidence questions,
+- full RAG quality passed at `9.48/10` average with all items above the configured `7/10` item gate.
 
-Next change should inspect answer-generation prompts and context size. Good candidates:
+Fast-path observability is now available in retrieval trace steps:
 
-- skip LLM answer generation when a deterministic extractive answer is already complete,
-- reduce prompt context for simple definition/list questions,
-- keep citations and verifier intact,
-- re-run full RAG quality after any answer-generation shortcut.
+- `evidence_path`
+- `answer_path`
+- `evidence_trace`
+- `answer_trace`
 
-## 2. Optimize One Slow Stage
+Use these fields to inspect slow answers before changing behavior.
 
-Recommended order after answer generation:
+Recommended order:
 
-1. If first-query retrieval remains slow, inspect reranker/model warmup.
-2. If reranking is slow after warmup, tune `RERANK_CANDIDATES`.
-3. If routing is slow, cache document routing results.
-4. If embedding is slow, cache repeated query embeddings.
-5. If retrieval is slow for larger data, consider Qdrant server mode instead of local path mode.
+1. Run warmed latency for representative IDs across Sora, Docker, ML, Python, and article-style PDFs.
+2. Inspect `answer_path` for the slowest query in each family.
+3. If `answer_path=llm_generation`, inspect `answer_trace.fast_path.rejections`.
+4. Add only generic fixes for repeated safe rejection patterns.
+5. Tighten prompt/context only where traces show excess context.
+6. Consider chat-model warmup for demos where first LLM answer latency matters.
+7. Keep citations, verification, and repair intact.
 
 Do not remove verification or answer repair as the first performance optimization. They protect answer quality.
 
@@ -65,10 +75,37 @@ After each optimization, run:
 
 ```cmd
 venv\Scripts\python.exe scripts\run_regression.py
-venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output var\logs\latency_after_change_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_after_change_report.json
 ```
 
-## 3. Expand Gold QA
+## 2. Improve Trace UI Summaries
+
+Goal: make the new trace metadata easy to read in the web UI.
+
+Add compact labels in the trace panel:
+
+- Evidence path: deterministic fast path, LLM judge, or heuristic fallback.
+- Answer path: extractive fast path, LLM generation, deterministic replacement, or fallback.
+- Rejection reason summary for answer fast-path candidates.
+
+Keep full JSON details expandable for debugging, but show the compact labels first.
+
+## 3. Optimize One Slow Stage
+
+If latency remains high after answer-path observability, optimize one slow stage at a time:
+
+- if normal LLM answer generation is slow, inspect prompt size and context size,
+- if reranking is slow after warmup, tune `RERANK_CANDIDATES`,
+- if routing is slow, cache document routing results,
+- if embedding is slow, cache repeated query embeddings,
+- if retrieval is slow for larger data, consider Qdrant server mode instead of local path mode.
+
+Keep these constraints:
+
+- keep citations, verification, and repair intact,
+- re-run full RAG quality after any retrieval/warmup shortcut.
+
+## 4. Expand Gold QA
 
 Goal: keep the system general-purpose as more documents arrive.
 
@@ -82,7 +119,7 @@ For every new PDF, add 3 to 5 gold QA items:
 
 This prevents the system from being tuned only for Sora, Docker, or the current Medium/article PDFs.
 
-## 4. Add Scheduled Backup Policy
+## 5. Add Scheduled Backup Policy
 
 Goal: protect runtime state outside the local repo.
 
@@ -96,7 +133,7 @@ Define:
 
 Local backup/restore already works; this step turns it into an operating policy.
 
-## 5. Future Guardrail Work
+## 6. Future Guardrail Work
 
 Do this before adding write/delete tools.
 
@@ -109,7 +146,7 @@ Next guardrail tasks:
 
 Important rule: memory and tools can guide the agent, but PDF answers must still come from retrieved PDF evidence and citations.
 
-## 6. Future MCP Work
+## 7. Future MCP Work
 
 Current MCP-style tools are local read-only connectors. They are useful and safe for the current app.
 

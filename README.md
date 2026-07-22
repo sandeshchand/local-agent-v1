@@ -94,6 +94,7 @@ QDRANT_PATH=./var/qdrant
 SQLITE_PATH=./var/sqlite/app.db
 TOP_K=3
 DEBUG=true
+WARM_RETRIEVAL_ON_STARTUP=false
 ```
 
 To reuse an older local index, point the paths at the existing files:
@@ -179,7 +180,7 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_
 Run a quick latency benchmark:
 
 ```powershell
-venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output var\logs\latency_benchmark_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --warmup --output var\logs\latency_benchmark_report.json
 ```
 
 Quality rules:

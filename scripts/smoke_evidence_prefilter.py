@@ -51,7 +51,7 @@ def main() -> None:
         "The review highlights Sora spatial reasoning limitations, cause-and-effect failures, and issues with interactions.",
     )
 
-    selected, judgments = judge.select_evidence(
+    selected, judgments, trace = judge.select_evidence_with_trace(
         "What limitations of Sora does the review highlight?",
         results,
         max_items=4,
@@ -62,6 +62,9 @@ def main() -> None:
 
     assert chat_client.calls == 6
     assert len(judgments) == 6
+    assert trace["path"] == "llm_judge"
+    assert trace["used_evidence_fast_path"] is False
+    assert trace["llm_judgment_count"] == 6
     assert "chunk-10" in judged_ids
     assert "chunk-10" in selected_ids
 
@@ -80,13 +83,16 @@ def main() -> None:
         make_item(4, "A general introduction to unrelated automation platforms."),
     ]
 
-    fast_selected, fast_judgments = fast_judge.select_evidence(
+    fast_selected, fast_judgments, fast_trace = fast_judge.select_evidence_with_trace(
         "What are the key features of AlphaTool?",
         fast_results,
         max_items=3,
     )
 
     assert fast_chat_client.calls == 0
+    assert fast_trace["path"] == "deterministic_fast_path"
+    assert fast_trace["used_evidence_fast_path"] is True
+    assert fast_trace["fast_path_shape"] == "list"
     assert fast_judgments
     assert any("fast path" in judgment.reason for judgment in fast_judgments)
     assert any("monitoring pipelines" in item["text"] for item in fast_selected)

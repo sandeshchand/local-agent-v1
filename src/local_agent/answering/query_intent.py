@@ -226,6 +226,21 @@ Focused answer:
         if any(term in query_lower for term in ["represent", "representation", "before feeding", "model input"]):
             return not any(term in answer_lower for term in ["representation", "represent", "latent", "token", "patch", "compress"])
 
+        if any(term in query_lower for term in ["large number", "large integer", "very large"]):
+            large_number_markers = [
+                "memory",
+                "dynamically",
+                "dynamic",
+                "allocat",
+                "int",
+                "long",
+                "digit",
+                "10**",
+                "arbitrary",
+                "precision",
+            ]
+            return sum(1 for term in large_number_markers if term in answer_lower) < 2
+
         if any(term in query_lower for term in ["limitations", "limitation", "challenges"]):
             return not any(term in answer_lower for term in ["limitation", "challenge", "constraint", "failure", "issue"])
 

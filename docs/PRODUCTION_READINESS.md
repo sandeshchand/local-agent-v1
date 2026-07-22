@@ -148,7 +148,7 @@ It should also have:
 
 ## Near-Term Priorities
 
-1. Optimize answer-generation latency without reducing RAG quality.
+1. Optimize first-query retrieval/model warmup without reducing RAG quality.
 2. Add broader gold QA for new daily PDFs.
 3. Add scheduled/off-machine backup policy for deployed environments.
 4. Add authentication and user/session isolation design.
@@ -162,3 +162,4 @@ Completed from this list:
 - Memory management API, UI tab, delete control, and smoke test.
 - Local deployment guide covering startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
 - Evidence-selection fast path with latency improvement from `16527.31 ms` average to `5170.94 ms` average on the 5-query baseline.
+- Answer-generation fast path with latency improvement from `5170.94 ms` average to `2208.78 ms` average on the 5-query baseline, while full RAG regression passed at `9.39/10`.

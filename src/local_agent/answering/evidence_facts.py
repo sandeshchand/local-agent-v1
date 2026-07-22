@@ -388,7 +388,9 @@ class EvidenceFactMixin:
             return True
         if "comprehensive review" in sentence_lower and "current limitations" in sentence_lower:
             return True
-        if any(marker in sentence_lower for marker in ["follow publication", "click here", "followers", "following"]):
+        if any(marker in sentence_lower for marker in ["follow publication", "click here", "followers"]):
+            return True
+        if re.search(r"\b\d+(?:\.\d+)?k?\s+following\b", sentence_lower):
             return True
         if any(marker in sentence_lower for marker in ["tag your", "clap if", "comment below", "share this"]):
             return True

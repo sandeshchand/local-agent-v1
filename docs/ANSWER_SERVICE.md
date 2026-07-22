@@ -50,6 +50,7 @@ src/local_agent/answering/
 The split uses mixins. This keeps the behavior stable while making each group easier to test and maintain. `AnswerService` still exposes the same methods used by the orchestrator:
 
 - `answer_from_context()`
+- `answer_from_context_result()`
 - `repair_answer()`
 - `answer_direct()`
 - `answer_from_tool_result()`
@@ -62,11 +63,14 @@ This package sits outside `retrieval` because it is not only a retrieval compone
 
 This is the main RAG answer path.
 
+`answer_from_context()` returns only the final answer string for compatibility with older scripts. The orchestrator uses `answer_from_context_result()`, which returns the same answer plus structured trace metadata.
+
 Flow:
 
 ```text
 retrieved results
 -> single-source filtering when needed
+-> high-confidence extractive fast path for simple citation-backed answers
 -> deterministic evidence facts
 -> build retrieval prompt
 -> ask local LLM
@@ -83,9 +87,33 @@ The method intentionally combines LLM output with deterministic extractive repai
 
 For performance, the answer path avoids unnecessary LLM calls:
 
+- a high-confidence extractive fast path can return before LLM generation when an existing deterministic extractor produces a complete, cited, focused answer,
 - deterministic evidence facts are built before the prompt,
 - LLM fact extraction is used only when deterministic facts are empty or insufficient,
 - focused rewrite is skipped when the first answer is already cited, focused, specific enough, and free of raw context leakage.
+
+The fast path is intentionally conservative. It does not use document-specific keywords. It requires valid citations, rejects raw context leakage, rejects unrequested code-heavy answers, checks query intent shape, and requires stronger coverage for command/server, definition, and practice-challenge questions. If any check is weak, the service falls back to the normal LLM generation path.
+
+For definition questions such as `what is ...`, the candidate must mention the focused entity and include a definition-style relation such as `is`, `are`, `refers to`, `means`, `called`, or `known as`. This keeps the optimization generic for future PDFs.
+
+The fast path also rejects low-value bullet-like candidates that look like scraped article metadata, publication prompts, follower counts, social calls to action, or very short fragments. This prevents a noisy extraction from being accepted just because it has a citation.
+
+This filter must stay precise. Technical names that contain punctuation, and ordinary terms such as `prompt following`, should not be treated as social metadata. Social metadata should be rejected only when there are clear metadata signals such as followers, following counts, publication prompts, read-time text, or clap/share language.
+
+### `answer_from_context_result()`
+
+This is the traced variant used by the orchestrator.
+
+It returns:
+
+- `answer`: the final answer text,
+- `trace.path`: the final answer path,
+- `trace.used_answer_fast_path`: whether the high-confidence answer fast path returned before LLM generation,
+- `trace.used_llm_generation`: whether the local chat model was called,
+- `trace.fast_path`: eligibility, candidate count, accepted candidate source, and rejection reasons,
+- `trace.final_answer_source`: the final source, such as `extractive_fast_path`, `llm_generation`, `definition_extractive_replacement`, or `generic_extractive_fallback`.
+
+This metadata is saved into retrieval trace steps as `answer_trace`. It is for observability only; it should not change the answer content.
 
 ### `repair_answer()`
 
@@ -299,6 +327,21 @@ This is used when:
 - verifier repair fails
 - the answer contains raw retrieval metadata
 - the answer has invalid citations
+
+### `_extractive_fast_path_answer()`
+
+Runs before the retrieval prompt is built. It reuses the same generic deterministic extractors that repair weak answers, but returns early only when the candidate is high confidence.
+
+It is useful for:
+
+- clear definition questions,
+- feature/list questions,
+- why/how capability questions,
+- limitation questions,
+- command/server questions,
+- practice challenge step questions.
+
+It deliberately skips tool-context answers, because tool output may need separate formatting. Memory guidance is allowed because memory is not treated as evidence; the answer still needs PDF citations.
 
 ### `_generic_extractive_fallback()`
 

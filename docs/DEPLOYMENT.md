@@ -70,11 +70,14 @@ DEBUG=false
 USE_RERANKER=true
 RERANKER_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
 RERANK_CANDIDATES=8
+WARM_RETRIEVAL_ON_STARTUP=false
 FILE_MCP_ENABLED=true
 FILE_MCP_ROOTS=data,docs,benchmarks,tests,README.md,pyproject.toml
 ```
 
 Keep `.env` out of Git. Use `.env.example` for safe placeholders.
+
+Set `WARM_RETRIEVAL_ON_STARTUP=true` for demos or local production when first-question latency matters. This warms the Qdrant collection check, embedding model, and reranker during startup. Keep it `false` for the fastest development startup.
 
 For deployed environments, do not store real secrets in the repo. Move secrets to the host secret manager or deployment platform when the app becomes multi-user.
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from rank_bm25 import BM25Okapi
@@ -10,6 +11,7 @@ from local_agent.retrieval.query_terms import focus_phrases, tokenize
 from local_agent.storage.qdrant_store import QdrantStore
 from local_agent.storage.sqlite_store import SQLiteStore
 from local_agent.retrieval.reranker import CrossEncoderReranker
+
 
 class RetrievalService:
     def __init__(
@@ -52,7 +54,43 @@ class RetrievalService:
             if use_reranker
             else None
         )
-    
+
+    def warm_up(self) -> dict[str, Any]:
+        """Load retrieval dependencies before the first user query."""
+
+        steps: list[dict[str, Any]] = []
+
+        def record(name: str, action) -> None:
+            started_at = time.perf_counter()
+            try:
+                value = action()
+                steps.append(
+                    {
+                        "name": name,
+                        "ok": True,
+                        "duration_ms": round((time.perf_counter() - started_at) * 1000, 2),
+                        "value": value if isinstance(value, (bool, int, float, str)) else None,
+                    }
+                )
+            except Exception as exc:
+                steps.append(
+                    {
+                        "name": name,
+                        "ok": False,
+                        "duration_ms": round((time.perf_counter() - started_at) * 1000, 2),
+                        "error": str(exc),
+                    }
+                )
+
+        record("qdrant_collection", self.qdrant_store.collection_exists)
+        record("embedding_model", lambda: len(self.embedding_client.embed("retrieval warmup")))
+        if self.reranker is not None:
+            record("reranker_model", self.reranker.warm_up)
+
+        return {
+            "ok": all(step["ok"] for step in steps),
+            "steps": steps,
+        }
 
     def search(
         self,
