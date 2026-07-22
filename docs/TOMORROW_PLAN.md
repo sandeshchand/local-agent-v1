@@ -13,29 +13,31 @@ The latest work moved the project closer to production readiness and improved RA
 - Added retrieval/model warmup for Qdrant collection checks, query embeddings, and the cross-encoder reranker.
 - Added a safer definition fast path and low-value candidate rejection for noisy extracted bullets.
 - Added fast-path observability for evidence and answer decisions in retrieval traces.
+- Narrowed low-value metadata filtering so terms like `prompt following` and technical names with punctuation are not rejected as social metadata.
 - Five-query latency improved from `16527.31 ms` average to `5170.94 ms` after evidence fast path, then to `2208.78 ms` after answer fast path.
 - Warmed retrieval produced a best five-query sample of `199.51 ms` average and a latest repeated sample of `1694.8 ms` average because one harder answer still used normal LLM generation.
-- Full RAG regression passed with `9.51/10` average quality and `45/45` items at `>= 8/10`.
+- The latest warmed five-query sample is `227.06 ms` average with `248.38 ms` p95.
+- Full RAG regression passed with `9.48/10` average quality and all items above the configured `7/10` item gate.
 - The latest changes are still uncommitted.
 
 ## First Task Tomorrow
 
-Commit today's validated observability work before starting new behavior.
+Commit today's validated fast-path latency work before starting new behavior.
 
 ```powershell
 git status --short
 git add -A
-git commit -m "perf: add fast-path trace observability"
+git commit -m "perf: refine low-value fast-path filtering"
 ```
 
 After that, push and merge only if the branch still looks clean.
 
 ## Recommended Feature Order
 
-1. Reduce remaining normal LLM answer latency
-   - Run the warmed latency benchmark.
-   - Inspect `answer_path` and `answer_trace.fast_path.rejections` for the slowest traces.
-   - Inspect slow traces where answer generation takes several seconds.
+1. Broaden latency coverage across document families
+   - Run warmed latency for representative Sora, Docker, ML, Python, and article-style questions.
+   - Inspect `answer_path` and `answer_trace.fast_path.rejections` for the slowest traces in each family.
+   - Add only generic fixes for repeated safe rejection patterns.
    - Tighten prompt/context only when trace data shows the prompt is larger than needed.
    - Consider chat-model warmup for demos or local production startup.
 

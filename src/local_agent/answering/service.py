@@ -530,7 +530,7 @@ class AnswerService(
             item_lower = item.lower()
             if any(marker in item_lower for marker in low_value_markers):
                 return True
-            if "\u00b7" in item or "!!" in item:
+            if self._has_article_metadata_separator(item) or "!!" in item:
                 return True
             answer_markers = [
                 " is ",
@@ -553,6 +553,22 @@ class AnswerService(
             if self._is_low_value_fact(item):
                 return True
         return False
+
+    def _has_article_metadata_separator(self, item: str) -> bool:
+        if "\u00b7" not in item and "\u00c2\u00b7" not in item:
+            return False
+        item_lower = item.lower()
+        metadata_markers = [
+            "followers",
+            "published",
+            "publication",
+            "min read",
+            "read more",
+            "clap",
+        ]
+        return any(marker in item_lower for marker in metadata_markers) or bool(
+            re.search(r"\b\d+(?:\.\d+)?k?\s+following\b", item_lower)
+        )
 
     def _has_definition_answer_coverage(self, query: str, candidate: str) -> bool:
         entity = self._definition_query_entity(query)

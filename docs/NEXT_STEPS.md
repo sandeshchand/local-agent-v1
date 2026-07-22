@@ -32,11 +32,12 @@ Implemented:
 - Answer-generation fast path for high-confidence citation-backed extractive answers.
 - Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
 - Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
+- Narrow low-value social/article metadata filtering so valid technical terms can use the answer fast path.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
-## 1. Reduce Remaining LLM Fallback Latency
+## 1. Broaden Latency Coverage Across Document Families
 
-Goal: reduce the remaining slow answers without weakening answer quality.
+Goal: confirm performance improvements generalize beyond the first five Sora questions.
 
 Evidence selection, answer generation, and retrieval/model warmup have already been optimized with safe high-confidence paths:
 
@@ -44,9 +45,10 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - answer fast path improved the latest 5-query average to `2208.78 ms`,
 - retrieval warmup produced a best warmed 5-query average of `199.51 ms`,
 - the latest repeated warmed sample had `240.19 ms` p50 and `1694.8 ms` average because one question correctly fell back to normal LLM answer generation,
+- the low-value fast-path fix improved the latest warmed 5-query sample to `227.06 ms` average and `248.38 ms` p95,
 - evidence selection dropped to about `1.75ms` to `2.45ms`,
 - fast-path answer generation is about `6ms` to `20ms` on the sampled high-confidence questions,
-- full RAG quality passed at `9.51/10` with `45/45` items at `>= 8/10`.
+- full RAG quality passed at `9.48/10` average with all items above the configured `7/10` item gate.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -59,8 +61,8 @@ Use these fields to inspect slow answers before changing behavior.
 
 Recommended order:
 
-1. Run a warmed latency benchmark.
-2. Inspect `answer_path` for the slowest query.
+1. Run warmed latency for representative IDs across Sora, Docker, ML, Python, and article-style PDFs.
+2. Inspect `answer_path` for the slowest query in each family.
 3. If `answer_path=llm_generation`, inspect `answer_trace.fast_path.rejections`.
 4. Add only generic fixes for repeated safe rejection patterns.
 5. Tighten prompt/context only where traces show excess context.
@@ -76,7 +78,19 @@ venv\Scripts\python.exe scripts\run_regression.py
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_after_change_report.json
 ```
 
-## 2. Optimize One Slow Stage
+## 2. Improve Trace UI Summaries
+
+Goal: make the new trace metadata easy to read in the web UI.
+
+Add compact labels in the trace panel:
+
+- Evidence path: deterministic fast path, LLM judge, or heuristic fallback.
+- Answer path: extractive fast path, LLM generation, deterministic replacement, or fallback.
+- Rejection reason summary for answer fast-path candidates.
+
+Keep full JSON details expandable for debugging, but show the compact labels first.
+
+## 3. Optimize One Slow Stage
 
 If latency remains high after answer-path observability, optimize one slow stage at a time:
 
@@ -91,7 +105,7 @@ Keep these constraints:
 - keep citations, verification, and repair intact,
 - re-run full RAG quality after any retrieval/warmup shortcut.
 
-## 3. Expand Gold QA
+## 4. Expand Gold QA
 
 Goal: keep the system general-purpose as more documents arrive.
 
@@ -105,7 +119,7 @@ For every new PDF, add 3 to 5 gold QA items:
 
 This prevents the system from being tuned only for Sora, Docker, or the current Medium/article PDFs.
 
-## 4. Add Scheduled Backup Policy
+## 5. Add Scheduled Backup Policy
 
 Goal: protect runtime state outside the local repo.
 
@@ -119,7 +133,7 @@ Define:
 
 Local backup/restore already works; this step turns it into an operating policy.
 
-## 5. Future Guardrail Work
+## 6. Future Guardrail Work
 
 Do this before adding write/delete tools.
 
@@ -132,7 +146,7 @@ Next guardrail tasks:
 
 Important rule: memory and tools can guide the agent, but PDF answers must still come from retrieved PDF evidence and citations.
 
-## 6. Future MCP Work
+## 7. Future MCP Work
 
 Current MCP-style tools are local read-only connectors. They are useful and safe for the current app.
 

@@ -98,6 +98,8 @@ For definition questions such as `what is ...`, the candidate must mention the f
 
 The fast path also rejects low-value bullet-like candidates that look like scraped article metadata, publication prompts, follower counts, social calls to action, or very short fragments. This prevents a noisy extraction from being accepted just because it has a citation.
 
+This filter must stay precise. Technical names that contain punctuation, and ordinary terms such as `prompt following`, should not be treated as social metadata. Social metadata should be rejected only when there are clear metadata signals such as followers, following counts, publication prompts, read-time text, or clap/share language.
+
 ### `answer_from_context_result()`
 
 This is the traced variant used by the orchestrator.

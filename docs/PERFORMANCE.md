@@ -290,7 +290,49 @@ Useful examples:
 
 `answer_trace.fast_path.rejections` records generic rejection reasons for skipped fast-path candidates. This is the next debugging tool for latency work: slow answers can now show whether the answer was slow because the query shape was unsupported, the candidate was under-specific, citations were missing, or normal LLM generation was genuinely needed.
 
-Next optimization target: use these trace fields to reduce unavoidable LLM answer-generation latency without weakening verification, repair, or citation quality.
+This made the low-value candidate filter the next optimization target, because a slow prompt-following trace showed a valid mechanism answer was rejected for `low_value_candidate_items`.
+
+## After Low-Value Fast-Path Fix
+
+The low-value filter was narrowed so article/social metadata is still rejected, but valid technical terms and phrases are not rejected accidentally:
+
+- `DALL-E`-style names are allowed,
+- `prompt following` is allowed,
+- social metadata such as follower/following counts, publication prompts, and read-time fragments is still rejected.
+
+Slow-case benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids sora_prompt_following --warmup --output var\logs\latency_prompt_following_low_value_fix_report.json
+```
+
+Result:
+
+- `sora_prompt_following`: `215.95 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- `used_llm_generation`: `false`.
+
+Five-query warmed benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_low_value_fast_path_fix_report.json
+```
+
+Result:
+
+- average latency: `227.06 ms`,
+- p50 latency: `221.36 ms`,
+- p95 latency: `248.38 ms`,
+- slowest query: `sora_what_is` at `251.32 ms`.
+
+Quality gates:
+
+- targeted RAG: `9.06/10`, `3/3` at `>= 8/10`,
+- full RAG: `9.48/10`, passed the configured gate,
+- targeted rerun for `sora_limitations`: `9.75/10`.
+
+Current conclusion: the first five warmed Sora questions now avoid normal LLM answer generation. The next performance task should run a broader latency benchmark across more document families and fix only repeated generic rejection patterns.
 
 ## Existing Evidence Selection Optimization
 

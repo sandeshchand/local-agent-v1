@@ -63,6 +63,21 @@ def main() -> None:
     assert "LazyDocker" in fast_answer
     assert "logs" in fast_answer
     assert "[1]" in fast_answer
+    assert (
+        fast_service._has_low_value_candidate_items(
+            "Sora works this way: "
+            "- DALL\u00b7E 3 addresses short prompts by using LLMs to rewrite them into detailed instructions. [1] "
+            "- This prompt expansion helps improve prompt following. [1]"
+        )
+        is False
+    )
+    assert fast_service._is_low_value_fact("This prompt expansion helps improve prompt following.") is False
+    assert (
+        fast_service._has_low_value_candidate_items(
+            "Because: - Follow publication for more posts. [1] - 10K Followers \u00b7 3 Following. [1]"
+        )
+        is True
+    )
 
     print("Answer generation budget smoke test passed.")
 
