@@ -199,7 +199,60 @@ Trace timing after the change:
 - fast-path answer generation for four sampled Sora questions: about `6.78ms` to `19.99ms`,
 - `sora_what_is` still uses normal LLM generation and first-query retrieval/model warmup.
 
-Next optimization target: reduce first-query retrieval/model warmup and improve the remaining definition path without reducing answer quality.
+This made retrieval/model warmup and the remaining definition path the next optimization target.
+
+## After Retrieval Warmup And Definition Fast Path
+
+Latest warmup benchmark command:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_retrieval_definition_warmup_final_report.json
+```
+
+Result:
+
+- sample size: `5` queries,
+- average latency: `1694.8 ms`,
+- p50 latency: `240.19 ms`,
+- p95 latency: `6054.57 ms`,
+- slowest query: `sora_prompt_following` at `7504.51 ms`,
+- retrieval warmup completed successfully.
+
+The best repeated warmed sample was:
+
+- average latency: `199.51 ms`,
+- p50 latency: `196.27 ms`,
+- p95 latency: `209.59 ms`,
+- slowest query: `sora_visual_input` at `210.24 ms`.
+
+Quality gate after the change:
+
+```powershell
+venv\Scripts\python.exe scripts\run_regression.py --full --output var\logs\rag_quality_retrieval_definition_warmup_final_report.json
+```
+
+Result:
+
+- average RAG quality: `9.51/10`,
+- passed: `45/45` at `>= 8/10`,
+- full regression passed.
+
+Warmup details from the final benchmark:
+
+- Qdrant collection check: `0.03 ms`,
+- embedding model warmup: `51.39 ms`,
+- reranker model warmup: `4307.71 ms`.
+
+Trace timing after the change:
+
+- retrieval search stayed around `171ms` to `190ms` in the final five-query sample,
+- evidence selection stayed around `1.85ms` to `3.59ms`,
+- high-confidence extractive answers took about `8.88ms` to `20.18ms`,
+- one harder prompt-following question used normal LLM answer generation and took `7279.87ms`.
+
+Current conclusion: retrieval/model warmup is now handled. The remaining latency variance comes from questions that correctly fall back to normal LLM answer generation instead of the deterministic fast path.
+
+Next optimization target: add trace visibility for fast-path decisions, then reduce unavoidable LLM answer-generation latency without weakening verification, repair, or citation quality.
 
 ## Existing Evidence Selection Optimization
 

@@ -89,7 +89,11 @@ For performance, the answer path avoids unnecessary LLM calls:
 - LLM fact extraction is used only when deterministic facts are empty or insufficient,
 - focused rewrite is skipped when the first answer is already cited, focused, specific enough, and free of raw context leakage.
 
-The fast path is intentionally conservative. It does not use document-specific keywords. It requires valid citations, rejects raw context leakage, rejects unrequested code-heavy answers, checks query intent shape, and requires stronger coverage for command/server and practice-challenge questions. If any check is weak, the service falls back to the normal LLM generation path.
+The fast path is intentionally conservative. It does not use document-specific keywords. It requires valid citations, rejects raw context leakage, rejects unrequested code-heavy answers, checks query intent shape, and requires stronger coverage for command/server, definition, and practice-challenge questions. If any check is weak, the service falls back to the normal LLM generation path.
+
+For definition questions such as `what is ...`, the candidate must mention the focused entity and include a definition-style relation such as `is`, `are`, `refers to`, `means`, `called`, or `known as`. This keeps the optimization generic for future PDFs.
+
+The fast path also rejects low-value bullet-like candidates that look like scraped article metadata, publication prompts, follower counts, social calls to action, or very short fragments. This prevents a noisy extraction from being accepted just because it has a citation.
 
 ### `repair_answer()`
 

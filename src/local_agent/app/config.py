@@ -34,6 +34,7 @@ class AppConfig(BaseModel):
          alias="RERANKER_MODEL",
         )
     rerank_candidates: int = Field(8, alias="RERANK_CANDIDATES")
+    warm_retrieval_on_startup: bool = Field(False, alias="WARM_RETRIEVAL_ON_STARTUP")
     file_mcp_enabled: bool = Field(True, alias="FILE_MCP_ENABLED")
     file_mcp_roots: list[Path] = Field(default_factory=list, alias="FILE_MCP_ROOTS")
 
@@ -60,6 +61,7 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
         "USE_RERANKER": _parse_bool_env("USE_RERANKER", True),
         "RERANKER_MODEL": _env("RERANKER_MODEL", DEFAULT_RERANKER_MODEL),
         "RERANK_CANDIDATES": os.getenv("RERANK_CANDIDATES", "8"),
+        "WARM_RETRIEVAL_ON_STARTUP": _parse_bool_env("WARM_RETRIEVAL_ON_STARTUP", False),
         "FILE_MCP_ENABLED": _parse_bool_env("FILE_MCP_ENABLED", True),
         "FILE_MCP_ROOTS": _parse_path_list(
             _env("FILE_MCP_ROOTS", DEFAULT_FILE_MCP_ROOTS),
@@ -90,6 +92,7 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
         USE_RERANKER=config.use_reranker,
         RERANKER_MODEL=config.rerank_model,
         RERANK_CANDIDATES=config.rerank_candidates,
+        WARM_RETRIEVAL_ON_STARTUP=config.warm_retrieval_on_startup,
         FILE_MCP_ENABLED=config.file_mcp_enabled,
         FILE_MCP_ROOTS=config.file_mcp_roots,
     )

@@ -13,6 +13,7 @@ class QdrantStore:
         self.storage_path.mkdir(parents=True, exist_ok=True)
         self.collection_name = collection_name
         self.client: QdrantClient | None = None
+        self._collection_exists_cache: bool | None = None
 
     def connect(self) -> QdrantClient:
         if self.client is None:
@@ -35,6 +36,7 @@ class QdrantStore:
                     distance=Distance.COSINE,
                 ),
             )
+        self._collection_exists_cache = True
 
     def health_check(self) -> bool:
         client = self.connect()
@@ -42,10 +44,15 @@ class QdrantStore:
         return isinstance(collections, list)
 
     def collection_exists(self) -> bool:
+        if self._collection_exists_cache is True:
+            return True
         client = self.connect()
         collections = client.get_collections().collections
         collection_names = {collection.name for collection in collections}
-        return self.collection_name in collection_names
+        exists = self.collection_name in collection_names
+        if exists:
+            self._collection_exists_cache = True
+        return exists
 
     def upsert_test_vector(
         self,

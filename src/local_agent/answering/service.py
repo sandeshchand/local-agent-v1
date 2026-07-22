@@ -307,6 +307,11 @@ class AnswerService(
         is_command_query = self._is_command_or_server_query(query)
         if is_command_query and not self._has_command_answer_coverage(candidate):
             return False
+        if not is_command_query and self._has_low_value_candidate_items(candidate):
+            return False
+        is_definition_query = bool(self._definition_query_entity(query))
+        if is_definition_query and not self._has_definition_answer_coverage(query, candidate):
+            return False
 
         candidate_lower = candidate.lower()
         query_terms = self._query_terms(query)
@@ -320,10 +325,12 @@ class AnswerService(
             if not focus_phrases or self._focus_phrase_score(candidate, focus_phrases) == 0:
                 return False
 
-        if self._looks_under_specific(candidate, results) and not is_command_query:
+        if self._looks_under_specific(candidate, results) and not (is_command_query or is_definition_query):
             return False
 
         word_count = len(re.findall(r"\b\w+\b", candidate))
+        if is_definition_query:
+            return 8 <= word_count <= 95
         if self._is_list_question(query):
             return len(citation_numbers) >= 1 and word_count >= 14
         if self._is_explanation_question(query) or query.lower().startswith("how"):
@@ -348,9 +355,75 @@ class AnswerService(
         ]
         candidate_lower = candidate.lower()
         return sum(1 for marker in code_markers if marker in candidate_lower) >= 2
+
+    def _has_low_value_candidate_items(self, candidate: str) -> bool:
+        parts = re.split(r"\s+-\s+", candidate)
+        if len(parts) <= 1:
+            return False
+        low_value_markers = [
+            "follow publication",
+            "published in",
+            "followers",
+            "clap",
+            "comment below",
+            "share this",
+            "subscribe",
+            "thanks for reading",
+        ]
+        for raw_part in parts[1:]:
+            item = re.sub(r"\[\d+\]", "", raw_part)
+            item = re.sub(r"\s+", " ", item).strip(" .:-")
+            if not item:
+                return True
+            item_lower = item.lower()
+            if any(marker in item_lower for marker in low_value_markers):
+                return True
+            if "\u00b7" in item or "!!" in item:
+                return True
+            answer_markers = [
+                " is ",
+                " are ",
+                "used",
+                "useful",
+                "feature",
+                "strength",
+                "because",
+                "allows",
+                "helps",
+                "supports",
+                "enables",
+                "detect",
+                "monitor",
+                "update",
+            ]
+            if len(item.split()) < 6 and not any(marker in item_lower for marker in answer_markers):
+                return True
+            if self._is_low_value_fact(item):
+                return True
+        return False
+
+    def _has_definition_answer_coverage(self, query: str, candidate: str) -> bool:
+        entity = self._definition_query_entity(query)
+        entity_terms = self._entity_terms(entity)
+        candidate_lower = candidate.lower()
+        relation_markers = [
+            " is ",
+            " are ",
+            "refers to",
+            "means",
+            "called",
+            "known as",
+        ]
+        return (
+            bool(entity_terms)
+            and self._matches_entity_terms(candidate_lower, entity_terms)
+            and any(marker in candidate_lower for marker in relation_markers)
+        )
+
     def _is_command_or_server_query(self, query: str) -> bool:
         q = query.lower()
         return any(term in q for term in ["command", "setup", "install", "run", "start", "server"])
+
     def _has_command_answer_coverage(self, candidate: str) -> bool:
         candidate_lower = candidate.lower()
         has_command = bool(

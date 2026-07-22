@@ -70,6 +70,7 @@ def run_benchmark(
     ids: str,
     limit: int | None,
     session_prefix: str,
+    warmup: bool,
 ) -> dict[str, Any]:
     items = load_eval_items(eval_path, ids, limit)
     if not items:
@@ -82,6 +83,10 @@ def run_benchmark(
             f"Could not load app config from {env_file}. "
             "Create .env from .env.example or pass --env-file with a valid config."
         ) from exc
+    warmup_report: dict[str, Any] | None = None
+    if warmup:
+        warmup_report = deps.retrieval_service.warm_up()
+
     report_items: list[dict[str, Any]] = []
     try:
         for index, gold in enumerate(items, start=1):
@@ -131,6 +136,7 @@ def run_benchmark(
             "question": slowest["question"],
             "total_ms": slowest["total_ms"],
         },
+        "warmup": warmup_report,
         "items": report_items,
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -172,6 +178,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Session id prefix used for benchmark traces.",
     )
     parser.add_argument(
+        "--warmup",
+        action="store_true",
+        help="Warm retrieval dependencies before measuring query latency.",
+    )
+    parser.add_argument(
         "--fail-over-average-ms",
         type=float,
         default=None,
@@ -196,6 +207,7 @@ def main() -> None:
             ids=args.ids,
             limit=args.limit,
             session_prefix=args.session_prefix,
+            warmup=args.warmup,
         )
     except Exception as exc:
         print(f"ERROR: {exc}")
@@ -206,6 +218,9 @@ def main() -> None:
     print(f"p50: {report['p50_ms']} ms")
     print(f"p95: {report['p95_ms']} ms")
     print(f"Slowest: {report['slowest']['id']} at {report['slowest']['total_ms']} ms")
+    if report.get("warmup"):
+        warmup_ok = report["warmup"].get("ok")
+        print(f"Warmup: {'ok' if warmup_ok else 'completed with errors'}")
     print(f"Report: {args.output}")
 
     failed = False

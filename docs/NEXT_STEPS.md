@@ -30,38 +30,42 @@ Implemented:
 - Runtime backup and restore for local SQLite and Qdrant state.
 - Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
 - Answer-generation fast path for high-confidence citation-backed extractive answers.
+- Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
-## 1. Optimize First-Query Retrieval/Model Warmup
+## 1. Add Fast-Path Observability
 
-Goal: reduce the remaining slow first query without weakening answer quality.
+Goal: make every performance decision visible in traces so slow answers are easy to explain.
 
-Evidence selection and answer generation have already been optimized with safe high-confidence fast paths:
+Evidence selection, answer generation, and retrieval/model warmup have already been optimized with safe high-confidence paths:
 
 - average latency improved from `16527.31 ms` to `5170.94 ms`,
 - answer fast path improved the latest 5-query average to `2208.78 ms`,
-- p50 latency improved to `237.74 ms`,
+- retrieval warmup produced a best warmed 5-query average of `199.51 ms`,
+- the latest repeated warmed sample had `240.19 ms` p50 and `1694.8 ms` average because one question correctly fell back to normal LLM answer generation,
 - evidence selection dropped to about `1.75ms` to `2.45ms`,
 - fast-path answer generation is about `6ms` to `20ms` on the sampled high-confidence questions,
-- full RAG quality passed at `9.39/10`.
+- full RAG quality passed at `9.51/10` with `45/45` items at `>= 8/10`.
 
-Next change should inspect first-query retrieval and model warmup. Good candidates:
+Next change should add trace fields that explain:
 
-- warm reranker/model components at startup or benchmark start,
-- cache repeated document-routing or query-embedding work,
-- inspect why `sora_what_is` still spends several seconds in retrieval/model warmup,
-- keep citations, verification, and repair intact,
-- re-run full RAG quality after any retrieval/warmup shortcut.
+- whether the evidence fast path was used,
+- whether the answer fast path was used,
+- why a candidate was rejected from the fast path,
+- when normal LLM generation was required,
+- how much time each fallback path cost.
 
-## 2. Optimize One Slow Stage
+This helps us optimize generic behavior without hardcoded document-specific keywords.
 
-Recommended order after answer generation:
+## 2. Reduce Remaining LLM Fallback Latency
 
-1. If first-query retrieval remains slow, inspect reranker/model warmup.
-2. If reranking is slow after warmup, tune `RERANK_CANDIDATES`.
-3. If routing is slow, cache document routing results.
-4. If embedding is slow, cache repeated query embeddings.
-5. If retrieval is slow for larger data, consider Qdrant server mode instead of local path mode.
+Recommended order after observability:
+
+1. Add a lightweight trace marker for answer path selection.
+2. Inspect the slowest LLM fallback traces.
+3. Tighten prompt/context only where traces show excess context.
+4. Consider chat-model warmup for demos where first LLM answer latency matters.
+5. Keep citations, verification, and repair intact.
 
 Do not remove verification or answer repair as the first performance optimization. They protect answer quality.
 
@@ -69,10 +73,25 @@ After each optimization, run:
 
 ```cmd
 venv\Scripts\python.exe scripts\run_regression.py
-venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output var\logs\latency_after_change_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_after_change_report.json
 ```
 
-## 3. Expand Gold QA
+## 3. Optimize One Slow Stage
+
+If latency remains high after answer-path observability, optimize one slow stage at a time:
+
+- if normal LLM answer generation is slow, inspect prompt size and context size,
+- if reranking is slow after warmup, tune `RERANK_CANDIDATES`,
+- if routing is slow, cache document routing results,
+- if embedding is slow, cache repeated query embeddings,
+- if retrieval is slow for larger data, consider Qdrant server mode instead of local path mode.
+
+Keep these constraints:
+
+- keep citations, verification, and repair intact,
+- re-run full RAG quality after any retrieval/warmup shortcut.
+
+## 4. Expand Gold QA
 
 Goal: keep the system general-purpose as more documents arrive.
 
@@ -86,7 +105,7 @@ For every new PDF, add 3 to 5 gold QA items:
 
 This prevents the system from being tuned only for Sora, Docker, or the current Medium/article PDFs.
 
-## 4. Add Scheduled Backup Policy
+## 5. Add Scheduled Backup Policy
 
 Goal: protect runtime state outside the local repo.
 
@@ -100,7 +119,7 @@ Define:
 
 Local backup/restore already works; this step turns it into an operating policy.
 
-## 5. Future Guardrail Work
+## 6. Future Guardrail Work
 
 Do this before adding write/delete tools.
 
@@ -113,7 +132,7 @@ Next guardrail tasks:
 
 Important rule: memory and tools can guide the agent, but PDF answers must still come from retrieved PDF evidence and citations.
 
-## 6. Future MCP Work
+## 7. Future MCP Work
 
 Current MCP-style tools are local read-only connectors. They are useful and safe for the current app.
 

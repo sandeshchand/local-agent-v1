@@ -59,6 +59,9 @@ def bootstrap_app(env_file: str | Path = ".env") -> AppDependencies:
         rerank_model=config.rerank_model,
         rerank_candidates=config.rerank_candidates,
     )
+    if config.warm_retrieval_on_startup:
+        retrieval_service.warm_up()
+
     answer_service = AnswerService(
         chat_client=chat_client
     )
