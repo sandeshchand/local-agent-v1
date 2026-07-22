@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import re
+from typing import Any
 
 from local_agent.llm import OllamaChatClient
 from local_agent.answering.cleaning import AnswerCleaningMixin
@@ -11,6 +13,12 @@ from local_agent.answering.query_intent import QueryIntentMixin
 from local_agent.answering.source_windows import SourceWindowMixin
 from local_agent.answering.tool_outputs import ToolOutputMixin
 from local_agent.retrieval.context_builder import build_context
+
+
+@dataclass(frozen=True)
+class AnswerGenerationResult:
+    answer: str
+    trace: dict[str, Any]
 
 
 class AnswerService(
@@ -26,6 +34,7 @@ class AnswerService(
 
     def __init__(self, chat_client: OllamaChatClient) -> None:
         self.chat_client = chat_client
+
     def answer_from_context(
         self,
         query: str,
@@ -33,15 +42,43 @@ class AnswerService(
         memory_context: str = "",
         tool_context: str = "",
     ) -> str:
+        return self.answer_from_context_result(
+            query=query,
+            results=results,
+            memory_context=memory_context,
+            tool_context=tool_context,
+        ).answer
+
+    def answer_from_context_result(
+        self,
+        query: str,
+        results: list[dict],
+        memory_context: str = "",
+        tool_context: str = "",
+    ) -> AnswerGenerationResult:
         results = self._single_source_results(query, results)
-        fast_answer = self._extractive_fast_path_answer(
+        fast_answer, fast_trace = self._extractive_fast_path_answer_with_trace(
             query=query,
             results=results,
             memory_context=memory_context,
             tool_context=tool_context,
         )
+        trace: dict[str, Any] = {
+            "path": "extractive_fast_path" if fast_answer else "llm_generation",
+            "used_answer_fast_path": bool(fast_answer),
+            "used_llm_generation": False,
+            "fast_path": fast_trace,
+        }
+
+        def done(answer: str, source: str) -> AnswerGenerationResult:
+            result_trace = dict(trace)
+            result_trace["final_answer_source"] = source
+            if source != "llm_generation":
+                result_trace["path"] = source
+            return AnswerGenerationResult(answer=answer, trace=result_trace)
+
         if fast_answer:
-            return fast_answer
+            return done(fast_answer, "extractive_fast_path")
 
         prompt = self.build_retrieval_prompt(
             query=query,
@@ -51,15 +88,21 @@ class AnswerService(
         )
         try:
             answer = self.chat_client.generate(prompt).strip()
+            trace["used_llm_generation"] = True
         except Exception:
             fallback = self._deterministic_repair_answer(query, results)
-            return fallback or self._generic_extractive_fallback(query, results)
+            trace["fallback_reason"] = "llm_generation_exception"
+            if fallback:
+                return done(fallback, "deterministic_repair_fallback")
+            return done(self._generic_extractive_fallback(query, results), "generic_extractive_fallback")
 
         if not answer:
-            return self._generic_extractive_fallback(query, results)
+            trace["fallback_reason"] = "empty_llm_answer"
+            return done(self._generic_extractive_fallback(query, results), "generic_extractive_fallback")
 
         answer = self._remove_mixed_abstention(answer)
         answer = self._focused_rewrite(query, answer, results)
+        answer_source = "llm_generation"
 
         # Candidate priority matters: specific extractors run before broad list
         # extraction so a feature, limitation, pipeline, or command answer is not
@@ -67,35 +110,45 @@ class AnswerService(
         best_practices_answer = self._best_practices_extractive_answer(query, results)
         if best_practices_answer:
             answer = best_practices_answer
+            answer_source = "best_practices_extractive_replacement"
         capability_answer = ""
         if self._should_use_capability_extractive_answer(query, results):
             capability_answer = self._capability_extractive_answer(query, results)
             if capability_answer:
                 answer = capability_answer
+                answer_source = "capability_extractive_replacement"
         limitation_answer = self._limitation_extractive_answer(query, results)
         if limitation_answer:
             answer = limitation_answer
+            answer_source = "limitation_extractive_replacement"
         definition_answer = self._definition_extractive_answer(query, results)
         if definition_answer:
             answer = definition_answer
+            answer_source = "definition_extractive_replacement"
         used_for_answer = self._used_for_extractive_answer(query, results)
         if used_for_answer:
             answer = used_for_answer
+            answer_source = "used_for_extractive_replacement"
         config_file_answer = self._config_file_purpose_answer(query, results)
         if config_file_answer:
             answer = config_file_answer
+            answer_source = "config_file_extractive_replacement"
         meaning_answer = self._meaning_extractive_answer(query, results)
         if meaning_answer:
             answer = meaning_answer
+            answer_source = "meaning_extractive_replacement"
         pipeline_answer = self._pipeline_extractive_answer(query, results)
         if pipeline_answer:
             answer = pipeline_answer
+            answer_source = "pipeline_extractive_replacement"
         challenge_answer = self._challenge_steps_answer(query, results)
         if challenge_answer:
             answer = challenge_answer
+            answer_source = "challenge_extractive_replacement"
         command_answer = self._command_usefulness_answer(query, results)
         if command_answer:
             answer = command_answer
+            answer_source = "command_extractive_replacement"
         example_answer = self._example_extractive_answer(query, results)
         if example_answer and (
             "example" in query.lower()
@@ -103,6 +156,7 @@ class AnswerService(
             or len(self._content_terms(example_answer) - self._content_terms(answer)) >= 3
         ):
             answer = example_answer
+            answer_source = "example_extractive_replacement"
         why_answer = self._why_extractive_answer(query, results)
         if why_answer and not meaning_answer and (
             self._is_explanation_question(query)
@@ -114,6 +168,7 @@ class AnswerService(
             )
         ):
             answer = why_answer
+            answer_source = "why_extractive_replacement"
         list_answer = self._list_extractive_answer(query, results)
         if list_answer and not best_practices_answer and not limitation_answer and not used_for_answer and not config_file_answer and not meaning_answer and not challenge_answer and not command_answer and (
             self._is_list_question(query)
@@ -122,6 +177,7 @@ class AnswerService(
             or self._prefer_mechanism_answer(query, answer, list_answer)
         ):
             answer = list_answer
+            answer_source = "list_extractive_replacement"
         mechanism_answer = self._mechanism_extractive_answer(query, results)
         if mechanism_answer and (
             self._misses_intent_shape(query, answer)
@@ -129,6 +185,7 @@ class AnswerService(
             or self._prefer_mechanism_answer(query, answer, mechanism_answer)
         ):
             answer = mechanism_answer
+            answer_source = "mechanism_extractive_replacement"
         focused_entity_answer = self._focused_entity_extractive_answer(query, results)
         if focused_entity_answer and (
             self._looks_unfocused(query, answer)
@@ -137,56 +194,72 @@ class AnswerService(
             or self._prefer_focused_entity_answer(query, answer, focused_entity_answer)
         ):
             answer = focused_entity_answer
+            answer_source = "focused_entity_extractive_replacement"
         source_window_answer = self._source_window_answer(query, results)
         if source_window_answer and self._should_prefer_source_window_answer(query, answer, source_window_answer):
             answer = source_window_answer
+            answer_source = "source_window_extractive_replacement"
+
         def final_answer(candidate: str) -> str:
             candidate = self._augment_feature_answer_with_intro(query, candidate, results)
             return self._clean_final_answer(candidate, max_citation=len(results))
 
         if self._looks_under_specific(answer, results) or self._looks_unfocused(query, answer) or self._misses_intent_shape(query, answer):
+            trace["fallback_reason"] = "llm_answer_unfocused_or_under_specific"
             if capability_answer:
-                return final_answer(capability_answer)
+                return done(final_answer(capability_answer), "capability_extractive_replacement")
             if why_answer:
-                return final_answer(why_answer)
+                return done(final_answer(why_answer), "why_extractive_replacement")
             if definition_answer:
-                return final_answer(definition_answer)
+                return done(final_answer(definition_answer), "definition_extractive_replacement")
             if used_for_answer:
-                return final_answer(used_for_answer)
+                return done(final_answer(used_for_answer), "used_for_extractive_replacement")
             if config_file_answer:
-                return final_answer(config_file_answer)
+                return done(final_answer(config_file_answer), "config_file_extractive_replacement")
             if meaning_answer:
-                return final_answer(meaning_answer)
+                return done(final_answer(meaning_answer), "meaning_extractive_replacement")
             if pipeline_answer:
-                return final_answer(pipeline_answer)
+                return done(final_answer(pipeline_answer), "pipeline_extractive_replacement")
             if challenge_answer:
-                return final_answer(challenge_answer)
+                return done(final_answer(challenge_answer), "challenge_extractive_replacement")
             if command_answer:
-                return final_answer(command_answer)
+                return done(final_answer(command_answer), "command_extractive_replacement")
             if example_answer:
-                return final_answer(example_answer)
+                return done(final_answer(example_answer), "example_extractive_replacement")
             if source_window_answer:
-                return final_answer(source_window_answer)
+                return done(final_answer(source_window_answer), "source_window_extractive_replacement")
             if list_answer:
-                return final_answer(list_answer)
+                return done(final_answer(list_answer), "list_extractive_replacement")
             if mechanism_answer:
-                return final_answer(mechanism_answer)
+                return done(final_answer(mechanism_answer), "mechanism_extractive_replacement")
             if focused_entity_answer:
-                return final_answer(focused_entity_answer)
+                return done(final_answer(focused_entity_answer), "focused_entity_extractive_replacement")
             if best_practices_answer:
-                return final_answer(best_practices_answer)
+                return done(final_answer(best_practices_answer), "best_practices_extractive_replacement")
             if limitation_answer:
-                return final_answer(limitation_answer)
-            return self._generic_extractive_fallback(query, results)
+                return done(final_answer(limitation_answer), "limitation_extractive_replacement")
+            return done(self._generic_extractive_fallback(query, results), "generic_extractive_fallback")
         if self._is_insufficient_answer(answer):
-            return self._generic_extractive_fallback(query, results)
+            trace["fallback_reason"] = "insufficient_llm_answer"
+            return done(self._generic_extractive_fallback(query, results), "generic_extractive_fallback")
         answer = self._augment_feature_answer_with_intro(query, answer, results)
         if results and not re.search(r"\[\d+\]", answer):
+            trace["fallback_reason"] = "missing_citations"
             if best_practices_answer:
-                return self._clean_final_answer(best_practices_answer, max_citation=len(results))
-            return self._generic_extractive_fallback(query, results)
+                return done(
+                    self._clean_final_answer(best_practices_answer, max_citation=len(results)),
+                    "best_practices_extractive_replacement",
+                )
+            return done(self._generic_extractive_fallback(query, results), "generic_extractive_fallback")
 
-        return self._ensure_focus_entity_mentioned(query, self._clean_final_answer(answer, max_citation=len(results)))
+        return done(
+            self._ensure_focus_entity_mentioned(
+                query,
+                self._clean_final_answer(answer, max_citation=len(results)),
+            ),
+            answer_source,
+        )
+
     def _extractive_fast_path_answer(
         self,
         query: str,
@@ -194,16 +267,70 @@ class AnswerService(
         memory_context: str = "",
         tool_context: str = "",
     ) -> str:
-        if not results or tool_context.strip():
-            return ""
-        if not self._is_extractively_answerable_query(query):
-            return ""
+        answer, _ = self._extractive_fast_path_answer_with_trace(
+            query=query,
+            results=results,
+            memory_context=memory_context,
+            tool_context=tool_context,
+        )
+        return answer
 
-        for candidate in self._extractive_fast_path_candidates(query, results):
+    def _extractive_fast_path_answer_with_trace(
+        self,
+        query: str,
+        results: list[dict],
+        memory_context: str = "",
+        tool_context: str = "",
+    ) -> tuple[str, dict[str, Any]]:
+        trace: dict[str, Any] = {
+            "eligible": False,
+            "used": False,
+            "reason": "",
+            "candidate_count": 0,
+            "accepted_candidate_source": "",
+            "accepted_candidate_index": None,
+            "memory_context_present": bool(memory_context.strip()),
+            "rejections": [],
+        }
+
+        if not results:
+            trace["reason"] = "no_results"
+            return "", trace
+        if tool_context.strip():
+            trace["reason"] = "tool_context_present"
+            return "", trace
+        if not self._is_extractively_answerable_query(query):
+            trace["reason"] = "unsupported_query_shape"
+            return "", trace
+
+        trace["eligible"] = True
+        candidates = self._extractive_fast_path_candidates(query, results)
+        trace["candidate_count"] = len(candidates)
+
+        for index, (source, candidate) in enumerate(candidates, start=1):
             candidate = self._finalize_extractive_candidate(query, candidate, results)
-            if self._is_high_confidence_extractive_answer(query, candidate, results):
-                return candidate
-        return ""
+            rejection_reason = self._high_confidence_extractive_rejection_reason(
+                query=query,
+                candidate=candidate,
+                results=results,
+            )
+            if not rejection_reason:
+                trace["used"] = True
+                trace["reason"] = "accepted_high_confidence_candidate"
+                trace["accepted_candidate_source"] = source
+                trace["accepted_candidate_index"] = index
+                return candidate, trace
+            if len(trace["rejections"]) < 8:
+                trace["rejections"].append(
+                    {
+                        "candidate_source": source,
+                        "reason": rejection_reason,
+                    }
+                )
+
+        trace["reason"] = "no_high_confidence_candidate"
+        return "", trace
+
     def _is_extractively_answerable_query(self, query: str) -> bool:
         q = query.lower()
         return bool(
@@ -237,81 +364,97 @@ class AnswerService(
                 ]
             )
         )
-    def _extractive_fast_path_candidates(self, query: str, results: list[dict]) -> list[str]:
-        candidates: list[str] = []
+
+    def _extractive_fast_path_candidates(self, query: str, results: list[dict]) -> list[tuple[str, str]]:
+        candidates: list[tuple[str, str]] = []
+
+        def add(source: str, candidate: str) -> None:
+            if candidate:
+                candidates.append((source, candidate))
 
         source_window_answer = self._source_window_answer(query, results)
-        if source_window_answer:
-            candidates.append(source_window_answer)
+        add("source_window", source_window_answer)
 
         best_practices_answer = self._best_practices_extractive_answer(query, results)
-        if best_practices_answer:
-            candidates.append(best_practices_answer)
+        add("best_practices", best_practices_answer)
 
         if self._should_use_capability_extractive_answer(query, results):
             capability_answer = self._capability_extractive_answer(query, results)
-            if capability_answer:
-                candidates.append(capability_answer)
+            add("capability", capability_answer)
 
-        for builder in [
-            self._limitation_extractive_answer,
-            self._definition_extractive_answer,
-            self._used_for_extractive_answer,
-            self._config_file_purpose_answer,
-            self._meaning_extractive_answer,
-            self._pipeline_extractive_answer,
-            self._challenge_steps_answer,
-            self._command_usefulness_answer,
-            self._example_extractive_answer,
-            self._why_extractive_answer,
-            self._list_extractive_answer,
-            self._mechanism_extractive_answer,
-            self._focused_entity_extractive_answer,
+        for source, builder in [
+            ("limitation", self._limitation_extractive_answer),
+            ("definition", self._definition_extractive_answer),
+            ("used_for", self._used_for_extractive_answer),
+            ("config_file", self._config_file_purpose_answer),
+            ("meaning", self._meaning_extractive_answer),
+            ("pipeline", self._pipeline_extractive_answer),
+            ("challenge", self._challenge_steps_answer),
+            ("command", self._command_usefulness_answer),
+            ("example", self._example_extractive_answer),
+            ("why", self._why_extractive_answer),
+            ("list", self._list_extractive_answer),
+            ("mechanism", self._mechanism_extractive_answer),
+            ("focused_entity", self._focused_entity_extractive_answer),
         ]:
-            candidate = builder(query, results)
-            if candidate:
-                candidates.append(candidate)
+            add(source, builder(query, results))
         return candidates
+
     def _finalize_extractive_candidate(self, query: str, candidate: str, results: list[dict]) -> str:
         if not candidate:
             return ""
         candidate = self._augment_feature_answer_with_intro(query, candidate, results)
         candidate = self._clean_final_answer(candidate, max_citation=len(results))
         return self._ensure_focus_entity_mentioned(query, candidate)
+
     def _is_high_confidence_extractive_answer(
         self,
         query: str,
         candidate: str,
         results: list[dict],
     ) -> bool:
-        if not candidate or self._is_insufficient_answer(candidate):
-            return False
+        return not self._high_confidence_extractive_rejection_reason(
+            query=query,
+            candidate=candidate,
+            results=results,
+        )
+
+    def _high_confidence_extractive_rejection_reason(
+        self,
+        query: str,
+        candidate: str,
+        results: list[dict],
+    ) -> str:
+        if not candidate:
+            return "empty_candidate"
+        if self._is_insufficient_answer(candidate):
+            return "insufficient_candidate"
         if self._has_raw_context_leak(candidate):
-            return False
+            return "raw_context_leak"
         if self._contains_unrequested_code(candidate, query):
-            return False
+            return "unrequested_code"
         if self._is_practice_challenge_query(query) and not self._has_practice_challenge_coverage(candidate):
-            return False
+            return "practice_challenge_coverage_missing"
         if self._looks_unfocused(query, candidate):
-            return False
+            return "unfocused_candidate"
         if self._misses_intent_shape(query, candidate):
-            return False
+            return "intent_shape_missing"
         if self._answer_misses_focus_phrase(query, candidate):
-            return False
+            return "focus_phrase_missing"
         citation_numbers = [int(match) for match in re.findall(r"\[(\d+)\]", candidate)]
         if not citation_numbers:
-            return False
+            return "missing_citation"
         if any(number < 1 or number > len(results) for number in citation_numbers):
-            return False
+            return "invalid_citation"
 
         is_command_query = self._is_command_or_server_query(query)
         if is_command_query and not self._has_command_answer_coverage(candidate):
-            return False
+            return "command_coverage_missing"
         if not is_command_query and self._has_low_value_candidate_items(candidate):
-            return False
+            return "low_value_candidate_items"
         is_definition_query = bool(self._definition_query_entity(query))
         if is_definition_query and not self._has_definition_answer_coverage(query, candidate):
-            return False
+            return "definition_coverage_missing"
 
         candidate_lower = candidate.lower()
         query_terms = self._query_terms(query)
@@ -323,19 +466,28 @@ class AnswerService(
         if distinctive_query_terms and not any(term in candidate_lower for term in distinctive_query_terms):
             focus_phrases = self._focus_phrases(query)
             if not focus_phrases or self._focus_phrase_score(candidate, focus_phrases) == 0:
-                return False
+                return "distinctive_query_terms_missing"
 
         if self._looks_under_specific(candidate, results) and not (is_command_query or is_definition_query):
-            return False
+            return "under_specific_candidate"
 
         word_count = len(re.findall(r"\b\w+\b", candidate))
         if is_definition_query:
-            return 8 <= word_count <= 95
+            if 8 <= word_count <= 95:
+                return ""
+            return "definition_length_out_of_bounds"
         if self._is_list_question(query):
-            return len(citation_numbers) >= 1 and word_count >= 14
+            if len(citation_numbers) >= 1 and word_count >= 14:
+                return ""
+            return "list_answer_too_short"
         if self._is_explanation_question(query) or query.lower().startswith("how"):
-            return word_count >= 18
-        return word_count >= 8
+            if word_count >= 18:
+                return ""
+            return "explanation_answer_too_short"
+        if word_count >= 8:
+            return ""
+        return "answer_too_short"
+
     def _contains_unrequested_code(self, candidate: str, query: str) -> bool:
         if self._should_keep_code_fact(query, candidate):
             return False

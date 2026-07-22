@@ -98,6 +98,11 @@ def run_benchmark(
             elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
             perf = performance_step(response)
             verification = response.get("verification") or {}
+            retrieval_steps = [
+                step
+                for step in response.get("steps", [])
+                if step.get("type") == "retrieve"
+            ]
 
             report_items.append(
                 {
@@ -115,6 +120,8 @@ def run_benchmark(
                     "tool_calls": perf.get("tool_calls", 0),
                     "citation_count": perf.get("citation_count", 0),
                     "verification_status": verification.get("status", "unknown"),
+                    "evidence_paths": [step.get("evidence_path", "") for step in retrieval_steps],
+                    "answer_paths": [step.get("answer_path", "") for step in retrieval_steps],
                     "timings_ms": perf.get("timings_ms", {}),
                 }
             )

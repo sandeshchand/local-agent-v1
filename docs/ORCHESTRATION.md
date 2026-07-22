@@ -113,9 +113,15 @@ For retrieval steps, useful fields include:
 - `result_count`
 - `selected_count`
 - `answer_context_count`
+- `evidence_path`
+- `answer_path`
+- `evidence_trace`
+- `answer_trace`
 - `evidence_judgements`
 
 These fields are useful when debugging why a query was answered poorly.
+
+`evidence_trace` explains whether evidence selection used the deterministic fast path, LLM judging, or heuristic fallback. `answer_trace` explains whether the answer used the extractive fast path, normal LLM generation, or a deterministic replacement after LLM generation. When the answer fast path rejects candidates, the trace includes generic rejection reasons such as missing citations, raw context leakage, weak definition coverage, low-value candidate items, or under-specific content.
 
 ## Design Rules
 
@@ -161,4 +167,4 @@ Good next orchestration improvements:
 1. Add multi-step `retrieve_then_tool` tests.
 2. Add a route-confidence metric from document routing.
 3. Add per-project memory namespaces for long-running sessions.
-4. Keep expanding UI trace inspection when new orchestration step types are added.
+4. Improve UI display for `evidence_trace` and `answer_trace` summaries.

@@ -25,6 +25,15 @@ Retrieval steps also include detailed timings:
 - context merge,
 - answer generation.
 
+Retrieval steps also include decision-path fields:
+
+- `evidence_path`,
+- `answer_path`,
+- `evidence_trace`,
+- `answer_trace`.
+
+These explain whether evidence selection used the deterministic fast path, LLM judging, or heuristic fallback, and whether answering used the extractive fast path, normal LLM generation, or a deterministic replacement.
+
 Verification, guardrail, direct-answer, and tool-call steps also include timing fields where useful.
 
 ## Why This Matters
@@ -45,7 +54,7 @@ This avoids changing the whole system blindly.
 Run a quick latency benchmark:
 
 ```powershell
-venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output var\logs\latency_benchmark_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --warmup --output var\logs\latency_benchmark_report.json
 ```
 
 Run selected questions:
@@ -75,6 +84,8 @@ The script writes a JSON report with:
 - p95 latency,
 - slowest query,
 - per-query timings,
+- per-query `evidence_paths`,
+- per-query `answer_paths`,
 - trace IDs for inspection in the UI.
 
 ## Recommended Changing Process
@@ -96,11 +107,12 @@ This is the safe production pattern: baseline, change one thing, re-measure.
 Recommended order for future performance improvements:
 
 1. Measure latency with `scripts/benchmark_latency.py`.
-2. Reduce unnecessary LLM calls in planner and evidence selection.
-3. Tune reranker candidate count.
-4. Cache repeated document routing and embedding work.
-5. Move Qdrant from local path mode to server mode for larger collections.
-6. Add ingestion batching and parallel parsing for large PDF sets.
+2. Inspect `answer_path` and `evidence_path` before changing behavior.
+3. Reduce unnecessary normal LLM answer generation where trace rejection reasons show a safe generic fix.
+4. Tune reranker candidate count only if reranking remains slow after warmup.
+5. Cache repeated document routing and embedding work.
+6. Move Qdrant from local path mode to server mode for larger collections.
+7. Add ingestion batching and parallel parsing for large PDF sets.
 
 Do not optimize by removing verification or answer repair first. Those protect answer quality.
 
@@ -252,7 +264,33 @@ Trace timing after the change:
 
 Current conclusion: retrieval/model warmup is now handled. The remaining latency variance comes from questions that correctly fall back to normal LLM answer generation instead of the deterministic fast path.
 
-Next optimization target: add trace visibility for fast-path decisions, then reduce unavoidable LLM answer-generation latency without weakening verification, repair, or citation quality.
+This made fast-path observability the next optimization target.
+
+## After Fast-Path Observability
+
+The orchestrator now stores path metadata inside each retrieval step:
+
+```text
+evidence_path
+answer_path
+evidence_trace
+answer_trace
+```
+
+The latency benchmark also writes `evidence_paths` and `answer_paths` per query.
+
+Useful examples:
+
+- `evidence_path=deterministic_fast_path`: evidence did not require LLM judging.
+- `evidence_path=llm_judge`: evidence selection used the local chat model.
+- `evidence_path=heuristic_fallback_after_llm`: LLM judging selected no evidence, so deterministic fallback selected the context.
+- `answer_path=extractive_fast_path`: answer returned before LLM generation.
+- `answer_path=llm_generation`: answer came from the normal retrieval prompt.
+- `answer_path=definition_extractive_replacement`: LLM was called, but a stronger deterministic definition answer replaced it.
+
+`answer_trace.fast_path.rejections` records generic rejection reasons for skipped fast-path candidates. This is the next debugging tool for latency work: slow answers can now show whether the answer was slow because the query shape was unsupported, the candidate was under-specific, citations were missing, or normal LLM generation was genuinely needed.
+
+Next optimization target: use these trace fields to reduce unavoidable LLM answer-generation latency without weakening verification, repair, or citation quality.
 
 ## Existing Evidence Selection Optimization
 

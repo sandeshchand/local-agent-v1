@@ -31,11 +31,12 @@ Implemented:
 - Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
 - Answer-generation fast path for high-confidence citation-backed extractive answers.
 - Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
+- Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
-## 1. Add Fast-Path Observability
+## 1. Reduce Remaining LLM Fallback Latency
 
-Goal: make every performance decision visible in traces so slow answers are easy to explain.
+Goal: reduce the remaining slow answers without weakening answer quality.
 
 Evidence selection, answer generation, and retrieval/model warmup have already been optimized with safe high-confidence paths:
 
@@ -47,25 +48,24 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - fast-path answer generation is about `6ms` to `20ms` on the sampled high-confidence questions,
 - full RAG quality passed at `9.51/10` with `45/45` items at `>= 8/10`.
 
-Next change should add trace fields that explain:
+Fast-path observability is now available in retrieval trace steps:
 
-- whether the evidence fast path was used,
-- whether the answer fast path was used,
-- why a candidate was rejected from the fast path,
-- when normal LLM generation was required,
-- how much time each fallback path cost.
+- `evidence_path`
+- `answer_path`
+- `evidence_trace`
+- `answer_trace`
 
-This helps us optimize generic behavior without hardcoded document-specific keywords.
+Use these fields to inspect slow answers before changing behavior.
 
-## 2. Reduce Remaining LLM Fallback Latency
+Recommended order:
 
-Recommended order after observability:
-
-1. Add a lightweight trace marker for answer path selection.
-2. Inspect the slowest LLM fallback traces.
-3. Tighten prompt/context only where traces show excess context.
-4. Consider chat-model warmup for demos where first LLM answer latency matters.
-5. Keep citations, verification, and repair intact.
+1. Run a warmed latency benchmark.
+2. Inspect `answer_path` for the slowest query.
+3. If `answer_path=llm_generation`, inspect `answer_trace.fast_path.rejections`.
+4. Add only generic fixes for repeated safe rejection patterns.
+5. Tighten prompt/context only where traces show excess context.
+6. Consider chat-model warmup for demos where first LLM answer latency matters.
+7. Keep citations, verification, and repair intact.
 
 Do not remove verification or answer repair as the first performance optimization. They protect answer quality.
 
@@ -76,7 +76,7 @@ venv\Scripts\python.exe scripts\run_regression.py
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_after_change_report.json
 ```
 
-## 3. Optimize One Slow Stage
+## 2. Optimize One Slow Stage
 
 If latency remains high after answer-path observability, optimize one slow stage at a time:
 
@@ -91,7 +91,7 @@ Keep these constraints:
 - keep citations, verification, and repair intact,
 - re-run full RAG quality after any retrieval/warmup shortcut.
 
-## 4. Expand Gold QA
+## 3. Expand Gold QA
 
 Goal: keep the system general-purpose as more documents arrive.
 
@@ -105,7 +105,7 @@ For every new PDF, add 3 to 5 gold QA items:
 
 This prevents the system from being tuned only for Sora, Docker, or the current Medium/article PDFs.
 
-## 5. Add Scheduled Backup Policy
+## 4. Add Scheduled Backup Policy
 
 Goal: protect runtime state outside the local repo.
 
@@ -119,7 +119,7 @@ Define:
 
 Local backup/restore already works; this step turns it into an operating policy.
 
-## 6. Future Guardrail Work
+## 5. Future Guardrail Work
 
 Do this before adding write/delete tools.
 
@@ -132,7 +132,7 @@ Next guardrail tasks:
 
 Important rule: memory and tools can guide the agent, but PDF answers must still come from retrieved PDF evidence and citations.
 
-## 7. Future MCP Work
+## 6. Future MCP Work
 
 Current MCP-style tools are local read-only connectors. They are useful and safe for the current app.
 

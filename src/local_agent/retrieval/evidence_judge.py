@@ -112,13 +112,39 @@ Return only valid JSON:
         results: list[dict],
         max_items: int = 8,
     ) -> tuple[list[dict], list[JudgedEvidence]]:
+        selected, judgments, _ = self.select_evidence_with_trace(
+            query=query,
+            results=results,
+            max_items=max_items,
+        )
+        return selected, judgments
+
+    def select_evidence_with_trace(
+        self,
+        query: str,
+        results: list[dict],
+        max_items: int = 8,
+    ) -> tuple[list[dict], list[JudgedEvidence], dict[str, object]]:
         judgments: list[JudgedEvidence] = []
+        fast_path_shape = self._fast_path_shape(query)
+        trace: dict[str, object] = {
+            "path": "not_selected",
+            "fast_path_enabled": self.enable_fast_path,
+            "fast_path_shape": fast_path_shape,
+            "used_evidence_fast_path": False,
+            "input_count": len(results),
+            "prefiltered_count": 0,
+            "llm_judgment_count": 0,
+            "selected_count": 0,
+            "reason": "",
+        }
 
         judge_candidates = self._prefilter_judgment_candidates(
             query=query,
             results=results,
             max_items=max_items,
         )
+        trace["prefiltered_count"] = len(judge_candidates)
 
         if self.enable_fast_path:
             fast_selected, fast_judgments = self._high_confidence_selection(
@@ -127,10 +153,21 @@ Return only valid JSON:
                 max_items=max_items,
             )
             if fast_selected:
-                return fast_selected, fast_judgments
+                trace.update(
+                    {
+                        "path": "deterministic_fast_path",
+                        "used_evidence_fast_path": True,
+                        "selected_count": len(fast_selected),
+                        "reason": "accepted_high_confidence_evidence",
+                    }
+                )
+                return fast_selected, fast_judgments, trace
+
+        trace["path"] = "llm_judge"
 
         for item in judge_candidates:
             judgments.append(self.judge_chunk(query, item))
+        trace["llm_judgment_count"] = len(judgments)
 
         selected: list[dict] = []
         seen_chunk_ids: set[str] = set()
@@ -159,9 +196,14 @@ Return only valid JSON:
         selected = selected[:max_items]
 
         if not selected:
+            trace["path"] = "heuristic_fallback_after_llm"
+            trace["reason"] = "llm_judge_selected_no_items"
             selected = self._heuristic_fallback(query, results, max_items=max_items)
+        else:
+            trace["reason"] = "llm_judge_selected_evidence"
 
-        return selected, judgments
+        trace["selected_count"] = len(selected)
+        return selected, judgments, trace
 
     def _high_confidence_selection(
         self,

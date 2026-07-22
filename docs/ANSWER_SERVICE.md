@@ -50,6 +50,7 @@ src/local_agent/answering/
 The split uses mixins. This keeps the behavior stable while making each group easier to test and maintain. `AnswerService` still exposes the same methods used by the orchestrator:
 
 - `answer_from_context()`
+- `answer_from_context_result()`
 - `repair_answer()`
 - `answer_direct()`
 - `answer_from_tool_result()`
@@ -61,6 +62,8 @@ This package sits outside `retrieval` because it is not only a retrieval compone
 ### `answer_from_context()`
 
 This is the main RAG answer path.
+
+`answer_from_context()` returns only the final answer string for compatibility with older scripts. The orchestrator uses `answer_from_context_result()`, which returns the same answer plus structured trace metadata.
 
 Flow:
 
@@ -94,6 +97,21 @@ The fast path is intentionally conservative. It does not use document-specific k
 For definition questions such as `what is ...`, the candidate must mention the focused entity and include a definition-style relation such as `is`, `are`, `refers to`, `means`, `called`, or `known as`. This keeps the optimization generic for future PDFs.
 
 The fast path also rejects low-value bullet-like candidates that look like scraped article metadata, publication prompts, follower counts, social calls to action, or very short fragments. This prevents a noisy extraction from being accepted just because it has a citation.
+
+### `answer_from_context_result()`
+
+This is the traced variant used by the orchestrator.
+
+It returns:
+
+- `answer`: the final answer text,
+- `trace.path`: the final answer path,
+- `trace.used_answer_fast_path`: whether the high-confidence answer fast path returned before LLM generation,
+- `trace.used_llm_generation`: whether the local chat model was called,
+- `trace.fast_path`: eligibility, candidate count, accepted candidate source, and rejection reasons,
+- `trace.final_answer_source`: the final source, such as `extractive_fast_path`, `llm_generation`, `definition_extractive_replacement`, or `generic_extractive_fallback`.
+
+This metadata is saved into retrieval trace steps as `answer_trace`. It is for observability only; it should not change the answer content.
 
 ### `repair_answer()`
 

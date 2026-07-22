@@ -12,6 +12,7 @@ The latest work moved the project closer to production readiness and improved RA
 - Added a high-confidence answer-generation fast path in `AnswerService`.
 - Added retrieval/model warmup for Qdrant collection checks, query embeddings, and the cross-encoder reranker.
 - Added a safer definition fast path and low-value candidate rejection for noisy extracted bullets.
+- Added fast-path observability for evidence and answer decisions in retrieval traces.
 - Five-query latency improved from `16527.31 ms` average to `5170.94 ms` after evidence fast path, then to `2208.78 ms` after answer fast path.
 - Warmed retrieval produced a best five-query sample of `199.51 ms` average and a latest repeated sample of `1694.8 ms` average because one harder answer still used normal LLM generation.
 - Full RAG regression passed with `9.51/10` average quality and `45/45` items at `>= 8/10`.
@@ -19,27 +20,28 @@ The latest work moved the project closer to production readiness and improved RA
 
 ## First Task Tomorrow
 
-Commit today's validated performance work before starting new behavior.
+Commit today's validated observability work before starting new behavior.
 
 ```powershell
 git status --short
 git add -A
-git commit -m "perf: add retrieval warmup and definition fast path"
+git commit -m "perf: add fast-path trace observability"
 ```
 
 After that, push and merge only if the branch still looks clean.
 
 ## Recommended Feature Order
 
-1. Add fast-path observability
-   - Add trace fields showing whether evidence fast path, answer fast path, or normal LLM generation was used.
-   - Record why a candidate was rejected from the answer fast path.
-   - This will make slow answers easier to explain in the UI.
-
-2. Reduce remaining normal LLM answer latency
+1. Reduce remaining normal LLM answer latency
+   - Run the warmed latency benchmark.
+   - Inspect `answer_path` and `answer_trace.fast_path.rejections` for the slowest traces.
    - Inspect slow traces where answer generation takes several seconds.
    - Tighten prompt/context only when trace data shows the prompt is larger than needed.
    - Consider chat-model warmup for demos or local production startup.
+
+2. Improve trace UI summaries
+   - Show compact labels for `evidence_path` and `answer_path` in the trace view.
+   - Keep full JSON details expandable for debugging.
 
 3. Broaden gold QA for new PDFs
    - Add more questions from unseen PDFs, daily medium-style articles, arXiv papers, and technical blog PDFs.

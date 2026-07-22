@@ -33,12 +33,16 @@ def main() -> None:
         }
     ]
 
-    answer = service.answer_from_context(
+    answer_result = service.answer_from_context_result(
         "Summarize this Docker document.",
         results,
     )
+    answer = answer_result.answer
 
     assert chat_client.calls == 1
+    assert answer_result.trace["used_llm_generation"] is True
+    assert answer_result.trace["used_answer_fast_path"] is False
+    assert answer_result.trace["fast_path"]["reason"] == "unsupported_query_shape"
     assert "LazyDocker" in answer
     assert "terminal UI" in answer
     assert "logs" in answer
@@ -46,12 +50,16 @@ def main() -> None:
 
     fast_chat_client = CountingChatClient()
     fast_service = AnswerService(chat_client=fast_chat_client)
-    fast_answer = fast_service.answer_from_context(
+    fast_result = fast_service.answer_from_context_result(
         "What are the key features of LazyDocker?",
         results,
     )
+    fast_answer = fast_result.answer
 
     assert fast_chat_client.calls == 0
+    assert fast_result.trace["used_answer_fast_path"] is True
+    assert fast_result.trace["fast_path"]["used"] is True
+    assert fast_result.trace["fast_path"]["accepted_candidate_source"]
     assert "LazyDocker" in fast_answer
     assert "logs" in fast_answer
     assert "[1]" in fast_answer

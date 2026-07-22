@@ -410,7 +410,7 @@ class Orchestrator:
         )
         retrieval_search_ms = self._elapsed_ms(search_started_at)
         evidence_started_at = time.perf_counter()
-        selected_results, judgments = self.evidence_judge.select_evidence(
+        selected_results, judgments, evidence_trace = self.evidence_judge.select_evidence_with_trace(
             query,
             results,
             max_items=10 if broaden_doc_scope else 8,
@@ -427,12 +427,13 @@ class Orchestrator:
         if answer_results:
             answer_started_at = time.perf_counter()
             state.retrieved_items = answer_results
-            state.final_answer = self.answer_service.answer_from_context(
+            answer_result = self.answer_service.answer_from_context_result(
                 query=query,
                 results=answer_results,
                 memory_context=memory_context,
                 tool_context="",
             )
+            state.final_answer = answer_result.answer
             answer_generation_ms = self._elapsed_ms(answer_started_at)
             state.steps.append(
                 self._retrieval_step(
@@ -448,6 +449,8 @@ class Orchestrator:
                     selected_count=len(selected_results),
                     answer_context_count=len(answer_results),
                     judgments=judgments,
+                    evidence_trace=evidence_trace,
+                    answer_trace=answer_result.trace,
                     notes=action.notes,
                     doc_routing_ms=doc_routing_ms,
                     retrieval_search_ms=retrieval_search_ms,
@@ -475,6 +478,13 @@ class Orchestrator:
                 selected_count=len(selected_results),
                 answer_context_count=len(answer_results),
                 judgments=judgments,
+                evidence_trace=evidence_trace,
+                answer_trace={
+                    "path": "no_answer_context",
+                    "used_answer_fast_path": False,
+                    "used_llm_generation": False,
+                    "reason": "no_selected_answer_context",
+                },
                 notes=action.notes,
                 doc_routing_ms=doc_routing_ms,
                 retrieval_search_ms=retrieval_search_ms,
@@ -617,6 +627,8 @@ class Orchestrator:
         selected_count: int,
         answer_context_count: int,
         judgments: list[Any],
+        evidence_trace: dict[str, Any],
+        answer_trace: dict[str, Any],
         notes: str,
         doc_routing_ms: float,
         retrieval_search_ms: float,
@@ -646,6 +658,10 @@ class Orchestrator:
             "result_count": result_count,
             "selected_count": selected_count,
             "answer_context_count": answer_context_count,
+            "evidence_path": evidence_trace.get("path", ""),
+            "answer_path": answer_trace.get("path", ""),
+            "evidence_trace": evidence_trace,
+            "answer_trace": answer_trace,
             "evidence_judgements": [
                 {
                     "label": judgment.label,
