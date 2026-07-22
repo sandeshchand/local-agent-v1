@@ -260,7 +260,10 @@ Status: completed for local runtime paths and local backup/restore.
 
 ### Phase 5: Deployment Shape
 
-- Add `deploy/` with process, environment, and health-check docs.
+Status: started for local single-machine deployment.
+
+- Local deployment documentation lives in [docs/DEPLOYMENT.md](DEPLOYMENT.md).
+- Add `deploy/` later if we introduce service-manager, container, or hosted deployment assets.
 - Add deployment-specific config examples.
 - Production health endpoints for app, SQLite, Qdrant, Ollama, and model availability are started through `/health` and `/api/system/status`.
 - Add deployment rollback policy and scheduled/off-machine backup policy.

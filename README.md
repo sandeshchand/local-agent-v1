@@ -228,6 +228,8 @@ venv\Scripts\python.exe scripts\runtime_state.py --env-file .env restore --backu
 
 Detailed steps: [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md)
 
+Deployment checklist: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
 ## Production Readiness
 
 Already implemented:
@@ -243,6 +245,7 @@ Already implemented:
 - read-only local file/database connectors,
 - system health/status endpoint and UI panel,
 - local runtime backup and restore tooling,
+- local deployment guide,
 - documented architecture and subsystem behavior.
 
 Required before real production use:
@@ -290,6 +293,7 @@ Evaluation, UI, and roadmap:
 - [docs/REGRESSION.md](docs/REGRESSION.md)
 - [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
 - [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md)
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 - [docs/UI_TRACE_VIEW.md](docs/UI_TRACE_VIEW.md)
 - [docs/FEEDBACK_ANALYTICS.md](docs/FEEDBACK_ANALYTICS.md)
 - [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)

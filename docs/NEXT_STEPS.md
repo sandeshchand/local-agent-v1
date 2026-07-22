@@ -28,68 +28,33 @@ Implemented:
 - UI trace view, compact source box, feedback, eval drafts, document library, and tools panel.
 - System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
 - Runtime backup and restore for local SQLite and Qdrant state.
+- Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
-## 1. Run Full RAG Regression
+## 1. Optimize Answer Generation Latency
 
-Goal: confirm the current production-hardening changes did not reduce retrieval quality.
+Goal: reduce the new largest latency stage without weakening answer quality.
 
-Run:
+Evidence selection has already been optimized with a safe high-confidence fast path:
 
-```cmd
-venv\Scripts\python.exe scripts\run_regression.py --full --output var\logs\rag_quality_report.json
-```
+- average latency improved from `16527.31 ms` to `5170.94 ms`,
+- p95 latency improved from `26323.34 ms` to `8643.61 ms`,
+- evidence selection dropped to about `1.75ms` to `2.45ms`,
+- full RAG quality passed at `9.47/10`.
 
-Pass rules:
+Next change should inspect answer-generation prompts and context size. Good candidates:
 
-- average score should stay above `8/10`,
-- important individual items should stay above `7/10`,
-- failed items should be inspected in the UI trace before changing retrieval logic.
+- skip LLM answer generation when a deterministic extractive answer is already complete,
+- reduce prompt context for simple definition/list questions,
+- keep citations and verifier intact,
+- re-run full RAG quality after any answer-generation shortcut.
 
-If the full run passes, commit and push the current branch before starting another behavior change.
+## 2. Optimize One Slow Stage
 
-## 2. Add Production Deployment Documentation
+Recommended order after answer generation:
 
-Goal: make the repo easier to operate outside a development terminal.
-
-Create `docs/DEPLOYMENT.md` covering:
-
-- startup command,
-- `.env` values,
-- health checks,
-- logs,
-- backup/restore,
-- rollback,
-- one-server ownership for local Qdrant path mode.
-
-## 3. Measure Performance Baseline
-
-Goal: measure latency before optimizing anything.
-
-Run:
-
-```cmd
-venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output var\logs\latency_baseline_report.json
-```
-
-Then inspect:
-
-- slowest query,
-- total latency,
-- document routing time,
-- retrieval search time,
-- reranking time,
-- evidence selection time,
-- answer generation time.
-
-Only optimize the slowest confirmed stage.
-
-## 4. Optimize One Slow Stage
-
-Recommended order:
-
-1. If reranking is slow, tune `RERANK_CANDIDATES`.
-2. If answer generation is slow, reduce context size or prompt size.
+1. If first-query retrieval remains slow, inspect reranker/model warmup.
+2. If reranking is slow after warmup, tune `RERANK_CANDIDATES`.
 3. If routing is slow, cache document routing results.
 4. If embedding is slow, cache repeated query embeddings.
 5. If retrieval is slow for larger data, consider Qdrant server mode instead of local path mode.
@@ -103,7 +68,7 @@ venv\Scripts\python.exe scripts\run_regression.py
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --output var\logs\latency_after_change_report.json
 ```
 
-## 5. Expand Gold QA
+## 3. Expand Gold QA
 
 Goal: keep the system general-purpose as more documents arrive.
 
@@ -117,7 +82,21 @@ For every new PDF, add 3 to 5 gold QA items:
 
 This prevents the system from being tuned only for Sora, Docker, or the current Medium/article PDFs.
 
-## 6. Future Guardrail Work
+## 4. Add Scheduled Backup Policy
+
+Goal: protect runtime state outside the local repo.
+
+Define:
+
+- backup storage location,
+- backup frequency,
+- retention period,
+- restore-drill schedule,
+- who owns rollback decisions.
+
+Local backup/restore already works; this step turns it into an operating policy.
+
+## 5. Future Guardrail Work
 
 Do this before adding write/delete tools.
 
@@ -130,7 +109,7 @@ Next guardrail tasks:
 
 Important rule: memory and tools can guide the agent, but PDF answers must still come from retrieved PDF evidence and citations.
 
-## 7. Future MCP Work
+## 6. Future MCP Work
 
 Current MCP-style tools are local read-only connectors. They are useful and safe for the current app.
 
