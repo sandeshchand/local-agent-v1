@@ -148,6 +148,32 @@ def main() -> None:
     assert strength_trace["fast_path_shape"] == "list"
     assert any("low memory usage" in item["text"] for item in strength_selected)
 
+    large_number_chat_client = CountingChatClient()
+    large_number_judge = EvidenceJudge(large_number_chat_client, max_llm_judgments=6)
+    large_number_results = [
+        make_item(1, "General background about programming language syntax."),
+        make_item(
+            2,
+            (
+                "The language automatically manages large integers. "
+                "There is no need for special data types or separate int or long types. "
+                "A value like 10**100 works because memory is dynamically allocated."
+            ),
+        ),
+        make_item(3, "Unrelated information about list indexing."),
+    ]
+
+    large_number_selected, _, large_number_trace = large_number_judge.select_evidence_with_trace(
+        "How does the language handle very large integers?",
+        large_number_results,
+        max_items=3,
+    )
+
+    assert large_number_chat_client.calls == 0
+    assert large_number_trace["path"] == "deterministic_fast_path"
+    assert large_number_trace["fast_path_shape"] == "mechanism"
+    assert any("10**100" in item["text"] for item in large_number_selected)
+
     print("Evidence prefilter smoke test passed.")
 
 

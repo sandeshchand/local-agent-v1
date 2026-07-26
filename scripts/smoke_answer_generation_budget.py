@@ -122,6 +122,36 @@ def main() -> None:
     assert "interpretable" in strength_result.answer.lower()
     assert "[1]" in strength_result.answer
 
+    large_number_chat_client = CountingChatClient()
+    large_number_service = AnswerService(chat_client=large_number_chat_client)
+    large_number_result = large_number_service.answer_from_context_result(
+        "How does Python handle very large integers according to the article?",
+        [
+            {
+                "chunk_id": "large-numbers",
+                "title": "Python Facts",
+                "section_title": "Large numbers",
+                "page_number": 1,
+                "text": (
+                    "Python Handles Large Numbers Automatically. "
+                    "In many languages, you need special data types to handle big numbers. "
+                    "But Python automatically manages large integers. "
+                    "big_num = 10**100. "
+                    "No int or long types - just use numbers normally. "
+                    "Python dynamically allocates memory."
+                ),
+            }
+        ],
+    )
+
+    assert large_number_chat_client.calls == 0
+    assert large_number_result.trace["used_answer_fast_path"] is True
+    assert "automatically manages large integers" in large_number_result.answer.lower()
+    assert "int or long" in large_number_result.answer.lower()
+    assert "dynamically allocates memory" in large_number_result.answer.lower()
+    assert "10**100" in large_number_result.answer
+    assert "[1]" in large_number_result.answer
+
     assert (
         fast_service._has_low_value_candidate_items(
             "Sora works this way: "

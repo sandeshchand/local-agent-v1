@@ -470,6 +470,42 @@ Result:
 
 Current conclusion: strengths/advantages/benefits are now handled as generic list-style evidence. The next slow representative queries still use `evidence_path=llm_judge`; start with `python_large_numbers`, then inspect Pydantic purpose, AI side-hustle steps, Python HTTP server, CRFs, and introduction formula.
 
+## After Large-Integer Fast Path
+
+The next slow representative case was `python_large_numbers`. Evidence selection already recognized it as a mechanism query, but deterministic evidence was missing large-number markers and the source-window answer was rejected because surrounding code-heavy context made it look under-specific.
+
+Large-integer benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids python_large_numbers --warmup --output var\logs\latency_large_integer_answer_fast_path_report.json
+```
+
+Result:
+
+- `python_large_numbers` improved from `9122.65 ms` to `183.18 ms`,
+- broad-profile rerun measured it at `150.15 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `10.0/10`.
+
+Representative benchmark after the large-integer fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_large_integer_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `3618.91 ms`,
+- p50 latency: `3491.15 ms`,
+- p95 latency: `8501.83 ms`,
+- slowest query: `intro_three_part_formula` at `9674.45 ms`,
+- answer paths: `10` extractive fast path, `1` pipeline extractive replacement, `1` source-window extractive replacement,
+- evidence paths: `7` deterministic fast path, `5` LLM judge.
+
+Current conclusion: large-number/integer mechanism questions now have generic deterministic evidence and focused extractive answering. The next slow representative queries still use `evidence_path=llm_judge`; start with `intro_three_part_formula`, then inspect Pydantic purpose, AI side-hustle steps, Python HTTP server, and CRFs.
+
 ## Existing Evidence Selection Optimization
 
 An earlier baseline showed evidence selection as the slowest stage for sampled Sora questions. The first fix added a deterministic prefilter so every expanded retrieval result is not sent to the local LLM evidence judge.

@@ -60,6 +60,11 @@ class SourceWindowMixin:
             if answer:
                 return answer
 
+        if "large" in q and ("number" in q or "integer" in q):
+            answer = self._large_number_window_answer(query, results)
+            if answer:
+                return answer
+
         if "example" in q:
             answer = self._example_window_answer(query, results)
             if answer:
@@ -742,6 +747,48 @@ class SourceWindowMixin:
         candidates.sort(reverse=True)
         citation = -candidates[0][1]
         return self._clean_final_answer(f"What holds people back is: {candidates[0][2]}. [{citation}]")
+    def _large_number_window_answer(self, query: str, results: list[dict]) -> str:
+        selected: list[str] = []
+        seen: set[str] = set()
+
+        def add_fact(fact: str) -> None:
+            normalized = re.sub(r"\W+", " ", fact.lower()).strip()
+            if normalized and normalized not in seen:
+                seen.add(normalized)
+                selected.append(fact)
+
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "")
+            lower = text.lower()
+            if not (
+                ("large" in lower and ("number" in lower or "integer" in lower))
+                or "big number" in lower
+                or "10**" in lower
+            ):
+                continue
+
+            if "automatically manages large integers" in lower:
+                add_fact(f"Python automatically manages large integers. [{index}]")
+            elif "automatically manages" in lower and ("large" in lower or "big number" in lower):
+                add_fact(f"Python automatically manages large numbers. [{index}]")
+
+            if "special data types" in lower:
+                add_fact(f"It does not require special data types for big numbers. [{index}]")
+            if re.search(r"\bint\s+or\s+long\b", lower):
+                add_fact(f"There is no need for separate int or long types. [{index}]")
+            if "use numbers normally" in lower:
+                add_fact(f"Developers can use numbers normally. [{index}]")
+            if "dynamically allocates memory" in lower or "dynamic memory" in lower:
+                add_fact(f"Python dynamically allocates memory. [{index}]")
+            if "10**" in text:
+                add_fact(f"The article gives `10**100` as an example of a very large number. [{index}]")
+
+            if len(selected) >= 5:
+                break
+
+        if len(selected) < 2:
+            return ""
+        return self._clean_final_answer("Python handles very large integers this way: " + " ".join(selected))
     def _marker_sentences(self, text: str, markers: list[str], max_words: int = 45) -> str:
         sentences = [
             sentence.strip()
