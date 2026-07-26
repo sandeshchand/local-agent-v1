@@ -31,19 +31,21 @@ The latest work moved the project closer to production readiness and improved RA
 - The formula fast-path fix reduced `intro_three_part_formula` from `9674.45 ms` to `255.41 ms`.
 - The config-purpose fast-path fix reduced `pydantic_env_file_purpose` from `7100.35 ms` to `254.3 ms`.
 - The recommended-steps fast-path fix reduced `ai_money_starting_steps` from `6994.95 ms` to `172.83 ms`.
-- The broad representative profile is now `1686.67 ms` average with `5961.88 ms` p95.
-- The current slowest broad-profile case is `python_builtin_http_server` at `6530.99 ms`, with `evidence_path=llm_judge`.
+- The command-usefulness fast-path fix reduced `python_builtin_http_server` from `6530.99 ms` to `260.17 ms`.
+- The broad representative profile is now `1292.09 ms` average with `5597.91 ms` p95.
+- The current slowest broad-profile case is `ml_tsetlin_machine` at `6142.94 ms`, with deterministic evidence and extractive answering already active.
+- The remaining representative `evidence_path=llm_judge` case is `ml_crfs`.
 - Full RAG regression passed with `9.48/10` average quality and all items above the configured `7/10` item gate.
 - The latest changes are still uncommitted.
 
 ## First Task Tomorrow
 
-Commit today's validated recommended-steps fast-path work before starting new behavior.
+Commit today's validated command-usefulness fast-path work before starting new behavior.
 
 ```powershell
 git status --short
 git add -A
-git commit -m "perf: add recommended steps evidence fast path"
+git commit -m "perf: add command usefulness evidence fast path"
 ```
 
 After that, push and merge only if the branch still looks clean.
@@ -51,9 +53,9 @@ After that, push and merge only if the branch still looks clean.
 ## Recommended Feature Order
 
 1. Broaden latency coverage across document families
-   - Inspect the latest slow traces that still use `evidence_path=llm_judge`.
-   - Start with `python_builtin_http_server`, then compare CRFs.
-   - Look for a generic evidence fast-path rule, such as command-usefulness or usage coverage.
+   - Inspect `ml_tsetlin_machine` first because it is slow despite deterministic evidence and extractive answering.
+   - Check retrieval timings, reranker timing, context expansion, and trace-save overhead before changing answer behavior.
+   - Then inspect `ml_crfs`, the remaining representative `evidence_path=llm_judge` case.
    - Add only generic fixes for repeated safe rejection patterns.
    - Re-run `--profile multi-doc-representative` after each change.
    - Tighten prompt/context only when trace data shows the prompt is larger than needed.

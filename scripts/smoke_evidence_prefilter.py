@@ -256,6 +256,38 @@ def main() -> None:
     assert steps_trace["fast_path_shape"] == "list"
     assert any("Pick one skill" in item["text"] for item in steps_selected)
 
+    command_chat_client = CountingChatClient()
+    command_judge = EvidenceJudge(command_chat_client, max_llm_judgments=6)
+    command_results = [
+        make_item(1, "General background about local developer tools."),
+        make_item(
+            2,
+            (
+                "The tool has a built-in web server. You can start it with a single command: "
+                "tool serve 8000."
+            ),
+        ),
+        make_item(
+            3,
+            (
+                "Why is this useful? You can quickly test web applications, serve files in a "
+                "browser, share files over a local network, and avoid third-party tools."
+            ),
+        ),
+    ]
+
+    command_selected, _, command_trace = command_judge.select_evidence_with_trace(
+        "What built-in server command does the article provide and why is it useful?",
+        command_results,
+        max_items=3,
+    )
+
+    assert command_chat_client.calls == 0
+    assert command_trace["path"] == "deterministic_fast_path"
+    assert command_trace["fast_path_shape"] == "usage"
+    assert any("single command" in item["text"] for item in command_selected)
+    assert any("local network" in item["text"] for item in command_selected)
+
     print("Evidence prefilter smoke test passed.")
 
 

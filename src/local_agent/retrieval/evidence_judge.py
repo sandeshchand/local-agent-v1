@@ -324,7 +324,9 @@ Return only valid JSON:
             return "mechanism"
         if q.startswith("why"):
             return "explanation"
-        if any(term in q for term in ["used for", "useful for", "purpose"]):
+        if "command" in q and any(term in q for term in ["useful", "usefulness", "why", "start", "run", "provide"]):
+            return "usage"
+        if any(term in q for term in ["used for", "useful for", "useful", "usefulness", "purpose"]):
             return "usage"
         return ""
 
@@ -484,12 +486,27 @@ Return only valid JSON:
             "usage": [
                 "used for",
                 "useful for",
+                "useful",
                 "helps",
                 "allows",
                 "enables",
                 "purpose",
                 "application",
                 "applications",
+                "command",
+                "single command",
+                "built-in",
+                "web server",
+                "http server",
+                "start one instantly",
+                "quickly test",
+                "test web applications",
+                "share files",
+                "local network",
+                "third-party tools",
+                "browser",
+                "localhost",
+                "serve files",
             ],
         }
         markers = markers_by_shape.get(shape, [])
@@ -584,6 +601,18 @@ Return only valid JSON:
                 "advantages",
                 "benefit",
                 "benefits",
+                "command",
+                "single command",
+                "built-in",
+                "web server",
+                "http server",
+                "quickly test",
+                "test web applications",
+                "share files",
+                "local network",
+                "third-party tools",
+                "browser",
+                "localhost",
                 "environment variables",
                 "local development",
                 "api key",
@@ -745,6 +774,8 @@ Return only valid JSON:
             terms.extend(["formula", "part", "parts", "step", "steps", "component", "components", "hook", "highlight", "handoff"])
         if any(phrase in query_lower for phrase in [".env", "env file", "environment file", "environment variable", "environment variables"]):
             terms.extend([".env", "env file", "local development", "environment variables", "variables", "api key", "api keys", "tokens", "secrets", "database", "database url", "url of your database", "key : value", "key-value", "slow", "messy", "inconvenient", "private", "secure", "safe"])
+        if "command" in query_lower or any(term in query_lower for term in ["useful", "usefulness", "server"]):
+            terms.extend(["command", "single command", "built-in", "http server", "web server", "start", "run", "useful", "test", "web applications", "share files", "local network", "third-party", "browser", "localhost"])
         if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
             terms.extend(["representation", "encoding", "token", "patch", "spacetime", "latent", "compressed", "input", "visual representation", "encoder", "transformer", "diffusion", "diffusion transformer"])
         if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):

@@ -67,8 +67,10 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - `pydantic_env_file_purpose` improved from `7100.35 ms` to `254.3 ms` with targeted RAG quality `10.0/10`,
 - the recommended-steps fast-path fix moved `ai_money_starting_steps` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
 - `ai_money_starting_steps` improved from `6994.95 ms` to `172.83 ms` with targeted RAG quality `9.5/10`,
-- the latest broad representative profile is `1686.67 ms` average with `5961.88 ms` p95,
-- the new slowest representative case is `python_builtin_http_server`, which still uses `evidence_path=llm_judge`.
+- the command-usefulness fast-path fix moved `python_builtin_http_server` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
+- `python_builtin_http_server` improved from `6530.99 ms` to `260.17 ms` with targeted RAG quality `9.5/10`,
+- the latest broad representative profile is `1292.09 ms` average with `5597.91 ms` p95,
+- the new slowest representative case is `ml_tsetlin_machine`, which already uses deterministic evidence and extractive answering.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -82,8 +84,8 @@ Use these fields to inspect slow answers before changing behavior.
 Recommended order:
 
 1. Inspect traces for the slowest `evidence_path=llm_judge` questions.
-2. Check whether the deterministic evidence fast path missed a general query shape such as command usefulness or usage.
-3. Add only generic evidence-routing fixes for repeated safe patterns.
+2. Inspect `ml_tsetlin_machine` retrieval timings because it is slow despite deterministic evidence.
+3. Inspect `ml_crfs`, the remaining representative `evidence_path=llm_judge` case.
 4. Re-run `--profile multi-doc-representative` after each performance change.
 5. Inspect `answer_path` and `answer_trace.fast_path.rejections` only after evidence selection is no longer the slowest stage.
 6. Tighten prompt/context only where traces show excess context.

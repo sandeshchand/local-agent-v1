@@ -620,6 +620,44 @@ Result:
 
 Current conclusion: guide-style numbered recommendation lists now avoid LLM evidence judging. The next slow representative queries still use `evidence_path=llm_judge`; start with Python HTTP server command usefulness, then inspect CRF usage.
 
+## After Command-Usefulness Fast Path
+
+The next slow representative case was `python_builtin_http_server`. Answer generation already used the command extractor, but evidence selection did not classify command/usefulness questions as a deterministic evidence shape.
+
+The fix treats command questions that ask why a command is useful as usage-shaped evidence. It adds generic command-usefulness markers such as single command, built-in web server, quickly test, share files, local network, browser, localhost, and third-party tools. This is meant for command/setup guides in any document family, not only Python articles.
+
+Command-usefulness benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids python_builtin_http_server --warmup --output var\logs\latency_python_http_server_fast_path_report.json
+```
+
+Result:
+
+- `python_builtin_http_server` improved from `6530.99 ms` to `260.17 ms`,
+- broad-profile rerun measured it at `195.97 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `9.5/10`.
+
+Representative benchmark after the command-usefulness fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_python_http_server_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `1292.09 ms`,
+- p50 latency: `220.23 ms`,
+- p95 latency: `5597.91 ms`,
+- slowest query: `ml_tsetlin_machine` at `6142.94 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `11` deterministic fast path, `1` LLM judge.
+
+Current conclusion: command-usefulness questions now avoid LLM evidence judging. The next slow representative case is `ml_tsetlin_machine`, which already uses deterministic evidence and extractive answering, so inspect retrieval/reranker timing before changing answer behavior. Also inspect `ml_crfs`, the remaining representative `evidence_path=llm_judge` case.
+
 ## Existing Evidence Selection Optimization
 
 An earlier baseline showed evidence selection as the slowest stage for sampled Sora questions. The first fix added a deterministic prefilter so every expanded retrieval result is not sent to the local LLM evidence judge.
