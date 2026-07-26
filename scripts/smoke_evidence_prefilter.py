@@ -123,6 +123,31 @@ def main() -> None:
     assert role_trace["fast_path_shape"] == "list"
     assert any("planning agents" in item["text"] for item in role_selected)
 
+    strength_chat_client = CountingChatClient()
+    strength_judge = EvidenceJudge(strength_chat_client, max_llm_judgments=6)
+    strength_results = [
+        make_item(1, "General background about machine learning models."),
+        make_item(
+            2,
+            (
+                "BetaModel key strengths include low memory usage, high learning speed, "
+                "competitive performance, efficient hardware deployment, and interpretable rules."
+            ),
+        ),
+        make_item(3, "Unrelated historical context about earlier algorithms."),
+    ]
+
+    strength_selected, _, strength_trace = strength_judge.select_evidence_with_trace(
+        "What are the key strengths of BetaModel?",
+        strength_results,
+        max_items=3,
+    )
+
+    assert strength_chat_client.calls == 0
+    assert strength_trace["path"] == "deterministic_fast_path"
+    assert strength_trace["fast_path_shape"] == "list"
+    assert any("low memory usage" in item["text"] for item in strength_selected)
+
     print("Evidence prefilter smoke test passed.")
 
 

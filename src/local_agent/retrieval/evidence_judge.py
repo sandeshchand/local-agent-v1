@@ -300,6 +300,12 @@ Return only valid JSON:
                 "features",
                 "capability",
                 "capabilities",
+                "strength",
+                "strengths",
+                "advantage",
+                "advantages",
+                "benefit",
+                "benefits",
                 "approaches",
                 "types",
                 "kinds",
@@ -381,6 +387,18 @@ Return only valid JSON:
                 "including",
                 "features include",
                 "key features",
+                "strength",
+                "strengths",
+                "key strengths",
+                "advantage",
+                "advantages",
+                "benefit",
+                "benefits",
+                "low memory",
+                "high learning speed",
+                "performance",
+                "efficient",
+                "interpretable",
                 "consists of",
                 "types",
                 "steps",
@@ -510,7 +528,22 @@ Return only valid JSON:
             score += 3
         if any(
             marker in evidence_text
-            for marker in ["include", "includes", "such as", "limitation", "challenge", "because", "roles", "agents"]
+            for marker in [
+                "include",
+                "includes",
+                "such as",
+                "limitation",
+                "challenge",
+                "because",
+                "roles",
+                "agents",
+                "strength",
+                "strengths",
+                "advantage",
+                "advantages",
+                "benefit",
+                "benefits",
+            ]
         ):
             score += 1
         return score
@@ -653,6 +686,8 @@ Return only valid JSON:
             terms.extend(["architecture", "framework", "component", "module", "mechanism"])
         if any(word in query_lower for word in ["role", "roles", "agent", "agents"]):
             terms.extend(["role", "roles", "agent", "agents", "planning", "coding", "testing", "debugging", "documentation", "collaborate", "specialization"])
+        if any(word in query_lower for word in ["strength", "strengths", "advantage", "advantages", "benefit", "benefits"]):
+            terms.extend(["strength", "strengths", "advantage", "advantages", "benefit", "benefits", "memory", "speed", "performance", "hardware", "efficient", "interpretable", "competitive"])
         if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
             terms.extend(["representation", "encoding", "token", "patch", "spacetime", "latent", "compressed", "input", "visual representation", "encoder", "transformer", "diffusion", "diffusion transformer"])
         if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):

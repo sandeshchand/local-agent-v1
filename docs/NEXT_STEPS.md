@@ -57,7 +57,9 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - the broad representative profile improved from `9248.55 ms` average to `6530.7 ms` average after the intent fix,
 - the role/component fast-path fix reduced `ai_coding_multi_agent_architecture` from `21360.92 ms` to `224.57 ms`,
 - the broad representative profile improved again to `4698.4 ms` average with `9945.79 ms` p95,
-- the new slowest representative case is `ml_tsetlin_machine`, which still uses `evidence_path=llm_judge`.
+- the strengths fast-path fix moved `ml_tsetlin_machine` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
+- the broad representative profile improved again to `3649.45 ms` average with `8428.04 ms` p95,
+- the new slowest representative case is `python_large_numbers`, which still uses `evidence_path=llm_judge`.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -71,7 +73,7 @@ Use these fields to inspect slow answers before changing behavior.
 Recommended order:
 
 1. Inspect traces for the slowest `evidence_path=llm_judge` questions.
-2. Check whether the deterministic evidence fast path missed a general query shape such as strengths/purpose/mechanism.
+2. Check whether the deterministic evidence fast path missed a general query shape such as mechanism/purpose/steps/formula.
 3. Add only generic evidence-routing fixes for repeated safe patterns.
 4. Re-run `--profile multi-doc-representative` after each performance change.
 5. Inspect `answer_path` and `answer_trace.fast_path.rejections` only after evidence selection is no longer the slowest stage.

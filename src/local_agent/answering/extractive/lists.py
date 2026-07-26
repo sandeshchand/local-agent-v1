@@ -144,6 +144,8 @@ class ListExtractorMixin:
             prefix = "The limitations are:"
         elif "reason" in q or q.startswith("why"):
             prefix = "The reasons are:"
+        elif "strength" in q or "advantage" in q or "benefit" in q:
+            prefix = "The strengths are:"
         elif "role" in q or "roles" in q:
             prefix = "The roles are:"
         elif "component" in q or "components" in q:

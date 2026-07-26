@@ -25,7 +25,9 @@ The latest work moved the project closer to production readiness and improved RA
 - The broad representative profile improved from `9248.55 ms` average to `6530.7 ms` average after the intent fix.
 - The role/component fast-path fix reduced `ai_coding_multi_agent_architecture` from `21360.92 ms` to `224.57 ms`.
 - The broad representative profile improved again to `4698.4 ms` average with `9945.79 ms` p95.
-- The current slowest broad-profile case is `ml_tsetlin_machine` at `10003.9 ms`, with `evidence_path=llm_judge`.
+- The strengths fast-path fix moved `ml_tsetlin_machine` to deterministic evidence and extractive answer paths.
+- The broad representative profile improved again to `3649.45 ms` average with `8428.04 ms` p95.
+- The current slowest broad-profile case is `python_large_numbers` at `9122.65 ms`, with `evidence_path=llm_judge`.
 - Full RAG regression passed with `9.48/10` average quality and all items above the configured `7/10` item gate.
 - The latest changes are still uncommitted.
 
@@ -45,8 +47,8 @@ After that, push and merge only if the branch still looks clean.
 
 1. Broaden latency coverage across document families
    - Inspect the latest slow traces that still use `evidence_path=llm_judge`.
-   - Start with `ml_tsetlin_machine`, then compare Python and article-style slow cases.
-   - Look for a generic evidence fast-path rule, such as strengths/purpose/mechanism coverage.
+   - Start with `python_large_numbers`, then compare Pydantic purpose, AI side-hustle steps, Python HTTP server, CRFs, and introduction formula.
+   - Look for a generic evidence fast-path rule, such as mechanism/purpose/steps/formula coverage.
    - Add only generic fixes for repeated safe rejection patterns.
    - Re-run `--profile multi-doc-representative` after each change.
    - Tighten prompt/context only when trace data shows the prompt is larger than needed.
