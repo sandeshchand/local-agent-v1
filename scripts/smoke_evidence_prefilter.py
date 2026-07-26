@@ -227,6 +227,35 @@ def main() -> None:
     assert env_trace["fast_path_shape"] == "explanation"
     assert any("slow" in item["text"] and "API keys" in item["text"] for item in env_selected)
 
+    steps_chat_client = CountingChatClient()
+    steps_judge = EvidenceJudge(steps_chat_client, max_llm_judgments=6)
+    steps_results = [
+        make_item(1, "General motivation about earning side income with new tools."),
+        make_item(
+            2,
+            (
+                "Want to start? Do this first: "
+                "1. Pick one skill you already have. "
+                "2. Ask AI tools to help you draft, research, or brainstorm faster. "
+                "3. Package the skill as a service. "
+                "4. Go where people already need help. "
+                "5. Do it messy, do it fast, and do not overthink it."
+            ),
+        ),
+        make_item(3, "Unrelated author biography and publication links."),
+    ]
+
+    steps_selected, _, steps_trace = steps_judge.select_evidence_with_trace(
+        "What first steps does the article recommend for starting a side hustle?",
+        steps_results,
+        max_items=3,
+    )
+
+    assert steps_chat_client.calls == 0
+    assert steps_trace["path"] == "deterministic_fast_path"
+    assert steps_trace["fast_path_shape"] == "list"
+    assert any("Pick one skill" in item["text"] for item in steps_selected)
+
     print("Evidence prefilter smoke test passed.")
 
 

@@ -582,6 +582,44 @@ Result:
 
 Current conclusion: config/secrets/local-development purpose questions now avoid LLM evidence judging when retrieved evidence contains direct purpose signals. The next slow representative queries still use `evidence_path=llm_judge`; start with `ai_money_starting_steps`, then inspect Python HTTP server command usefulness and CRF usage.
 
+## After Recommended-Steps Fast Path
+
+The next slow representative case was `ai_money_starting_steps`. Retrieval already found the right chunk and answer generation already used the extractive list path, but deterministic evidence selection rejected the fast path because a single numbered list did not score as direct enough.
+
+The fix is generic: list-shaped questions now give directness credit to numbered list items and common recommendation/start phrasing such as "first steps", "do this first", "start today", "here's how", and "recommended". This helps article and guide-style PDFs where the answer is a compact numbered action list.
+
+Recommended-steps benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids ai_money_starting_steps --warmup --output var\logs\latency_ai_money_steps_fast_path_report.json
+```
+
+Result:
+
+- `ai_money_starting_steps` improved from `6994.95 ms` to `172.83 ms`,
+- broad-profile rerun measured it at `159.54 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `9.5/10`.
+
+Representative benchmark after the recommended-steps fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_ai_money_steps_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `1686.67 ms`,
+- p50 latency: `206.93 ms`,
+- p95 latency: `5961.88 ms`,
+- slowest query: `python_builtin_http_server` at `6530.99 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `10` deterministic fast path, `2` LLM judge.
+
+Current conclusion: guide-style numbered recommendation lists now avoid LLM evidence judging. The next slow representative queries still use `evidence_path=llm_judge`; start with Python HTTP server command usefulness, then inspect CRF usage.
+
 ## Existing Evidence Selection Optimization
 
 An earlier baseline showed evidence selection as the slowest stage for sampled Sora questions. The first fix added a deterministic prefilter so every expanded retrieval result is not sent to the local LLM evidence judge.

@@ -493,7 +493,13 @@ Return only valid JSON:
             ],
         }
         markers = markers_by_shape.get(shape, [])
-        return sum(1 for marker in markers if marker in evidence_text)
+        score = sum(1 for marker in markers if marker in evidence_text)
+        if shape == "list":
+            numbered_items = len(re.findall(r"(?<!\d)\b\d{1,2}\.\s+", evidence_text))
+            score += min(4, numbered_items)
+            if re.search(r"\b(?:first steps?|do this first|start today|here'?s how|recommended?|suggests?)\b", evidence_text):
+                score += 1
+        return score
 
     def _is_speculative_or_secondary(self, evidence_text: str) -> bool:
         return any(
