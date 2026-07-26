@@ -22,6 +22,10 @@ class ListExtractorMixin:
                     "recommend",
                     "mentioned",
                     "tools",
+                    "role",
+                    "roles",
+                    "component",
+                    "components",
                     "strengths",
                     "architecture",
                     "collaboration",
@@ -140,6 +144,10 @@ class ListExtractorMixin:
             prefix = "The limitations are:"
         elif "reason" in q or q.startswith("why"):
             prefix = "The reasons are:"
+        elif "role" in q or "roles" in q:
+            prefix = "The roles are:"
+        elif "component" in q or "components" in q:
+            prefix = "The components are:"
         elif "setup" in q or "commands" in q:
             prefix = "The setup/run items are:"
         else:

@@ -354,6 +354,10 @@ class AnswerService(
                     "pipeline",
                     "formula",
                     "example",
+                    "role",
+                    "roles",
+                    "component",
+                    "components",
                     "setup",
                     "commands",
                     "reason",
@@ -590,7 +594,16 @@ class AnswerService(
 
     def _is_command_or_server_query(self, query: str) -> bool:
         q = query.lower()
-        return any(term in q for term in ["command", "setup", "install", "run", "start", "server"])
+        command_patterns = [
+            r"\bcommands?\b",
+            r"\bsetup\b",
+            r"\binstall(?:ation)?\b",
+            r"\brun(?:ning)?\b",
+            r"\bserver\b",
+            r"\bhow\s+(?:do|can|to)\s+(?:i\s+)?(?:start|run|install|set\s+up)\b",
+            r"\bstart(?:s|ed|ing)?\s+(?:the\s+)?(?:server|app|application|container|service|tool)\b",
+        ]
+        return any(re.search(pattern, q) for pattern in command_patterns)
 
     def _has_command_answer_coverage(self, candidate: str) -> bool:
         candidate_lower = candidate.lower()

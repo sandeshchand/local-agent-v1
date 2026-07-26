@@ -63,6 +63,12 @@ Run selected questions:
 venv\Scripts\python.exe scripts\benchmark_latency.py --ids docker_watchtower_features,sora_world_simulator --output var\logs\latency_targeted_report.json
 ```
 
+Run a named profile:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_representative_report.json
+```
+
 Use a specific environment file:
 
 ```powershell
@@ -333,6 +339,100 @@ Quality gates:
 - targeted rerun for `sora_limitations`: `9.75/10`.
 
 Current conclusion: the first five warmed Sora questions now avoid normal LLM answer generation. The next performance task should run a broader latency benchmark across more document families and fix only repeated generic rejection patterns.
+
+## After Representative Intent Fix
+
+The latency benchmark now supports named profiles:
+
+- `sora-fast`: the warmed Sora sample used during earlier fast-path work,
+- `multi-doc-representative`: representative Sora, Docker, ML, Python, Pydantic, SmolDocling, and article-style questions.
+
+The first broad run showed that performance gains were strong for Sora, but several non-Sora questions still fell into expensive LLM paths.
+
+Representative benchmark before this fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_representative_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `9248.55 ms`,
+- p50 latency: `8599.45 ms`,
+- p95 latency: `20854.89 ms`,
+- slowest query: `docker_lazydocker_features` at `27781.87 ms`.
+
+Trace inspection showed two generic intent bugs:
+
+- feature and strength questions such as `What are the key features of LazyDocker?` were being treated as definition questions,
+- article questions about `starting with AI` were being treated as command/server queries because the command detector matched the word `start` too broadly.
+
+The fix keeps true definition questions in the definition path, but routes feature, strength, formula, step, limitation, tool, type, purpose, and similar questions through the list/explanation path. It also narrows command detection to command/setup/install/run/server wording instead of any word containing `start`.
+
+Targeted benchmark after this fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids docker_lazydocker_features,ml_tsetlin_machine,intro_three_part_formula,ai_money_starting_steps --warmup --output var\logs\latency_intent_fix_report.json
+```
+
+Result:
+
+- sample size: `4` queries,
+- average latency: `6786.09 ms`,
+- p50 latency: `7006.14 ms`,
+- p95 latency: `11962.25 ms`,
+- `docker_lazydocker_features` improved from `27781.87 ms` to `319.82 ms`,
+- `docker_lazydocker_features` now uses `answer_path=extractive_fast_path` and `evidence_path=deterministic_fast_path`.
+
+Representative benchmark after this fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_intent_fix_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `6530.7 ms`,
+- p50 latency: `6310.09 ms`,
+- p95 latency: `14624.11 ms`,
+- slowest query: `ai_coding_multi_agent_architecture` at `21360.92 ms`,
+- answer paths: `8` extractive fast path, `2` source-window extractive replacement, `1` generic extractive fallback, `1` pipeline extractive replacement,
+- evidence paths: `4` deterministic fast path, `8` LLM judge.
+
+The next slow representative case was `ai_coding_multi_agent_architecture`, which asked what roles specialized agents can play. The evidence and answer intent layers did not yet treat role/component questions as list-style questions.
+
+Role fast-path benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids ai_coding_multi_agent_architecture --warmup --output var\logs\latency_role_answer_fast_path_report.json
+```
+
+Result:
+
+- `ai_coding_multi_agent_architecture` improved from `21360.92 ms` to `224.57 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `9.75/10`.
+
+Representative benchmark after the role/component fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_role_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `4698.4 ms`,
+- p50 latency: `5584.24 ms`,
+- p95 latency: `9945.79 ms`,
+- slowest query: `ml_tsetlin_machine` at `10003.9 ms`,
+- answer paths: `9` extractive fast path, `2` source-window extractive replacement, `1` pipeline extractive replacement,
+- evidence paths: `5` deterministic fast path, `7` LLM judge.
+
+Current conclusion: answer intent routing is safer and faster. Docker and role/component architecture representative questions are now fast. The remaining slow representative questions mostly use `evidence_path=llm_judge`, so the next optimization should improve deterministic evidence coverage for ML, Python, and article-style questions.
 
 ## Existing Evidence Selection Optimization
 

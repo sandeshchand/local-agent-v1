@@ -293,7 +293,24 @@ Return only valid JSON:
             return "definition"
         if any(term in q for term in ["limitation", "limitations", "challenge", "risk", "weakness", "constraint"]):
             return "limitation"
-        if any(term in q for term in ["feature", "features", "capability", "capabilities", "approaches", "types", "kinds", "steps", "setup"]):
+        if any(
+            term in q
+            for term in [
+                "feature",
+                "features",
+                "capability",
+                "capabilities",
+                "approaches",
+                "types",
+                "kinds",
+                "steps",
+                "setup",
+                "role",
+                "roles",
+                "component",
+                "components",
+            ]
+        ):
             return "list"
         if q.startswith("how"):
             return "mechanism"
@@ -367,6 +384,17 @@ Return only valid JSON:
                 "consists of",
                 "types",
                 "steps",
+                "roles",
+                "roles like",
+                "agents that",
+                "planning agents",
+                "coding agents",
+                "testing agents",
+                "debugging agents",
+                "documentation agents",
+                "components",
+                "collaborate",
+                "specialization",
                 "first",
                 "then",
                 "finally",
@@ -480,7 +508,10 @@ Return only valid JSON:
         evidence_text = self._evidence_text(item)
         if self._has_query_overlap(query, item):
             score += 3
-        if any(marker in evidence_text for marker in ["include", "includes", "such as", "limitation", "challenge", "because"]):
+        if any(
+            marker in evidence_text
+            for marker in ["include", "includes", "such as", "limitation", "challenge", "because", "roles", "agents"]
+        ):
             score += 1
         return score
 
@@ -620,6 +651,8 @@ Return only valid JSON:
             terms.extend(["application", "applications", "use case", "domain", "area", "industry", "sector"])
         if any(word in query_lower for word in ["architecture", "framework", "component", "core model"]):
             terms.extend(["architecture", "framework", "component", "module", "mechanism"])
+        if any(word in query_lower for word in ["role", "roles", "agent", "agents"]):
+            terms.extend(["role", "roles", "agent", "agents", "planning", "coding", "testing", "debugging", "documentation", "collaborate", "specialization"])
         if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
             terms.extend(["representation", "encoding", "token", "patch", "spacetime", "latent", "compressed", "input", "visual representation", "encoder", "transformer", "diffusion", "diffusion transformer"])
         if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):
