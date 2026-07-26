@@ -192,9 +192,10 @@ class DefinitionUsageExtractorMixin:
             for sentence in self._split_sentences(window):
                 sentence_text = re.sub(r"\[\d+\]", "", sentence).strip()
                 sentence_lower = sentence_text.lower()
-                if self._looks_like_code_or_metadata_fact(sentence_text) and not any(
-                    marker in sentence_lower for marker in ["label", "labels", "example", "format"]
-                ):
+                if self._looks_like_code_or_metadata_fact(sentence_text):
+                    example = self._explicit_named_example(sentence_text)
+                    if example:
+                        candidates.append((35, -index, f"The example/application shown is {example}. [{index}]"))
                     continue
                 score = self._focus_phrase_score(sentence_text, {focus.lower()})
                 if acronym and re.search(rf"\b{re.escape(acronym)}s?\b", sentence_lower):
@@ -255,7 +256,8 @@ class DefinitionUsageExtractorMixin:
                 ("context", ["context", "sequential", "sequence", "independent"]),
                 ("example", ["example/application", "label", "labels", "named entity", "ner"]),
             ]
-            prefix = f"{focus or 'It'} is used for:"
+            verb = "are" if (focus or "").lower().endswith("s") else "is"
+            prefix = f"{focus or 'It'} {verb} used for:"
 
         selected = self._select_category_facts(
             category_facts,
@@ -281,6 +283,8 @@ class DefinitionUsageExtractorMixin:
         return self._clean_final_answer(f"{prefix} {' '.join(selected)}")
     def _explicit_named_example(self, text: str) -> str:
         for pattern in [
+            r"\b(?:simplified\s+)?([A-Z][A-Z0-9-]{1,12}-like\s+format)\b",
+            r"\b([A-Z][A-Z0-9-]{1,12})\s+(?:format|example|dataset|task)\b",
             r"\b([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){1,5}\s*\([A-Z][A-Z0-9-]{1,12}\))\s+(?:labels?|examples?|format|task|application)",
             r"(?:labels?|examples?|format|task|application)[^.!?]{0,80}\b([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){1,5}\s*\([A-Z][A-Z0-9-]{1,12}\))",
         ]:

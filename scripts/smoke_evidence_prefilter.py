@@ -288,6 +288,34 @@ def main() -> None:
     assert any("single command" in item["text"] for item in command_selected)
     assert any("local network" in item["text"] for item in command_selected)
 
+    technical_usage_chat_client = CountingChatClient()
+    technical_usage_judge = EvidenceJudge(technical_usage_chat_client, max_llm_judgments=6)
+    technical_usage_results = [
+        make_item(1, "General background about sequence models and classifiers."),
+        make_item(
+            2,
+            (
+                "Conditional Random Fields (CRFs) are probabilistic models used for "
+                "structured prediction. Unlike traditional classifiers that make independent "
+                "predictions, CRFs take context into account, making them useful for sequential "
+                "data. A simplified NER-like format is shown as an example dataset."
+            ),
+        ),
+        make_item(3, "Unrelated information about recommendation systems and advertising."),
+    ]
+
+    technical_usage_selected, _, technical_usage_trace = technical_usage_judge.select_evidence_with_trace(
+        "What are Conditional Random Fields used for?",
+        technical_usage_results,
+        max_items=3,
+    )
+
+    assert technical_usage_chat_client.calls == 0
+    assert technical_usage_trace["path"] == "deterministic_fast_path"
+    assert technical_usage_trace["fast_path_shape"] == "usage"
+    assert any("structured prediction" in item["text"] for item in technical_usage_selected)
+    assert any("NER-like format" in item["text"] for item in technical_usage_selected)
+
     print("Evidence prefilter smoke test passed.")
 
 

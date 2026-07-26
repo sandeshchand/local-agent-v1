@@ -71,9 +71,10 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - the command-usefulness fast-path fix moved `python_builtin_http_server` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
 - `python_builtin_http_server` improved from `6530.99 ms` to `260.17 ms` with targeted RAG quality `9.5/10`,
 - the focused-list topic filter reduced `ml_tsetlin_machine` from `2859.2 ms` in the pre-fix rerun to `211.38 ms` with targeted RAG quality `9.17/10`,
-- the latest broad representative profile is `742.0 ms` average with `3320.76 ms` p95,
-- the new slowest representative case is `ml_crfs`, the only remaining representative `evidence_path=llm_judge` item,
-- the next deterministic-but-slow representative case is `smoldocling_app_pipeline` at `1568.04 ms`.
+- the technical-usage fast path reduced `ml_crfs` from `5462.98 ms` to `259.47 ms` with targeted RAG quality `10.0/10`,
+- the latest broad representative profile is `588.94 ms` average with `2365.39 ms` p95,
+- all `12` representative queries now use `evidence_path=deterministic_fast_path`,
+- the new slowest representative case is `smoldocling_app_pipeline` at `4971.18 ms`, with deterministic evidence but slower pipeline answer replacement.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -86,9 +87,9 @@ Use these fields to inspect slow answers before changing behavior.
 
 Recommended order:
 
-1. Inspect traces for the slowest `evidence_path=llm_judge` questions.
-2. Inspect `ml_crfs`, the remaining representative `evidence_path=llm_judge` case.
-3. Inspect `smoldocling_app_pipeline`, which has deterministic evidence but still uses the slower replacement path.
+1. Inspect `smoldocling_app_pipeline`, which has deterministic evidence but still uses the slower replacement path.
+2. Inspect the pipeline answer candidate, accepted/rejected fast-path candidates, and any LLM generation before the replacement.
+3. Add only generic pipeline/process-answer improvements if the trace shows a repeated pattern.
 4. Re-run `--profile multi-doc-representative` after each performance change.
 5. Inspect `answer_path` and `answer_trace.fast_path.rejections` only after evidence selection is no longer the slowest stage.
 6. Tighten prompt/context only where traces show excess context.

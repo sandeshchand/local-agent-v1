@@ -507,6 +507,19 @@ Return only valid JSON:
                 "browser",
                 "localhost",
                 "serve files",
+                "probabilistic",
+                "structured prediction",
+                "structured",
+                "prediction",
+                "independent predictions",
+                "context",
+                "sequential data",
+                "sequential",
+                "sequence",
+                "label",
+                "labels",
+                "named entity",
+                "ner",
             ],
         }
         markers = markers_by_shape.get(shape, [])
@@ -623,6 +636,11 @@ Return only valid JSON:
                 "key : value",
                 "slow and messy",
                 "inconvenient",
+                "structured prediction",
+                "independent predictions",
+                "sequential data",
+                "named entity",
+                "ner",
             ]
         ):
             score += 1
@@ -776,6 +794,28 @@ Return only valid JSON:
             terms.extend([".env", "env file", "local development", "environment variables", "variables", "api key", "api keys", "tokens", "secrets", "database", "database url", "url of your database", "key : value", "key-value", "slow", "messy", "inconvenient", "private", "secure", "safe"])
         if "command" in query_lower or any(term in query_lower for term in ["useful", "usefulness", "server"]):
             terms.extend(["command", "single command", "built-in", "http server", "web server", "start", "run", "useful", "test", "web applications", "share files", "local network", "third-party", "browser", "localhost"])
+        if any(phrase in query_lower for phrase in ["used for", "useful for", "purpose"]):
+            terms.extend([
+                "used for",
+                "useful",
+                "application",
+                "applications",
+                "probabilistic",
+                "structured",
+                "structured prediction",
+                "prediction",
+                "context",
+                "independent",
+                "independent predictions",
+                "sequential",
+                "sequential data",
+                "sequence",
+                "label",
+                "labels",
+                "named entity",
+                "ner",
+                "format",
+            ])
         if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
             terms.extend(["representation", "encoding", "token", "patch", "spacetime", "latent", "compressed", "input", "visual representation", "encoder", "transformer", "diffusion", "diffusion transformer"])
         if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):

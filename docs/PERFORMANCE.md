@@ -698,6 +698,45 @@ Result:
 
 Current conclusion: focused entity list answers now avoid slow repair when neighboring chunks mention other named topics. The next slow case is `ml_crfs`, the remaining representative `evidence_path=llm_judge` item. After that, inspect `smoldocling_app_pipeline`, which is deterministic evidence but still slow due to the replacement path.
 
+## After Technical Usage Fast Path
+
+The `ml_crfs` trace showed that answer generation was already extractive, but evidence selection still used the LLM judge for a technical "used for" question. The fast path detected the query shape as `usage`, but the deterministic sufficiency check did not recognize structured-prediction, sequential-data, context, label, and NER signals as usage evidence.
+
+The fix extends generic technical usage evidence markers and intent terms. It also improves the used-for extractor so code-heavy example snippets are converted into a clean cited application fact, for example `NER-like format`, instead of leaking imports into the answer.
+
+Technical-usage benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids ml_crfs --warmup --output var\logs\latency_ml_crfs_usage_fast_path_report.json
+```
+
+Result:
+
+- `ml_crfs` improved from `5462.98 ms` in the previous representative run to `259.47 ms`,
+- broad-profile rerun measured it at `195.31 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- verification passed without repair,
+- targeted RAG quality: `10.0/10`.
+
+Representative benchmark after the technical usage fast path:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_ml_crfs_usage_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `588.94 ms`,
+- p50 latency: `192.36 ms`,
+- p95 latency: `2365.39 ms`,
+- slowest query: `smoldocling_app_pipeline` at `4971.18 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `12` deterministic fast path.
+
+Current conclusion: every representative query now avoids LLM evidence judging. The next slow case is `smoldocling_app_pipeline`, which has deterministic evidence but still uses the slower pipeline replacement path.
+
 ## Existing Evidence Selection Optimization
 
 An earlier baseline showed evidence selection as the slowest stage for sampled Sora questions. The first fix added a deterministic prefilter so every expanded retrieval result is not sent to the local LLM evidence judge.

@@ -153,6 +153,36 @@ def main() -> None:
     assert "10**100" in large_number_result.answer
     assert "[1]" in large_number_result.answer
 
+    crf_chat_client = CountingChatClient()
+    crf_service = AnswerService(chat_client=crf_chat_client)
+    crf_result = crf_service.answer_from_context_result(
+        "What are Conditional Random Fields used for?",
+        [
+            {
+                "chunk_id": "crf-usage",
+                "title": "Model Notes",
+                "section_title": "Conditional Random Fields",
+                "page_number": 1,
+                "text": (
+                    "Conditional Random Fields (CRFs) are probabilistic models used for structured prediction. "
+                    "Unlike traditional classifiers that make independent predictions, CRFs take context into "
+                    "account, making them useful for sequential data. Conditional Random Field structure [source] "
+                    "import numpy as np from sklearn_crfsuite import CRF # Sample dataset "
+                    "(Simplified NER-like format)."
+                ),
+            }
+        ],
+    )
+
+    assert crf_chat_client.calls == 0
+    assert crf_result.trace["used_answer_fast_path"] is True
+    assert "structured prediction" in crf_result.answer.lower()
+    assert "sequential data" in crf_result.answer.lower()
+    assert "NER-like format" in crf_result.answer
+    assert "import numpy" not in crf_result.answer
+    assert "sklearn_crfsuite" not in crf_result.answer
+    assert "[1]" in crf_result.answer
+
     formula_chat_client = CountingChatClient()
     formula_service = AnswerService(chat_client=formula_chat_client)
     formula_result = formula_service.answer_from_context_result(
