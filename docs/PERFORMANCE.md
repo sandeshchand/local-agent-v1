@@ -737,6 +737,50 @@ Result:
 
 Current conclusion: every representative query now avoids LLM evidence judging. The next slow case is `smoldocling_app_pipeline`, which has deterministic evidence but still uses the slower pipeline replacement path.
 
+## After Pipeline Fast Path
+
+The `smoldocling_app_pipeline` trace showed that the correct pipeline candidate was available, but the answer fast path rejected it as `low_value_candidate_items`. The query also looked like a `what is` definition in parts of the routing logic, and the selected evidence window did not always keep the conversion chunk that mentioned document-class construction.
+
+The fix is generic for workflow and app-pipeline questions:
+
+- pipeline/workflow/app-flow questions are not treated as definition questions,
+- short pipeline bullets such as load, generate, create, export, preview, and download count as useful answer markers,
+- strong pipeline answers can pass the high-confidence answer fast path when they cover enough stages,
+- pipeline evidence selection has its own deterministic shape so input, model, generation, document conversion, export, and UI chunks are selected together,
+- document-class extraction prefers class-like identifiers such as `DocTagsDocument.from...` or `DoclingDocument(...)` and ignores quoted display names such as `"ProcessedDocument"`.
+
+Pipeline benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids smoldocling_app_pipeline --warmup --output var\logs\latency_smoldocling_pipeline_fast_path_report.json
+```
+
+Result:
+
+- `smoldocling_app_pipeline` improved from `4971.18 ms` to `204.28 ms`,
+- broad-profile rerun measured it at `188.15 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `10.0/10`.
+
+Representative benchmark after the pipeline fast path:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_smoldocling_pipeline_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `190.57 ms`,
+- p50 latency: `184.09 ms`,
+- p95 latency: `220.62 ms`,
+- slowest query: `sora_prompt_following` at `230.65 ms`,
+- answer paths: `12` extractive fast path,
+- evidence paths: `12` deterministic fast path.
+
+Current conclusion: the representative multi-document profile is now consistently fast without removing citations, verification, repair, reranking, or document routing. The next performance work should shift from broad fast-path additions to production profiling: repeated runs, p95 stability, larger document counts, Qdrant server mode, routing/embedding caches, and UI trace summaries.
+
 ## Existing Evidence Selection Optimization
 
 An earlier baseline showed evidence selection as the slowest stage for sampled Sora questions. The first fix added a deterministic prefilter so every expanded retrieval result is not sent to the local LLM evidence judge.

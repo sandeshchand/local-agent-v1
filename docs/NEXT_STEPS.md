@@ -72,9 +72,11 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - `python_builtin_http_server` improved from `6530.99 ms` to `260.17 ms` with targeted RAG quality `9.5/10`,
 - the focused-list topic filter reduced `ml_tsetlin_machine` from `2859.2 ms` in the pre-fix rerun to `211.38 ms` with targeted RAG quality `9.17/10`,
 - the technical-usage fast path reduced `ml_crfs` from `5462.98 ms` to `259.47 ms` with targeted RAG quality `10.0/10`,
-- the latest broad representative profile is `588.94 ms` average with `2365.39 ms` p95,
+- the pipeline fast path reduced `smoldocling_app_pipeline` from `4971.18 ms` to `204.28 ms` with targeted RAG quality `10.0/10`,
+- the latest broad representative profile is `190.57 ms` average with `220.62 ms` p95,
 - all `12` representative queries now use `evidence_path=deterministic_fast_path`,
-- the new slowest representative case is `smoldocling_app_pipeline` at `4971.18 ms`, with deterministic evidence but slower pipeline answer replacement.
+- all `12` representative queries now use `answer_path=extractive_fast_path`,
+- the new slowest representative case is `sora_prompt_following` at `230.65 ms`, which is already on deterministic evidence and extractive answer paths.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -87,11 +89,11 @@ Use these fields to inspect slow answers before changing behavior.
 
 Recommended order:
 
-1. Inspect `smoldocling_app_pipeline`, which has deterministic evidence but still uses the slower replacement path.
-2. Inspect the pipeline answer candidate, accepted/rejected fast-path candidates, and any LLM generation before the replacement.
-3. Add only generic pipeline/process-answer improvements if the trace shows a repeated pattern.
-4. Re-run `--profile multi-doc-representative` after each performance change.
-5. Inspect `answer_path` and `answer_trace.fast_path.rejections` only after evidence selection is no longer the slowest stage.
+1. Run repeated `multi-doc-representative` latency profiles to confirm p95 stability.
+2. Inspect the current slowest traces, starting with `sora_prompt_following`, only if repeated runs show a real pattern.
+3. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
+4. Shift the next performance work toward production scale: larger document counts, Qdrant server mode, routing cache, and embedding cache.
+5. Improve trace UI summaries so `evidence_path`, `answer_path`, and rejection reasons are obvious without opening raw JSON.
 6. Tighten prompt/context only where traces show excess context.
 7. Consider chat-model warmup for demos where first LLM answer latency matters.
 8. Keep citations, verification, and repair intact.

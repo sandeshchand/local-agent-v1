@@ -316,6 +316,43 @@ def main() -> None:
     assert any("structured prediction" in item["text"] for item in technical_usage_selected)
     assert any("NER-like format" in item["text"] for item in technical_usage_selected)
 
+    pipeline_chat_client = CountingChatClient()
+    pipeline_judge = EvidenceJudge(pipeline_chat_client, max_llm_judgments=6)
+    pipeline_results = [
+        make_item(1, "General background about document understanding tools."),
+        make_item(
+            2,
+            (
+                "The app workflow starts by loading PDFs or images from an upload, local file, "
+                "or URL. It then loads the model and generates DocTags output for each page."
+            ),
+        ),
+        make_item(
+            3,
+            (
+                "The process creates a DocTagsDocument and a DoclingDocument, then exports "
+                "Markdown, HTML, or JSON."
+            ),
+        ),
+        make_item(
+            4,
+            "The Gradio UI renders a preview and provides download controls for the result.",
+        ),
+    ]
+
+    pipeline_selected, _, pipeline_trace = pipeline_judge.select_evidence_with_trace(
+        "What is the main pipeline of the document processing app?",
+        pipeline_results,
+        max_items=4,
+    )
+
+    assert pipeline_chat_client.calls == 0
+    assert pipeline_trace["path"] == "deterministic_fast_path"
+    assert pipeline_trace["fast_path_shape"] == "pipeline"
+    assert any("PDFs or images" in item["text"] for item in pipeline_selected)
+    assert any("DocTagsDocument" in item["text"] for item in pipeline_selected)
+    assert any("Gradio UI" in item["text"] for item in pipeline_selected)
+
     print("Evidence prefilter smoke test passed.")
 
 

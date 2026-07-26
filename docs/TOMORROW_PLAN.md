@@ -34,30 +34,32 @@ The latest work moved the project closer to production readiness and improved RA
 - The command-usefulness fast-path fix reduced `python_builtin_http_server` from `6530.99 ms` to `260.17 ms`.
 - The focused-list topic filter reduced `ml_tsetlin_machine` from `2859.2 ms` in the pre-fix rerun to `211.38 ms`.
 - The technical-usage fast path reduced `ml_crfs` from `5462.98 ms` to `259.47 ms`.
-- The broad representative profile is now `588.94 ms` average with `2365.39 ms` p95.
+- The pipeline fast path reduced `smoldocling_app_pipeline` from `4971.18 ms` to `204.28 ms`.
+- The broad representative profile is now `190.57 ms` average with `220.62 ms` p95.
 - All `12` representative queries now use deterministic evidence selection.
-- The current slowest broad-profile case is `smoldocling_app_pipeline` at `4971.18 ms`.
+- All `12` representative queries now use extractive answer fast paths.
+- The current slowest broad-profile case is `sora_prompt_following` at `230.65 ms`.
 - Full RAG regression passed with `9.48/10` average quality and all items above the configured `7/10` item gate.
 - The latest focused-list change passed smoke-only regression and targeted `ml_tsetlin_machine` quality at `9.17/10`.
 - The latest CRF usage change passed targeted quality at `10.0/10`.
+- The latest SmolDocling pipeline change passed targeted quality at `10.0/10`.
 
 ## First Task Tomorrow
 
-Start with the remaining slow representative cases. Inspect traces before changing behavior.
+Start with production-scale performance validation instead of adding another fast path. The representative profile is already fast, so repeat the broad profile and look for p95 stability before changing behavior.
 
 ```powershell
 git status --short
-venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids smoldocling_app_pipeline --warmup --output var\logs\latency_smoldocling_pipeline_inspection_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_repeat_report.json
 ```
 
-Then inspect the saved trace for `answer_path`, `answer_trace.fast_path.rejections`, LLM generation, verifier status, and any repair steps.
+Then inspect the saved traces for `answer_path`, `evidence_path`, p95 variance, verifier status, and any repair steps. Only optimize a query if repeated runs show a real slow pattern.
 
 ## Recommended Feature Order
 
 1. Broaden latency coverage across document families
-   - Inspect `smoldocling_app_pipeline`, which is deterministic evidence but still slow.
-   - Check answer path, repair path, reranker timing, context expansion, and trace-save overhead before changing behavior.
-   - Add only generic fixes for repeated safe rejection patterns.
+   - Repeat the representative profile and compare p50/p95 over several runs.
+   - Add only generic fixes for repeated safe rejection patterns across multiple document families.
    - Re-run `--profile multi-doc-representative` after each change.
    - Tighten prompt/context only when trace data shows the prompt is larger than needed.
    - Consider chat-model warmup for demos or local production startup.

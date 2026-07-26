@@ -289,6 +289,8 @@ Return only valid JSON:
         q = query.lower().strip()
         if any(phrase in q for phrase in ["compare", "across documents", "both papers", "each document"]):
             return ""
+        if any(term in q for term in ["pipeline", "workflow", "processing app", "app flow"]):
+            return "pipeline"
         if any(term in q for term in ["formula", "part formula", "three-part", "three part"]):
             return "list"
         if q.startswith("what is") or q.startswith("define ") or "definition of" in q:
@@ -338,6 +340,7 @@ Return only valid JSON:
             "mechanism": 14.0,
             "explanation": 14.0,
             "usage": 13.0,
+            "pipeline": 13.0,
         }.get(shape, 99.0)
 
     def _fast_path_is_sufficient(self, shape: str, selected: list[dict], query: str) -> bool:
@@ -354,6 +357,9 @@ Return only valid JSON:
             evidence_text = " ".join(self._evidence_text(item) for item in selected[:2])
             intent_hits = sum(1 for term in self._intent_terms(query.lower()) if term in evidence_text)
             return intent_hits >= 2 or self._directness_score(shape, evidence_text) >= 5
+        if shape == "pipeline":
+            evidence_text = " ".join(self._evidence_text(item) for item in selected)
+            return self._pipeline_stage_coverage(evidence_text) >= 3
         return False
 
     def _directness_score(self, shape: str, evidence_text: str) -> int:
@@ -521,6 +527,38 @@ Return only valid JSON:
                 "named entity",
                 "ner",
             ],
+            "pipeline": [
+                "pipeline",
+                "workflow",
+                "setup",
+                "load",
+                "input",
+                "file",
+                "upload",
+                "url",
+                "image",
+                "pdf",
+                "model",
+                "load_model",
+                "process",
+                "processing",
+                "generate",
+                "output",
+                "doctags",
+                "markup",
+                "document",
+                "doctagsdocument",
+                "doclingdocument",
+                "export",
+                "markdown",
+                "html",
+                "json",
+                "download",
+                "preview",
+                "interface",
+                "ui",
+                "gradio",
+            ],
         }
         markers = markers_by_shape.get(shape, [])
         score = sum(1 for marker in markers if marker in evidence_text)
@@ -529,7 +567,20 @@ Return only valid JSON:
             score += min(4, numbered_items)
             if re.search(r"\b(?:first steps?|do this first|start today|here'?s how|recommended?|suggests?)\b", evidence_text):
                 score += 1
+        if shape == "pipeline":
+            score += self._pipeline_stage_coverage(evidence_text) * 2
         return score
+
+    def _pipeline_stage_coverage(self, evidence_text: str) -> int:
+        stage_groups = [
+            ["pdf", "image", "file", "upload", "url", "input"],
+            ["model", "load_model", "load the"],
+            ["process", "processing", "generate", "output", "doctags", "markup"],
+            ["document", "doctagsdocument", "doclingdocument"],
+            ["export", "markdown", "html", "json", "format"],
+            ["preview", "download", "interface", "ui", "gradio"],
+        ]
+        return sum(1 for markers in stage_groups if any(marker in evidence_text for marker in markers))
 
     def _is_speculative_or_secondary(self, evidence_text: str) -> bool:
         return any(
@@ -641,6 +692,20 @@ Return only valid JSON:
                 "sequential data",
                 "named entity",
                 "ner",
+                "pipeline",
+                "workflow",
+                "setup",
+                "load_model",
+                "doctags",
+                "doctagsdocument",
+                "doclingdocument",
+                "export",
+                "markdown",
+                "html",
+                "json",
+                "download",
+                "preview",
+                "gradio",
             ]
         ):
             score += 1
@@ -790,6 +855,8 @@ Return only valid JSON:
             terms.extend(["large", "number", "numbers", "integer", "integers", "big numbers", "automatically manages", "special data types", "int", "long", "memory", "dynamic", "dynamically", "allocates", "digits", "10**"])
         if any(phrase in query_lower for phrase in ["formula", "part formula", "three-part", "three part"]):
             terms.extend(["formula", "part", "parts", "step", "steps", "component", "components", "hook", "highlight", "handoff"])
+        if any(phrase in query_lower for phrase in ["pipeline", "workflow", "processing app", "app flow"]):
+            terms.extend(["pipeline", "workflow", "setup", "load", "input", "file", "url", "upload", "pdf", "image", "model", "load_model", "process", "processing", "generate", "output", "doctags", "document", "doctagsdocument", "doclingdocument", "export", "markdown", "html", "json", "download", "preview", "interface", "ui", "gradio"])
         if any(phrase in query_lower for phrase in [".env", "env file", "environment file", "environment variable", "environment variables"]):
             terms.extend([".env", "env file", "local development", "environment variables", "variables", "api key", "api keys", "tokens", "secrets", "database", "database url", "url of your database", "key : value", "key-value", "slow", "messy", "inconvenient", "private", "secure", "safe"])
         if "command" in query_lower or any(term in query_lower for term in ["useful", "usefulness", "server"]):

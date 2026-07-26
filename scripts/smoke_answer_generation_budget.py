@@ -183,6 +183,55 @@ def main() -> None:
     assert "sklearn_crfsuite" not in crf_result.answer
     assert "[1]" in crf_result.answer
 
+    pipeline_chat_client = CountingChatClient()
+    pipeline_service = AnswerService(chat_client=pipeline_chat_client)
+    pipeline_result = pipeline_service.answer_from_context_result(
+        "What is the main pipeline of the AtlasDoc document processing app?",
+        [
+            {
+                "chunk_id": "pipeline-input",
+                "title": "Document Processing App",
+                "section_title": "Building the App",
+                "page_number": 1,
+                "text": (
+                    "This is the setup: 1. Load PDFs or Images from a local file or via URL. "
+                    "2. Load the AtlasDoc model with load_model(). "
+                    "3. Process Documents and generate DocTags for each page image."
+                ),
+            },
+            {
+                "chunk_id": "pipeline-output",
+                "title": "Document Processing App",
+                "section_title": "Export and UI",
+                "page_number": 2,
+                "text": (
+                    "The generated output creates a DocTagsDocument and DoclingDocument. "
+                    "Export the result as Markdown, HTML, JSON, or PDF. "
+                    "Render a preview and provide download controls in the Gradio UI."
+                ),
+            },
+        ],
+    )
+
+    assert pipeline_chat_client.calls == 0
+    assert pipeline_result.trace["used_answer_fast_path"] is True
+    assert pipeline_result.trace["fast_path"]["accepted_candidate_source"] == "pipeline"
+    assert "The main pipeline is:" in pipeline_result.answer
+    assert "Load PDFs or images" in pipeline_result.answer
+    assert "Load the AtlasDoc model" in pipeline_result.answer
+    assert "Generate DocTags" in pipeline_result.answer
+    assert "DocTagsDocument" in pipeline_result.answer
+    assert "DoclingDocument" in pipeline_result.answer
+    assert "Markdown" in pipeline_result.answer
+    assert "HTML" in pipeline_result.answer
+    assert "JSON" in pipeline_result.answer
+    assert "Gradio UI" in pipeline_result.answer
+    assert "[1]" in pipeline_result.answer or "[2]" in pipeline_result.answer
+    assert pipeline_service._pipeline_document_classes(
+        'doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(outputs); '
+        'doc = DoclingDocument(name="ProcessedDocument")'
+    ) == ["DocTagsDocument", "DoclingDocument"]
+
     formula_chat_client = CountingChatClient()
     formula_service = AnswerService(chat_client=formula_chat_client)
     formula_result = formula_service.answer_from_context_result(
@@ -252,6 +301,7 @@ def main() -> None:
     assert fast_service._definition_query_entity("What are the key features of LazyDocker?") == ""
     assert fast_service._definition_query_entity("What are the key strengths of Tsetlin Machines?") == ""
     assert fast_service._definition_query_entity("What is the article's three-part formula for starting with AI?") == ""
+    assert fast_service._definition_query_entity("What is the main pipeline of the document processing app?") == ""
     assert fast_service._definition_query_entity("What is Sora?") == "Sora"
     assert fast_service._is_command_or_server_query("What steps does the article suggest for starting with AI?") is False
     assert fast_service._is_command_or_server_query("What command starts the HTTP server?") is True

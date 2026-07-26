@@ -100,6 +100,8 @@ The fast path also rejects low-value bullet-like candidates that look like scrap
 
 This filter must stay precise. Technical names that contain punctuation, and ordinary terms such as `prompt following`, should not be treated as social metadata. Social metadata should be rejected only when there are clear metadata signals such as followers, following counts, publication prompts, read-time text, or clap/share language.
 
+Pipeline and workflow questions have a generic extractor for app/process flow answers. It looks for stages such as input loading, model loading, generation/processing, document conversion, export formats, preview, download, and UI rendering. For document-processing pipelines, class-like identifiers such as `DocTagsDocument` and `DoclingDocument` can be used when they appear in evidence, but quoted display names such as `"ProcessedDocument"` are ignored so the answer does not treat an instance name as a pipeline class.
+
 ### `answer_from_context_result()`
 
 This is the traced variant used by the orchestrator.
