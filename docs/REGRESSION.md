@@ -69,6 +69,12 @@ Run this when you are working on performance:
 venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --output var\logs\latency_benchmark_report.json
 ```
 
+Run the same profile multiple times when you need p95 stability, not just one sample:
+
+```cmd
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_multi_doc_stability_report.json
+```
+
 This is separate from the default regression runner because it depends on real model speed and machine load. Use it to compare before and after reports when changing retrieval, reranking, planner behavior, model settings, or context size.
 
 ## Custom Focused Eval

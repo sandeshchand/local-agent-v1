@@ -69,6 +69,12 @@ Run a named profile:
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_representative_report.json
 ```
 
+Run the same benchmark multiple times and write one stability report:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_multi_doc_stability_report.json
+```
+
 Use a specific environment file:
 
 ```powershell
@@ -89,6 +95,8 @@ The script writes a JSON report with:
 - p50 latency,
 - p95 latency,
 - slowest query,
+- repeat/run stability when `--repeat` is used,
+- evidence-path and answer-path counts when `--repeat` is used,
 - per-query timings,
 - per-query `evidence_paths`,
 - per-query `answer_paths`,
@@ -780,6 +788,35 @@ Result:
 - evidence paths: `12` deterministic fast path.
 
 Current conclusion: the representative multi-document profile is now consistently fast without removing citations, verification, repair, reranking, or document routing. The next performance work should shift from broad fast-path additions to production profiling: repeated runs, p95 stability, larger document counts, Qdrant server mode, routing/embedding caches, and UI trace summaries.
+
+## After Latency Stability Mode
+
+The latency benchmark now supports repeated runs:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_multi_doc_stability_report.json
+```
+
+This writes:
+
+- one aggregate stability report at the requested `--output`,
+- one per-run report beside it, using `_run_1`, `_run_2`, and so on,
+- run-level average/p50/p95 summaries,
+- p95 spread across runs,
+- evidence-path and answer-path counts across all runs.
+
+Latest stability result:
+
+- runs: `3`,
+- total queries: `36`,
+- average latency: `200.67 ms`,
+- p50 latency: `203.54 ms`,
+- p95 latency: `226.45 ms`,
+- slowest query: `sora_prompt_following` at `236.35 ms`,
+- p95 spread across runs: `16.06 ms`,
+- warmup: `ok`.
+
+Current conclusion: the representative profile is not just fast in one sample; it is stable across repeated local runs. The next performance tasks should focus on scale behavior rather than adding more answer fast paths: larger document sets, Qdrant server mode, routing cache, embedding cache, and clearer trace UI summaries.
 
 ## Existing Evidence Selection Optimization
 

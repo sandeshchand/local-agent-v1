@@ -74,6 +74,8 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - the technical-usage fast path reduced `ml_crfs` from `5462.98 ms` to `259.47 ms` with targeted RAG quality `10.0/10`,
 - the pipeline fast path reduced `smoldocling_app_pipeline` from `4971.18 ms` to `204.28 ms` with targeted RAG quality `10.0/10`,
 - the latest broad representative profile is `190.57 ms` average with `220.62 ms` p95,
+- the repeated broad representative profile is `200.67 ms` average with `226.45 ms` p95 across `3` runs and `36` total queries,
+- p95 spread across repeated runs is `16.06 ms`,
 - all `12` representative queries now use `evidence_path=deterministic_fast_path`,
 - all `12` representative queries now use `answer_path=extractive_fast_path`,
 - the new slowest representative case is `sora_prompt_following` at `230.65 ms`, which is already on deterministic evidence and extractive answer paths.
@@ -89,11 +91,11 @@ Use these fields to inspect slow answers before changing behavior.
 
 Recommended order:
 
-1. Run repeated `multi-doc-representative` latency profiles to confirm p95 stability.
-2. Inspect the current slowest traces, starting with `sora_prompt_following`, only if repeated runs show a real pattern.
-3. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
-4. Shift the next performance work toward production scale: larger document counts, Qdrant server mode, routing cache, and embedding cache.
-5. Improve trace UI summaries so `evidence_path`, `answer_path`, and rejection reasons are obvious without opening raw JSON.
+1. Improve trace UI summaries so `evidence_path`, `answer_path`, and rejection reasons are obvious without opening raw JSON.
+2. Shift the next performance work toward production scale: larger document counts, Qdrant server mode, routing cache, and embedding cache.
+3. Inspect the current slowest traces, starting with `sora_prompt_following`, only if repeated runs show a real pattern.
+4. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
+5. Re-run `multi-doc-representative` with `--repeat 3` after any performance-sensitive change.
 6. Tighten prompt/context only where traces show excess context.
 7. Consider chat-model warmup for demos where first LLM answer latency matters.
 8. Keep citations, verification, and repair intact.
@@ -105,7 +107,7 @@ After each optimization, run:
 ```cmd
 venv\Scripts\python.exe scripts\run_regression.py
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_after_change_report.json
-venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_after_change_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_multi_doc_after_change_report.json
 ```
 
 ## 2. Improve Trace UI Summaries

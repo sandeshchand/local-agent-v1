@@ -178,6 +178,112 @@ def run_benchmark(
     return report
 
 
+def path_counts(reports: list[dict[str, Any]], field_name: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for report in reports:
+        for item in report.get("items", []):
+            paths = item.get(field_name) or []
+            if not paths:
+                counts[""] = counts.get("", 0) + 1
+            for path in paths:
+                path_name = str(path or "")
+                counts[path_name] = counts.get(path_name, 0) + 1
+    return dict(sorted(counts.items(), key=lambda pair: pair[0]))
+
+
+def run_repeated_benchmark(
+    *,
+    eval_path: Path,
+    output_path: Path,
+    env_file: Path,
+    ids: str,
+    limit: int | None,
+    session_prefix: str,
+    warmup: bool,
+    profile: str,
+    repeat: int,
+) -> dict[str, Any]:
+    reports: list[dict[str, Any]] = []
+    run_output_paths: list[Path] = []
+
+    for run_index in range(1, repeat + 1):
+        run_output_path = output_path.with_name(
+            f"{output_path.stem}_run_{run_index}{output_path.suffix}"
+        )
+        run_output_paths.append(run_output_path)
+        reports.append(
+            run_benchmark(
+                eval_path=eval_path,
+                output_path=run_output_path,
+                env_file=env_file,
+                ids=ids,
+                limit=limit,
+                session_prefix=f"{session_prefix}-run-{run_index}",
+                warmup=warmup,
+                profile=profile,
+            )
+        )
+
+    flattened_items: list[dict[str, Any]] = []
+    for run_index, report in enumerate(reports, start=1):
+        for item in report.get("items", []):
+            flattened_items.append({"run": run_index, **item})
+
+    latencies = [float(item["total_ms"]) for item in flattened_items]
+    run_average_values = [float(report["average_ms"]) for report in reports]
+    run_p95_values = [float(report["p95_ms"]) for report in reports]
+    slowest = max(flattened_items, key=lambda item: item["total_ms"])
+    run_summaries = [
+        {
+            "run": run_index,
+            "report": str(run_output_paths[run_index - 1]),
+            "average_ms": report["average_ms"],
+            "p50_ms": report["p50_ms"],
+            "p95_ms": report["p95_ms"],
+            "slowest": report["slowest"],
+            "warmup": report.get("warmup"),
+        }
+        for run_index, report in enumerate(reports, start=1)
+    ]
+
+    aggregate_report = {
+        "eval_file": str(eval_path),
+        "profile": profile,
+        "repeat": repeat,
+        "count": len(flattened_items),
+        "queries_per_run": reports[0]["count"] if reports else 0,
+        "average_ms": round(statistics.mean(latencies), 2),
+        "min_ms": round(min(latencies), 2),
+        "max_ms": round(max(latencies), 2),
+        "p50_ms": percentile(latencies, 50),
+        "p95_ms": percentile(latencies, 95),
+        "slowest": {
+            "run": slowest["run"],
+            "id": slowest["id"],
+            "question": slowest["question"],
+            "total_ms": slowest["total_ms"],
+        },
+        "stability": {
+            "run_average_min_ms": round(min(run_average_values), 2),
+            "run_average_max_ms": round(max(run_average_values), 2),
+            "run_average_spread_ms": round(max(run_average_values) - min(run_average_values), 2),
+            "run_p95_min_ms": round(min(run_p95_values), 2),
+            "run_p95_max_ms": round(max(run_p95_values), 2),
+            "run_p95_spread_ms": round(max(run_p95_values) - min(run_p95_values), 2),
+        },
+        "evidence_path_counts": path_counts(reports, "evidence_paths"),
+        "answer_path_counts": path_counts(reports, "answer_paths"),
+        "runs": run_summaries,
+        "items": flattened_items,
+    }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(aggregate_report, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    return aggregate_report
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Benchmark local agent latency.")
     parser.add_argument(
@@ -223,6 +329,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Warm retrieval dependencies before measuring query latency.",
     )
     parser.add_argument(
+        "--repeat",
+        type=int,
+        default=1,
+        help="Run the selected benchmark N times and write an aggregate stability report.",
+    )
+    parser.add_argument(
         "--fail-over-average-ms",
         type=float,
         default=None,
@@ -242,36 +354,70 @@ def main() -> None:
     if args.ids and args.profile:
         print("ERROR: Use either --ids or --profile, not both.")
         sys.exit(1)
+    if args.repeat < 1:
+        print("ERROR: --repeat must be 1 or greater.")
+        sys.exit(1)
 
     ids = args.ids
     if args.profile:
         ids = ",".join(LATENCY_PROFILES[args.profile])
 
     try:
-        report = run_benchmark(
-            eval_path=ROOT / args.eval_file,
-            output_path=ROOT / args.output,
-            env_file=ROOT / args.env_file,
-            ids=ids,
-            limit=args.limit,
-            session_prefix=args.session_prefix,
-            warmup=args.warmup,
-            profile=args.profile,
-        )
+        if args.repeat == 1:
+            report = run_benchmark(
+                eval_path=ROOT / args.eval_file,
+                output_path=ROOT / args.output,
+                env_file=ROOT / args.env_file,
+                ids=ids,
+                limit=args.limit,
+                session_prefix=args.session_prefix,
+                warmup=args.warmup,
+                profile=args.profile,
+            )
+        else:
+            report = run_repeated_benchmark(
+                eval_path=ROOT / args.eval_file,
+                output_path=ROOT / args.output,
+                env_file=ROOT / args.env_file,
+                ids=ids,
+                limit=args.limit,
+                session_prefix=args.session_prefix,
+                warmup=args.warmup,
+                profile=args.profile,
+                repeat=args.repeat,
+            )
     except Exception as exc:
         print(f"ERROR: {exc}")
         sys.exit(1)
 
-    print(f"Latency benchmark complete: {report['count']} queries")
+    if args.repeat == 1:
+        print(f"Latency benchmark complete: {report['count']} queries")
+    else:
+        print(
+            f"Latency stability benchmark complete: {report['repeat']} runs, "
+            f"{report['count']} total queries"
+        )
     print(f"Average: {report['average_ms']} ms")
     print(f"p50: {report['p50_ms']} ms")
     print(f"p95: {report['p95_ms']} ms")
-    print(f"Slowest: {report['slowest']['id']} at {report['slowest']['total_ms']} ms")
+    slowest_prefix = f"run {report['slowest']['run']}, " if args.repeat > 1 else ""
+    print(f"Slowest: {slowest_prefix}{report['slowest']['id']} at {report['slowest']['total_ms']} ms")
     if report.get("profile"):
         print(f"Profile: {report['profile']}")
+    if args.repeat > 1:
+        stability = report.get("stability") or {}
+        print(
+            "Run p95 spread: "
+            f"{stability.get('run_p95_spread_ms')} ms "
+            f"({stability.get('run_p95_min_ms')} - {stability.get('run_p95_max_ms')} ms)"
+        )
     if report.get("warmup"):
         warmup_ok = report["warmup"].get("ok")
         print(f"Warmup: {'ok' if warmup_ok else 'completed with errors'}")
+    elif args.repeat > 1 and report.get("runs"):
+        warmup_ok = all((run.get("warmup") or {}).get("ok") for run in report["runs"])
+        if args.warmup:
+            print(f"Warmup: {'ok' if warmup_ok else 'completed with errors'}")
     print(f"Report: {args.output}")
 
     failed = False

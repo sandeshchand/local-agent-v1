@@ -36,6 +36,8 @@ The latest work moved the project closer to production readiness and improved RA
 - The technical-usage fast path reduced `ml_crfs` from `5462.98 ms` to `259.47 ms`.
 - The pipeline fast path reduced `smoldocling_app_pipeline` from `4971.18 ms` to `204.28 ms`.
 - The broad representative profile is now `190.57 ms` average with `220.62 ms` p95.
+- The repeated representative profile is `200.67 ms` average with `226.45 ms` p95 across `3` runs and `36` total queries.
+- The repeated profile p95 spread is `16.06 ms`.
 - All `12` representative queries now use deterministic evidence selection.
 - All `12` representative queries now use extractive answer fast paths.
 - The current slowest broad-profile case is `sora_prompt_following` at `230.65 ms`.
@@ -46,19 +48,18 @@ The latest work moved the project closer to production readiness and improved RA
 
 ## First Task Tomorrow
 
-Start with production-scale performance validation instead of adding another fast path. The representative profile is already fast, so repeat the broad profile and look for p95 stability before changing behavior.
+Start with trace UI summaries. The representative profile is already fast and stable, so the next user-facing improvement is making trace metadata readable without opening raw JSON.
 
 ```powershell
 git status --short
-venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_repeat_report.json
 ```
 
-Then inspect the saved traces for `answer_path`, `evidence_path`, p95 variance, verifier status, and any repair steps. Only optimize a query if repeated runs show a real slow pattern.
+Then inspect `src\local_agent\app\web.py` and the UI template/static assets. Add compact labels for `evidence_path`, `answer_path`, and answer fast-path rejection reasons while keeping raw trace JSON expandable.
 
 ## Recommended Feature Order
 
 1. Broaden latency coverage across document families
-   - Repeat the representative profile and compare p50/p95 over several runs.
+   - Repeat the representative profile with `--repeat 3` after performance-sensitive changes.
    - Add only generic fixes for repeated safe rejection patterns across multiple document families.
    - Re-run `--profile multi-doc-representative` after each change.
    - Tighten prompt/context only when trace data shows the prompt is larger than needed.
@@ -96,7 +97,7 @@ For answering, retrieval, or ranking changes:
 ```powershell
 venv\Scripts\python.exe scripts\run_regression.py --full --output var\logs\rag_quality_report.json
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_after_change_report.json
-venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_after_change_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_multi_doc_after_change_report.json
 ```
 
 ## Important Reminders
