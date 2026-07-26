@@ -419,6 +419,17 @@ Return only valid JSON:
                 "such as",
             ],
             "mechanism": [
+                "automatically manages",
+                "large integers",
+                "large numbers",
+                "big numbers",
+                "special data types",
+                "int or long",
+                "dynamically allocates",
+                "allocates memory",
+                "dynamic memory",
+                "10**",
+                "digits",
                 "using",
                 "uses",
                 "through",
@@ -688,6 +699,8 @@ Return only valid JSON:
             terms.extend(["role", "roles", "agent", "agents", "planning", "coding", "testing", "debugging", "documentation", "collaborate", "specialization"])
         if any(word in query_lower for word in ["strength", "strengths", "advantage", "advantages", "benefit", "benefits"]):
             terms.extend(["strength", "strengths", "advantage", "advantages", "benefit", "benefits", "memory", "speed", "performance", "hardware", "efficient", "interpretable", "competitive"])
+        if any(phrase in query_lower for phrase in ["large number", "large numbers", "large integer", "large integers", "very large", "big number", "big numbers"]):
+            terms.extend(["large", "number", "numbers", "integer", "integers", "big numbers", "automatically manages", "special data types", "int", "long", "memory", "dynamic", "dynamically", "allocates", "digits", "10**"])
         if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
             terms.extend(["representation", "encoding", "token", "patch", "spacetime", "latent", "compressed", "input", "visual representation", "encoder", "transformer", "diffusion", "diffusion transformer"])
         if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):

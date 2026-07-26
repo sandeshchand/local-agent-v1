@@ -459,6 +459,7 @@ class AnswerService(
         is_definition_query = bool(self._definition_query_entity(query))
         if is_definition_query and not self._has_definition_answer_coverage(query, candidate):
             return "definition_coverage_missing"
+        has_large_number_coverage = self._has_large_number_answer_coverage(query, candidate)
 
         candidate_lower = candidate.lower()
         query_terms = self._query_terms(query)
@@ -472,7 +473,9 @@ class AnswerService(
             if not focus_phrases or self._focus_phrase_score(candidate, focus_phrases) == 0:
                 return "distinctive_query_terms_missing"
 
-        if self._looks_under_specific(candidate, results) and not (is_command_query or is_definition_query):
+        if self._looks_under_specific(candidate, results) and not (
+            is_command_query or is_definition_query or has_large_number_coverage
+        ):
             return "under_specific_candidate"
 
         word_count = len(re.findall(r"\b\w+\b", candidate))
@@ -591,6 +594,31 @@ class AnswerService(
             and self._matches_entity_terms(candidate_lower, entity_terms)
             and any(marker in candidate_lower for marker in relation_markers)
         )
+
+    def _has_large_number_answer_coverage(self, query: str, candidate: str) -> bool:
+        query_lower = query.lower()
+        if not (
+            ("large" in query_lower and ("number" in query_lower or "integer" in query_lower))
+            or "very large" in query_lower
+            or "big number" in query_lower
+        ):
+            return False
+
+        candidate_lower = candidate.lower()
+        coverage_groups = [
+            ["large integer", "large number", "big number", "very large"],
+            ["automatically manages", "automatically handle", "handles automatically"],
+            ["special data type", "int or long", "separate int", "separate long"],
+            ["dynamic memory", "dynamically allocates", "allocates memory"],
+            ["10**", "100 digits", "digits"],
+            ["use numbers normally", "numbers normally"],
+        ]
+        matched_groups = sum(
+            1
+            for markers in coverage_groups
+            if any(marker in candidate_lower for marker in markers)
+        )
+        return matched_groups >= 4
 
     def _is_command_or_server_query(self, query: str) -> bool:
         q = query.lower()

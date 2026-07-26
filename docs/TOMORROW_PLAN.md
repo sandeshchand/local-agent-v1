@@ -27,7 +27,9 @@ The latest work moved the project closer to production readiness and improved RA
 - The broad representative profile improved again to `4698.4 ms` average with `9945.79 ms` p95.
 - The strengths fast-path fix moved `ml_tsetlin_machine` to deterministic evidence and extractive answer paths.
 - The broad representative profile improved again to `3649.45 ms` average with `8428.04 ms` p95.
-- The current slowest broad-profile case is `python_large_numbers` at `9122.65 ms`, with `evidence_path=llm_judge`.
+- The large-integer fast-path fix reduced `python_large_numbers` from `9122.65 ms` to `183.18 ms`.
+- The broad representative profile is now `3618.91 ms` average with `8501.83 ms` p95.
+- The current slowest broad-profile case is `intro_three_part_formula` at `9674.45 ms`, with `evidence_path=llm_judge`.
 - Full RAG regression passed with `9.48/10` average quality and all items above the configured `7/10` item gate.
 - The latest changes are still uncommitted.
 
@@ -47,8 +49,8 @@ After that, push and merge only if the branch still looks clean.
 
 1. Broaden latency coverage across document families
    - Inspect the latest slow traces that still use `evidence_path=llm_judge`.
-   - Start with `python_large_numbers`, then compare Pydantic purpose, AI side-hustle steps, Python HTTP server, CRFs, and introduction formula.
-   - Look for a generic evidence fast-path rule, such as mechanism/purpose/steps/formula coverage.
+   - Start with `intro_three_part_formula`, then compare Pydantic purpose, AI side-hustle steps, Python HTTP server, and CRFs.
+   - Look for a generic evidence fast-path rule, such as formula/purpose/steps/usage coverage.
    - Add only generic fixes for repeated safe rejection patterns.
    - Re-run `--profile multi-doc-representative` after each change.
    - Tighten prompt/context only when trace data shows the prompt is larger than needed.
