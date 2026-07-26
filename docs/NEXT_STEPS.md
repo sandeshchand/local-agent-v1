@@ -36,6 +36,7 @@ Implemented:
 - Named latency benchmark profiles for Sora-only and multi-document representative coverage.
 - Safer answer intent routing so feature/strength/formula/step questions are not treated as definitions.
 - Narrow command intent routing so `starting with AI` style questions are not treated as command/server requests.
+- Focused entity list filtering so answers do not mix neighboring named topics into feature/strength lists.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
 ## 1. Broaden Latency Coverage Across Document Families
@@ -69,8 +70,10 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - `ai_money_starting_steps` improved from `6994.95 ms` to `172.83 ms` with targeted RAG quality `9.5/10`,
 - the command-usefulness fast-path fix moved `python_builtin_http_server` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
 - `python_builtin_http_server` improved from `6530.99 ms` to `260.17 ms` with targeted RAG quality `9.5/10`,
-- the latest broad representative profile is `1292.09 ms` average with `5597.91 ms` p95,
-- the new slowest representative case is `ml_tsetlin_machine`, which already uses deterministic evidence and extractive answering.
+- the focused-list topic filter reduced `ml_tsetlin_machine` from `2859.2 ms` in the pre-fix rerun to `211.38 ms` with targeted RAG quality `9.17/10`,
+- the latest broad representative profile is `742.0 ms` average with `3320.76 ms` p95,
+- the new slowest representative case is `ml_crfs`, the only remaining representative `evidence_path=llm_judge` item,
+- the next deterministic-but-slow representative case is `smoldocling_app_pipeline` at `1568.04 ms`.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -84,8 +87,8 @@ Use these fields to inspect slow answers before changing behavior.
 Recommended order:
 
 1. Inspect traces for the slowest `evidence_path=llm_judge` questions.
-2. Inspect `ml_tsetlin_machine` retrieval timings because it is slow despite deterministic evidence.
-3. Inspect `ml_crfs`, the remaining representative `evidence_path=llm_judge` case.
+2. Inspect `ml_crfs`, the remaining representative `evidence_path=llm_judge` case.
+3. Inspect `smoldocling_app_pipeline`, which has deterministic evidence but still uses the slower replacement path.
 4. Re-run `--profile multi-doc-representative` after each performance change.
 5. Inspect `answer_path` and `answer_trace.fast_path.rejections` only after evidence selection is no longer the slowest stage.
 6. Tighten prompt/context only where traces show excess context.

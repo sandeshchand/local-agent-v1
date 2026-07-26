@@ -117,7 +117,8 @@ def main() -> None:
 
     assert strength_chat_client.calls == 0
     assert strength_result.trace["used_answer_fast_path"] is True
-    assert "The strengths are:" in strength_result.answer
+    assert "BetaModel" in strength_result.answer
+    assert "strengths are:" in strength_result.answer
     assert "competitive performance" in strength_result.answer.lower()
     assert "interpretable" in strength_result.answer.lower()
     assert "[1]" in strength_result.answer

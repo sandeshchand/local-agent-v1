@@ -445,6 +445,8 @@ class AnswerService(
             return "intent_shape_missing"
         if self._answer_misses_focus_phrase(query, candidate):
             return "focus_phrase_missing"
+        if self._has_competing_focus_topic(query, candidate):
+            return "competing_named_topic"
         citation_numbers = [int(match) for match in re.findall(r"\[(\d+)\]", candidate)]
         if not citation_numbers:
             return "missing_citation"
@@ -495,6 +497,36 @@ class AnswerService(
         if word_count >= 8:
             return ""
         return "answer_too_short"
+
+    def _has_competing_focus_topic(self, query: str, candidate: str) -> bool:
+        q = query.lower()
+        if not any(
+            term in q
+            for term in [
+                "feature",
+                "features",
+                "capability",
+                "capabilities",
+                "strength",
+                "strengths",
+                "advantage",
+                "advantages",
+                "benefit",
+                "benefits",
+                "role",
+                "roles",
+                "component",
+                "components",
+            ]
+        ):
+            return False
+        focus_phrases = set(self._focus_phrases(query))
+        focus_entity = self._focus_entity_display(query)
+        if focus_entity:
+            focus_phrases.add(focus_entity.lower())
+        if not focus_phrases:
+            return False
+        return self._mentions_competing_named_topic(candidate, focus_phrases)
 
     def _contains_unrequested_code(self, candidate: str, query: str) -> bool:
         if self._should_keep_code_fact(query, candidate):

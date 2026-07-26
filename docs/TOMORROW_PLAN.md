@@ -32,30 +32,30 @@ The latest work moved the project closer to production readiness and improved RA
 - The config-purpose fast-path fix reduced `pydantic_env_file_purpose` from `7100.35 ms` to `254.3 ms`.
 - The recommended-steps fast-path fix reduced `ai_money_starting_steps` from `6994.95 ms` to `172.83 ms`.
 - The command-usefulness fast-path fix reduced `python_builtin_http_server` from `6530.99 ms` to `260.17 ms`.
-- The broad representative profile is now `1292.09 ms` average with `5597.91 ms` p95.
-- The current slowest broad-profile case is `ml_tsetlin_machine` at `6142.94 ms`, with deterministic evidence and extractive answering already active.
-- The remaining representative `evidence_path=llm_judge` case is `ml_crfs`.
+- The focused-list topic filter reduced `ml_tsetlin_machine` from `2859.2 ms` in the pre-fix rerun to `211.38 ms`.
+- The broad representative profile is now `742.0 ms` average with `3320.76 ms` p95.
+- The current slowest broad-profile case is `ml_crfs` at `5462.98 ms`.
+- The next deterministic-but-slow broad-profile case is `smoldocling_app_pipeline` at `1568.04 ms`.
 - Full RAG regression passed with `9.48/10` average quality and all items above the configured `7/10` item gate.
-- The latest changes are still uncommitted.
+- The latest focused-list change passed smoke-only regression and targeted `ml_tsetlin_machine` quality at `9.17/10`.
 
 ## First Task Tomorrow
 
-Commit today's validated command-usefulness fast-path work before starting new behavior.
+Start with the remaining slow representative cases. Inspect traces before changing behavior.
 
 ```powershell
 git status --short
-git add -A
-git commit -m "perf: add command usefulness evidence fast path"
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids ml_crfs --warmup --output var\logs\latency_ml_crfs_inspection_report.json
 ```
 
-After that, push and merge only if the branch still looks clean.
+Then inspect the saved trace for `evidence_path`, `answer_path`, `answer_trace`, verifier status, and any repair steps.
 
 ## Recommended Feature Order
 
 1. Broaden latency coverage across document families
-   - Inspect `ml_tsetlin_machine` first because it is slow despite deterministic evidence and extractive answering.
-   - Check retrieval timings, reranker timing, context expansion, and trace-save overhead before changing answer behavior.
-   - Then inspect `ml_crfs`, the remaining representative `evidence_path=llm_judge` case.
+   - Inspect `ml_crfs`, the remaining representative `evidence_path=llm_judge` case.
+   - Then inspect `smoldocling_app_pipeline`, which is deterministic evidence but still slow.
+   - Check evidence selection, answer path, repair path, reranker timing, context expansion, and trace-save overhead before changing behavior.
    - Add only generic fixes for repeated safe rejection patterns.
    - Re-run `--profile multi-doc-representative` after each change.
    - Tighten prompt/context only when trace data shows the prompt is larger than needed.

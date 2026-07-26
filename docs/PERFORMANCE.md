@@ -658,6 +658,46 @@ Result:
 
 Current conclusion: command-usefulness questions now avoid LLM evidence judging. The next slow representative case is `ml_tsetlin_machine`, which already uses deterministic evidence and extractive answering, so inspect retrieval/reranker timing before changing answer behavior. Also inspect `ml_crfs`, the remaining representative `evidence_path=llm_judge` case.
 
+## After Focused List Topic Filter
+
+The `ml_tsetlin_machine` trace showed that retrieval and extractive answer generation were already fast, but the first list answer mixed neighboring sections such as Symbolic Regression and Random Kitchen Sinks into the Tsetlin answer. Verification correctly rejected that mixed-topic answer, and LLM answer repair added most of the latency.
+
+The fix keeps focused list questions generic: when a query names a focus entity, the list extractor now filters competing named-topic facts, keeps section follow-up facts only when they read like details of the focused entity, and uses an entity-specific prefix for feature, strength, role, and component answers. The high-confidence answer gate also rejects focused feature/list candidates that introduce a separate named topic, so source-window candidates can fall through to stricter extractive list answers. A synthetic focused-list smoke test was added to regression coverage.
+
+Focused-list benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids ml_tsetlin_machine --warmup --output var\logs\latency_tsetlin_focused_list_final_report.json
+```
+
+Result:
+
+- `ml_tsetlin_machine` improved from `2859.2 ms` in the pre-fix rerun to `211.38 ms`,
+- broad-profile rerun measured it at `193.14 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- verification passed without `answer_repair`,
+- targeted RAG quality: `9.17/10`.
+
+Representative benchmark after the focused-list topic filter:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_focused_list_final_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `742.0 ms`,
+- p50 latency: `196.03 ms`,
+- p95 latency: `3320.76 ms`,
+- slowest query: `ml_crfs` at `5462.98 ms`,
+- next deterministic-but-slow query: `smoldocling_app_pipeline` at `1568.04 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `11` deterministic fast path, `1` LLM judge.
+
+Current conclusion: focused entity list answers now avoid slow repair when neighboring chunks mention other named topics. The next slow case is `ml_crfs`, the remaining representative `evidence_path=llm_judge` item. After that, inspect `smoldocling_app_pipeline`, which is deterministic evidence but still slow due to the replacement path.
+
 ## Existing Evidence Selection Optimization
 
 An earlier baseline showed evidence selection as the slowest stage for sampled Sora questions. The first fix added a deterministic prefilter so every expanded retrieval result is not sent to the local LLM evidence judge.
