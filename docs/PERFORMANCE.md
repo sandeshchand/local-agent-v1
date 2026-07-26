@@ -434,6 +434,42 @@ Result:
 
 Current conclusion: answer intent routing is safer and faster. Docker and role/component architecture representative questions are now fast. The remaining slow representative questions mostly use `evidence_path=llm_judge`, so the next optimization should improve deterministic evidence coverage for ML, Python, and article-style questions.
 
+## After Strengths Fast Path
+
+The next slow representative case was `ml_tsetlin_machine`, which asks for key strengths. The answer path was already extractive, but evidence selection still used the LLM judge because strengths/advantages/benefits were not recognized as list-style evidence.
+
+Strength fast-path benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids ml_tsetlin_machine --warmup --output var\logs\latency_strength_fast_path_report.json
+```
+
+Result:
+
+- first measured run: `5604.14 ms`,
+- repeated measured run: `1641.24 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `9.17/10`.
+
+Representative benchmark after the strengths fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_strength_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `3649.45 ms`,
+- p50 latency: `2992.74 ms`,
+- p95 latency: `8428.04 ms`,
+- slowest query: `python_large_numbers` at `9122.65 ms`,
+- answer paths: `10` extractive fast path, `1` source-window extractive replacement, `1` pipeline extractive replacement,
+- evidence paths: `6` deterministic fast path, `6` LLM judge.
+
+Current conclusion: strengths/advantages/benefits are now handled as generic list-style evidence. The next slow representative queries still use `evidence_path=llm_judge`; start with `python_large_numbers`, then inspect Pydantic purpose, AI side-hustle steps, Python HTTP server, CRFs, and introduction formula.
+
 ## Existing Evidence Selection Optimization
 
 An earlier baseline showed evidence selection as the slowest stage for sampled Sora questions. The first fix added a deterministic prefilter so every expanded retrieval result is not sent to the local LLM evidence judge.

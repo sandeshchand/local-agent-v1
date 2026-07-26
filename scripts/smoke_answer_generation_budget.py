@@ -93,6 +93,35 @@ def main() -> None:
     assert "documentation agents" in role_result.answer.lower()
     assert "[1]" in role_result.answer
 
+    strength_chat_client = CountingChatClient()
+    strength_service = AnswerService(chat_client=strength_chat_client)
+    strength_result = strength_service.answer_from_context_result(
+        "What are the key strengths of BetaModel?",
+        [
+            {
+                "chunk_id": "strengths",
+                "title": "Model Notes",
+                "section_title": "BetaModel",
+                "page_number": 1,
+                "text": (
+                    "BetaModel has several key strengths. "
+                    "One strength is low memory usage. "
+                    "Another strength is high learning speed. "
+                    "A further strength is competitive performance. "
+                    "It also has the strength of efficient hardware deployment. "
+                    "Its interpretable rules are another strength."
+                ),
+            }
+        ],
+    )
+
+    assert strength_chat_client.calls == 0
+    assert strength_result.trace["used_answer_fast_path"] is True
+    assert "The strengths are:" in strength_result.answer
+    assert "competitive performance" in strength_result.answer.lower()
+    assert "interpretable" in strength_result.answer.lower()
+    assert "[1]" in strength_result.answer
+
     assert (
         fast_service._has_low_value_candidate_items(
             "Sora works this way: "
