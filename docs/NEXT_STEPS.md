@@ -33,6 +33,9 @@ Implemented:
 - Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
 - Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
 - Narrow low-value social/article metadata filtering so valid technical terms can use the answer fast path.
+- Named latency benchmark profiles for Sora-only and multi-document representative coverage.
+- Safer answer intent routing so feature/strength/formula/step questions are not treated as definitions.
+- Narrow command intent routing so `starting with AI` style questions are not treated as command/server requests.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
 ## 1. Broaden Latency Coverage Across Document Families
@@ -49,6 +52,12 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - evidence selection dropped to about `1.75ms` to `2.45ms`,
 - fast-path answer generation is about `6ms` to `20ms` on the sampled high-confidence questions,
 - full RAG quality passed at `9.48/10` average with all items above the configured `7/10` item gate.
+- the first broad representative profile found `docker_lazydocker_features` as a slow case at `27781.87 ms`,
+- the generic intent fix reduced that LazyDocker case to `319.82 ms` with `answer_path=extractive_fast_path`.
+- the broad representative profile improved from `9248.55 ms` average to `6530.7 ms` average after the intent fix,
+- the role/component fast-path fix reduced `ai_coding_multi_agent_architecture` from `21360.92 ms` to `224.57 ms`,
+- the broad representative profile improved again to `4698.4 ms` average with `9945.79 ms` p95,
+- the new slowest representative case is `ml_tsetlin_machine`, which still uses `evidence_path=llm_judge`.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -61,13 +70,14 @@ Use these fields to inspect slow answers before changing behavior.
 
 Recommended order:
 
-1. Run warmed latency for representative IDs across Sora, Docker, ML, Python, and article-style PDFs.
-2. Inspect `answer_path` for the slowest query in each family.
-3. If `answer_path=llm_generation`, inspect `answer_trace.fast_path.rejections`.
-4. Add only generic fixes for repeated safe rejection patterns.
-5. Tighten prompt/context only where traces show excess context.
-6. Consider chat-model warmup for demos where first LLM answer latency matters.
-7. Keep citations, verification, and repair intact.
+1. Inspect traces for the slowest `evidence_path=llm_judge` questions.
+2. Check whether the deterministic evidence fast path missed a general query shape such as strengths/purpose/mechanism.
+3. Add only generic evidence-routing fixes for repeated safe patterns.
+4. Re-run `--profile multi-doc-representative` after each performance change.
+5. Inspect `answer_path` and `answer_trace.fast_path.rejections` only after evidence selection is no longer the slowest stage.
+6. Tighten prompt/context only where traces show excess context.
+7. Consider chat-model warmup for demos where first LLM answer latency matters.
+8. Keep citations, verification, and repair intact.
 
 Do not remove verification or answer repair as the first performance optimization. They protect answer quality.
 
@@ -76,6 +86,7 @@ After each optimization, run:
 ```cmd
 venv\Scripts\python.exe scripts\run_regression.py
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_after_change_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_after_change_report.json
 ```
 
 ## 2. Improve Trace UI Summaries

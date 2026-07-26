@@ -97,6 +97,32 @@ def main() -> None:
     assert any("fast path" in judgment.reason for judgment in fast_judgments)
     assert any("monitoring pipelines" in item["text"] for item in fast_selected)
 
+    role_chat_client = CountingChatClient()
+    role_judge = EvidenceJudge(role_chat_client, max_llm_judgments=6)
+    role_results = [
+        make_item(1, "General background about code assistant products."),
+        make_item(
+            2,
+            (
+                "Multi-agent coding architectures use specialized agents that collaborate. "
+                "Roles include planning agents, coding agents, testing agents, debugging agents, "
+                "and documentation agents."
+            ),
+        ),
+        make_item(3, "Unrelated information about model pricing and release dates."),
+    ]
+
+    role_selected, _, role_trace = role_judge.select_evidence_with_trace(
+        "What roles can specialized agents play in a multi-agent coding architecture?",
+        role_results,
+        max_items=3,
+    )
+
+    assert role_chat_client.calls == 0
+    assert role_trace["path"] == "deterministic_fast_path"
+    assert role_trace["fast_path_shape"] == "list"
+    assert any("planning agents" in item["text"] for item in role_selected)
+
     print("Evidence prefilter smoke test passed.")
 
 

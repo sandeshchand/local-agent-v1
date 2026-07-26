@@ -14,6 +14,31 @@ from local_agent.app.bootstrap import bootstrap_app
 ROOT = Path(__file__).resolve().parents[1]
 
 
+LATENCY_PROFILES: dict[str, list[str]] = {
+    "sora-fast": [
+        "sora_what_is",
+        "sora_world_simulator",
+        "sora_visual_input",
+        "sora_prompt_following",
+        "sora_limitations",
+    ],
+    "multi-doc-representative": [
+        "sora_prompt_following",
+        "docker_lazydocker_features",
+        "docker_watchtower_features",
+        "ml_tsetlin_machine",
+        "ml_crfs",
+        "python_builtin_http_server",
+        "python_large_numbers",
+        "ai_coding_multi_agent_architecture",
+        "pydantic_env_file_purpose",
+        "smoldocling_app_pipeline",
+        "intro_three_part_formula",
+        "ai_money_starting_steps",
+    ],
+}
+
+
 def percentile(values: list[float], percentile_value: float) -> float:
     if not values:
         return 0.0
@@ -42,7 +67,7 @@ def load_eval_items(eval_path: Path, ids: str, limit: int | None) -> list[dict[s
             missing = ", ".join(sorted(missing_ids))
             raise ValueError(f"Eval ids not found: {missing}")
 
-    if limit is not None:
+    if limit is not None and not selected_ids:
         items = items[: max(0, limit)]
     return items
 
@@ -71,6 +96,7 @@ def run_benchmark(
     limit: int | None,
     session_prefix: str,
     warmup: bool,
+    profile: str = "",
 ) -> dict[str, Any]:
     items = load_eval_items(eval_path, ids, limit)
     if not items:
@@ -132,6 +158,7 @@ def run_benchmark(
     slowest = max(report_items, key=lambda item: item["total_ms"])
     report = {
         "eval_file": str(eval_path),
+        "profile": profile,
         "count": len(report_items),
         "average_ms": round(statistics.mean(latencies), 2),
         "min_ms": round(min(latencies), 2),
@@ -174,6 +201,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Comma-separated eval item ids to benchmark.",
     )
     parser.add_argument(
+        "--profile",
+        choices=sorted(LATENCY_PROFILES.keys()),
+        default="",
+        help="Named set of representative eval ids to benchmark.",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=5,
@@ -206,15 +239,24 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    if args.ids and args.profile:
+        print("ERROR: Use either --ids or --profile, not both.")
+        sys.exit(1)
+
+    ids = args.ids
+    if args.profile:
+        ids = ",".join(LATENCY_PROFILES[args.profile])
+
     try:
         report = run_benchmark(
             eval_path=ROOT / args.eval_file,
             output_path=ROOT / args.output,
             env_file=ROOT / args.env_file,
-            ids=args.ids,
+            ids=ids,
             limit=args.limit,
             session_prefix=args.session_prefix,
             warmup=args.warmup,
+            profile=args.profile,
         )
     except Exception as exc:
         print(f"ERROR: {exc}")
@@ -225,6 +267,8 @@ def main() -> None:
     print(f"p50: {report['p50_ms']} ms")
     print(f"p95: {report['p95_ms']} ms")
     print(f"Slowest: {report['slowest']['id']} at {report['slowest']['total_ms']} ms")
+    if report.get("profile"):
+        print(f"Profile: {report['profile']}")
     if report.get("warmup"):
         warmup_ok = report["warmup"].get("ok")
         print(f"Warmup: {'ok' if warmup_ok else 'completed with errors'}")

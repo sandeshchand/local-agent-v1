@@ -28,6 +28,8 @@ class QueryIntentMixin:
             entity = match.group(1).strip(" '\"“”‘’")
             if entity.lower() in {"the article", "article", "it", "this", "that"}:
                 continue
+            if self._looks_like_non_definition_entity(entity):
+                continue
             entity_terms = self._entity_terms(entity)
             if not entity_terms:
                 continue
@@ -37,6 +39,90 @@ class QueryIntentMixin:
                     continue
             return re.sub(r"\s+", " ", entity)
         return ""
+    def _looks_like_non_definition_entity(self, entity: str) -> bool:
+        entity_lower = re.sub(r"\s+", " ", entity.lower()).strip()
+        if not entity_lower:
+            return True
+        if entity_lower.startswith(("the article's ", "article's ", "the paper's ", "paper's ")):
+            return True
+
+        non_definition_heads = [
+            "application",
+            "applications",
+            "approach",
+            "approaches",
+            "benefit",
+            "benefits",
+            "capability",
+            "capabilities",
+            "challenge",
+            "challenges",
+            "command",
+            "commands",
+            "component",
+            "components",
+            "difference",
+            "differences",
+            "example",
+            "examples",
+            "feature",
+            "features",
+            "formula",
+            "function",
+            "functions",
+            "kind",
+            "kinds",
+            "limitation",
+            "limitations",
+            "method",
+            "methods",
+            "part",
+            "parts",
+            "practice",
+            "practices",
+            "purpose",
+            "reason",
+            "reasons",
+            "role",
+            "roles",
+            "step",
+            "steps",
+            "strength",
+            "strengths",
+            "tool",
+            "tools",
+            "type",
+            "types",
+            "use",
+            "uses",
+        ]
+        modifiers = (
+            "the",
+            "a",
+            "an",
+            "its",
+            "their",
+            "this",
+            "that",
+            "these",
+            "those",
+            "key",
+            "main",
+            "core",
+            "primary",
+            "major",
+            "special",
+            "best",
+            "different",
+            "three",
+            "two",
+            "first",
+            "recommended",
+        )
+        words = re.findall(r"\b[a-z0-9]+\b", entity_lower)
+        while words and words[0] in modifiers:
+            words.pop(0)
+        return bool(words and words[0] in non_definition_heads)
     def _entity_terms(self, entity: str) -> list[str]:
         stop_words = {"a", "an", "the", "and", "or", "of", "for", "about", "by", "in", "on", "to"}
         return [
@@ -219,6 +305,13 @@ Focused answer:
             first_30_words = " ".join(answer_lower.split()[:30])
             return not any(term in first_30_words for term in ["input", "prompt", "instruction", "text", "natural language"])
 
+        if any(term in query_lower for term in ["role", "roles"]):
+            first_80_words = " ".join(answer_lower.split()[:80])
+            return not any(
+                term in first_80_words
+                for term in ["role", "roles", "agent", "agents", "planning", "coding", "testing", "debugging", "documentation"]
+            )
+
         if any(term in query_lower for term in ["architecture", "framework", "components"]):
             first_80_words = " ".join(answer_lower.split()[:80])
             return not any(term in first_80_words for term in ["architecture", "framework", "component", "part", "module"])
@@ -284,6 +377,8 @@ Focused answer:
         facets: list[str] = []
         if "feature" in q:
             facets.extend(["named features/capabilities/functions", "short role of each feature"])
+        if any(term in q for term in ["role", "roles"]):
+            facets.extend(["named roles", "short responsibility of each role"])
         if q.startswith("what is") or "definition" in q:
             facets.extend(["definition/category", "creator/source/date if present", "main capability", "important scope or limit"])
         if "architecture" in q or "components" in q or "core model" in q:
@@ -313,6 +408,7 @@ Focused answer:
                 "what steps",
                 "what first steps",
                 "what three",
+                "what roles",
                 "main pipeline",
                 "pipeline",
                 "formula",
@@ -332,6 +428,8 @@ Focused answer:
             terms.extend(["application", "use", "domain", "area", "industry", "sector"])
         if {"architecture", "framework", "component", "components"} & query_terms:
             terms.extend(["architecture", "framework", "component", "module", "mechanism"])
+        if {"role", "roles", "agent", "agents"} & query_terms:
+            terms.extend(["role", "roles", "agent", "agents", "planning", "coding", "testing", "debugging", "documentation", "collaborate", "specialization"])
         if {"represent", "representation", "model", "input"} & query_terms:
             terms.extend(["representation", "token", "patch", "latent", "compressed", "compressing", "input", "encoder", "model"])
         if {"kernel", "scalable", "scale", "methods"} & query_terms:
