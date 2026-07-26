@@ -29,19 +29,20 @@ The latest work moved the project closer to production readiness and improved RA
 - The broad representative profile improved again to `3649.45 ms` average with `8428.04 ms` p95.
 - The large-integer fast-path fix reduced `python_large_numbers` from `9122.65 ms` to `183.18 ms`.
 - The formula fast-path fix reduced `intro_three_part_formula` from `9674.45 ms` to `255.41 ms`.
-- The broad representative profile is now `2805.31 ms` average with `7027.56 ms` p95.
-- The current slowest broad-profile case is `pydantic_env_file_purpose` at `7100.35 ms`, with `evidence_path=llm_judge`.
+- The config-purpose fast-path fix reduced `pydantic_env_file_purpose` from `7100.35 ms` to `254.3 ms`.
+- The broad representative profile is now `2246.97 ms` average with `6394.89 ms` p95.
+- The current slowest broad-profile case is `ai_money_starting_steps` at `6994.95 ms`, with `evidence_path=llm_judge`.
 - Full RAG regression passed with `9.48/10` average quality and all items above the configured `7/10` item gate.
 - The latest changes are still uncommitted.
 
 ## First Task Tomorrow
 
-Commit today's validated formula fast-path work before starting new behavior.
+Commit today's validated config-purpose fast-path work before starting new behavior.
 
 ```powershell
 git status --short
 git add -A
-git commit -m "perf: add formula evidence fast path"
+git commit -m "perf: add config purpose evidence fast path"
 ```
 
 After that, push and merge only if the branch still looks clean.
@@ -50,8 +51,8 @@ After that, push and merge only if the branch still looks clean.
 
 1. Broaden latency coverage across document families
    - Inspect the latest slow traces that still use `evidence_path=llm_judge`.
-   - Start with `pydantic_env_file_purpose`, then compare AI side-hustle steps, Python HTTP server, and CRFs.
-   - Look for a generic evidence fast-path rule, such as purpose/steps/usage/command-usefulness coverage.
+   - Start with `ai_money_starting_steps`, then compare Python HTTP server and CRFs.
+   - Look for a generic evidence fast-path rule, such as first-step, command-usefulness, or usage coverage.
    - Add only generic fixes for repeated safe rejection patterns.
    - Re-run `--profile multi-doc-representative` after each change.
    - Tighten prompt/context only when trace data shows the prompt is larger than needed.

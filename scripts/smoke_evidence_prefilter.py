@@ -201,6 +201,32 @@ def main() -> None:
     assert formula_trace["fast_path_shape"] == "list"
     assert any("The Hook" in item["text"] for item in formula_selected)
 
+    env_chat_client = CountingChatClient()
+    env_judge = EvidenceJudge(env_chat_client, max_llm_judgments=6)
+    env_results = [
+        make_item(1, "General background about application configuration."),
+        make_item(
+            2,
+            (
+                "For local development, declaring environment variables on the machine is "
+                "inconvenient, slow, and messy. A .env file stores environment variables "
+                "such as API keys, database URLs, and tokens in key : value format."
+            ),
+        ),
+        make_item(3, "Unrelated documentation about deployment pipelines."),
+    ]
+
+    env_selected, _, env_trace = env_judge.select_evidence_with_trace(
+        "Why does the article recommend using a .env file during local development?",
+        env_results,
+        max_items=3,
+    )
+
+    assert env_chat_client.calls == 0
+    assert env_trace["path"] == "deterministic_fast_path"
+    assert env_trace["fast_path_shape"] == "explanation"
+    assert any("slow" in item["text"] and "API keys" in item["text"] for item in env_selected)
+
     print("Evidence prefilter smoke test passed.")
 
 

@@ -63,8 +63,10 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - `python_large_numbers` improved from `9122.65 ms` to `183.18 ms` with targeted RAG quality `10.0/10`,
 - the formula fast-path fix moved `intro_three_part_formula` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
 - `intro_three_part_formula` improved from `9674.45 ms` to `255.41 ms` with targeted RAG quality `9.5/10`,
-- the latest broad representative profile is `2805.31 ms` average with `7027.56 ms` p95,
-- the new slowest representative case is `pydantic_env_file_purpose`, which still uses `evidence_path=llm_judge`.
+- the config-purpose fast-path fix moved `pydantic_env_file_purpose` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
+- `pydantic_env_file_purpose` improved from `7100.35 ms` to `254.3 ms` with targeted RAG quality `10.0/10`,
+- the latest broad representative profile is `2246.97 ms` average with `6394.89 ms` p95,
+- the new slowest representative case is `ai_money_starting_steps`, which still uses `evidence_path=llm_judge`.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -78,7 +80,7 @@ Use these fields to inspect slow answers before changing behavior.
 Recommended order:
 
 1. Inspect traces for the slowest `evidence_path=llm_judge` questions.
-2. Check whether the deterministic evidence fast path missed a general query shape such as purpose/steps/usage/command usefulness.
+2. Check whether the deterministic evidence fast path missed a general query shape such as first steps, command usefulness, or usage.
 3. Add only generic evidence-routing fixes for repeated safe patterns.
 4. Re-run `--profile multi-doc-representative` after each performance change.
 5. Inspect `answer_path` and `answer_trace.fast_path.rejections` only after evidence selection is no longer the slowest stage.

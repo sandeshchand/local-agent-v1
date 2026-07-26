@@ -180,6 +180,35 @@ def main() -> None:
     assert "handoff" in formula_result.answer.lower()
     assert "[1]" in formula_result.answer
 
+    env_chat_client = CountingChatClient()
+    env_service = AnswerService(chat_client=env_chat_client)
+    env_result = env_service.answer_from_context_result(
+        "Why does the article recommend using a .env file during local development?",
+        [
+            {
+                "chunk_id": "env-purpose",
+                "title": "Manage Environment Variables",
+                "section_title": ".env file",
+                "page_number": 1,
+                "text": (
+                    "Developers set up environment variables that allow the app to run. "
+                    "These variables can be API keys of external services, URL of your database, "
+                    "and tokens. For local development, it is inconvenient to declare these "
+                    "variables on the machine because it is a slow and messy process. "
+                    "A .env file stores all environment variables in key : value format."
+                ),
+            }
+        ],
+    )
+
+    assert env_chat_client.calls == 0
+    assert env_result.trace["used_answer_fast_path"] is True
+    assert "The .env file is recommended because:" in env_result.answer
+    assert "slow" in env_result.answer.lower()
+    assert "api keys" in env_result.answer.lower()
+    assert "database" in env_result.answer.lower()
+    assert "[1]" in env_result.answer
+
     assert (
         fast_service._has_low_value_candidate_items(
             "Sora works this way: "

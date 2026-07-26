@@ -544,6 +544,44 @@ Result:
 
 Current conclusion: formula/list-style article questions now avoid LLM evidence judging and answer generation when the retrieved evidence already contains the numbered components. The next slow representative queries still use `evidence_path=llm_judge`; start with `pydantic_env_file_purpose`, then inspect AI side-hustle steps, Python HTTP server, and CRFs.
 
+## After Config-Purpose Fast Path
+
+The next slow representative case was `pydantic_env_file_purpose`. The answer path already used the `.env` config-purpose extractor, but evidence selection still used the LLM judge because explanation directness did not recognize config-purpose signals such as local development, environment variables, secrets, API keys, database URLs, tokens, slow setup, and key-value config files.
+
+The fix adds generic config-purpose markers to deterministic evidence scoring and intent terms. It also narrows answer punctuation cleanup so file names such as `.env` keep their leading space instead of becoming `The.env` or `A.env`.
+
+Config-purpose benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids pydantic_env_file_purpose --warmup --output var\logs\latency_pydantic_env_fast_path_report.json
+```
+
+Result:
+
+- `pydantic_env_file_purpose` improved from `7100.35 ms` to `254.3 ms`,
+- broad-profile rerun measured it at `214.22 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `10.0/10`.
+
+Representative benchmark after the config-purpose fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_pydantic_env_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `2246.97 ms`,
+- p50 latency: `245.74 ms`,
+- p95 latency: `6394.89 ms`,
+- slowest query: `ai_money_starting_steps` at `6994.95 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `9` deterministic fast path, `3` LLM judge.
+
+Current conclusion: config/secrets/local-development purpose questions now avoid LLM evidence judging when retrieved evidence contains direct purpose signals. The next slow representative queries still use `evidence_path=llm_judge`; start with `ai_money_starting_steps`, then inspect Python HTTP server command usefulness and CRF usage.
+
 ## Existing Evidence Selection Optimization
 
 An earlier baseline showed evidence selection as the slowest stage for sampled Sora questions. The first fix added a deterministic prefilter so every expanded retrieval result is not sent to the local LLM evidence judge.

@@ -456,6 +456,8 @@ Return only valid JSON:
                 "due to",
                 "therefore",
                 "as a result",
+                "recommend",
+                "recommended",
                 "helps",
                 "allows",
                 "enables",
@@ -463,6 +465,21 @@ Return only valid JSON:
                 "demonstrates",
                 "capability",
                 "ability",
+                "local development",
+                "environment variables",
+                "api key",
+                "api keys",
+                "database url",
+                "url of your database",
+                "tokens",
+                "secrets",
+                "slow and messy",
+                "inconvenient",
+                "key : value",
+                "key-value",
+                "private",
+                "secure",
+                "safe",
             ],
             "usage": [
                 "used for",
@@ -561,6 +578,16 @@ Return only valid JSON:
                 "advantages",
                 "benefit",
                 "benefits",
+                "environment variables",
+                "local development",
+                "api key",
+                "api keys",
+                "tokens",
+                "secrets",
+                "database",
+                "key : value",
+                "slow and messy",
+                "inconvenient",
             ]
         ):
             score += 1
@@ -710,6 +737,8 @@ Return only valid JSON:
             terms.extend(["large", "number", "numbers", "integer", "integers", "big numbers", "automatically manages", "special data types", "int", "long", "memory", "dynamic", "dynamically", "allocates", "digits", "10**"])
         if any(phrase in query_lower for phrase in ["formula", "part formula", "three-part", "three part"]):
             terms.extend(["formula", "part", "parts", "step", "steps", "component", "components", "hook", "highlight", "handoff"])
+        if any(phrase in query_lower for phrase in [".env", "env file", "environment file", "environment variable", "environment variables"]):
+            terms.extend([".env", "env file", "local development", "environment variables", "variables", "api key", "api keys", "tokens", "secrets", "database", "database url", "url of your database", "key : value", "key-value", "slow", "messy", "inconvenient", "private", "secure", "safe"])
         if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
             terms.extend(["representation", "encoding", "token", "patch", "spacetime", "latent", "compressed", "input", "visual representation", "encoder", "transformer", "diffusion", "diffusion transformer"])
         if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):
