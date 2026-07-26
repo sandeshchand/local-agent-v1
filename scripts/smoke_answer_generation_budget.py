@@ -152,6 +152,34 @@ def main() -> None:
     assert "10**100" in large_number_result.answer
     assert "[1]" in large_number_result.answer
 
+    formula_chat_client = CountingChatClient()
+    formula_service = AnswerService(chat_client=formula_chat_client)
+    formula_result = formula_service.answer_from_context_result(
+        "What is the article's three-part formula for a memorable one-minute introduction?",
+        [
+            {
+                "chunk_id": "intro-formula",
+                "title": "One-Minute Introductions",
+                "section_title": "The 3-Part Formula",
+                "page_number": 1,
+                "text": (
+                    "The 3-Part Formula (Steal This!) "
+                    "1. The Hook: Start With a Story, Not Your Name. "
+                    "2. The Highlight: Add a WTF Detail. "
+                    "3. The Handoff: Make It About Them."
+                ),
+            }
+        ],
+    )
+
+    assert formula_chat_client.calls == 0
+    assert formula_result.trace["used_answer_fast_path"] is True
+    assert "The formula is:" in formula_result.answer
+    assert "hook" in formula_result.answer.lower()
+    assert "highlight" in formula_result.answer.lower()
+    assert "handoff" in formula_result.answer.lower()
+    assert "[1]" in formula_result.answer
+
     assert (
         fast_service._has_low_value_candidate_items(
             "Sora works this way: "

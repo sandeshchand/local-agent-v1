@@ -174,6 +174,33 @@ def main() -> None:
     assert large_number_trace["fast_path_shape"] == "mechanism"
     assert any("10**100" in item["text"] for item in large_number_selected)
 
+    formula_chat_client = CountingChatClient()
+    formula_judge = EvidenceJudge(formula_chat_client, max_llm_judgments=6)
+    formula_results = [
+        make_item(1, "General background about communication and short presentations."),
+        make_item(
+            2,
+            (
+                "The article gives a three-part formula for memorable introductions: "
+                "1. The Hook starts with a story. "
+                "2. The Highlight adds a surprising detail. "
+                "3. The Handoff makes the ending about the other person."
+            ),
+        ),
+        make_item(3, "Unrelated publication metadata and follow-up links."),
+    ]
+
+    formula_selected, _, formula_trace = formula_judge.select_evidence_with_trace(
+        "What is the article's three-part formula for a memorable one-minute introduction?",
+        formula_results,
+        max_items=3,
+    )
+
+    assert formula_chat_client.calls == 0
+    assert formula_trace["path"] == "deterministic_fast_path"
+    assert formula_trace["fast_path_shape"] == "list"
+    assert any("The Hook" in item["text"] for item in formula_selected)
+
     print("Evidence prefilter smoke test passed.")
 
 

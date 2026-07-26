@@ -460,6 +460,7 @@ class AnswerService(
         if is_definition_query and not self._has_definition_answer_coverage(query, candidate):
             return "definition_coverage_missing"
         has_large_number_coverage = self._has_large_number_answer_coverage(query, candidate)
+        has_formula_coverage = self._has_formula_answer_coverage(query, candidate)
 
         candidate_lower = candidate.lower()
         query_terms = self._query_terms(query)
@@ -474,7 +475,7 @@ class AnswerService(
                 return "distinctive_query_terms_missing"
 
         if self._looks_under_specific(candidate, results) and not (
-            is_command_query or is_definition_query or has_large_number_coverage
+            is_command_query or is_definition_query or has_large_number_coverage or has_formula_coverage
         ):
             return "under_specific_candidate"
 
@@ -619,6 +620,26 @@ class AnswerService(
             if any(marker in candidate_lower for marker in markers)
         )
         return matched_groups >= 4
+
+    def _has_formula_answer_coverage(self, query: str, candidate: str) -> bool:
+        query_lower = query.lower()
+        if not any(phrase in query_lower for phrase in ["formula", "part formula", "three-part", "three part"]):
+            return False
+
+        candidate_lower = candidate.lower()
+        has_formula_frame = "formula" in candidate_lower or re.search(r"\b\d{1,2}\.\s+\w+", candidate)
+        component_markers = [
+            "hook",
+            "highlight",
+            "handoff",
+            "part",
+            "step",
+            "component",
+            "framework",
+        ]
+        marker_hits = sum(1 for marker in component_markers if marker in candidate_lower)
+        numbered_parts = len(re.findall(r"\b\d{1,2}\.\s+", candidate))
+        return has_formula_frame and (marker_hits >= 2 or numbered_parts >= 2)
 
     def _is_command_or_server_query(self, query: str) -> bool:
         q = query.lower()

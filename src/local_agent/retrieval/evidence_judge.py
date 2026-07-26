@@ -289,6 +289,8 @@ Return only valid JSON:
         q = query.lower().strip()
         if any(phrase in q for phrase in ["compare", "across documents", "both papers", "each document"]):
             return ""
+        if any(term in q for term in ["formula", "part formula", "three-part", "three part"]):
+            return "list"
         if q.startswith("what is") or q.startswith("define ") or "definition of" in q:
             return "definition"
         if any(term in q for term in ["limitation", "limitations", "challenge", "risk", "weakness", "constraint"]):
@@ -411,6 +413,11 @@ Return only valid JSON:
                 "debugging agents",
                 "documentation agents",
                 "components",
+                "formula",
+                "part formula",
+                "hook",
+                "highlight",
+                "handoff",
                 "collaborate",
                 "specialization",
                 "first",
@@ -701,6 +708,8 @@ Return only valid JSON:
             terms.extend(["strength", "strengths", "advantage", "advantages", "benefit", "benefits", "memory", "speed", "performance", "hardware", "efficient", "interpretable", "competitive"])
         if any(phrase in query_lower for phrase in ["large number", "large numbers", "large integer", "large integers", "very large", "big number", "big numbers"]):
             terms.extend(["large", "number", "numbers", "integer", "integers", "big numbers", "automatically manages", "special data types", "int", "long", "memory", "dynamic", "dynamically", "allocates", "digits", "10**"])
+        if any(phrase in query_lower for phrase in ["formula", "part formula", "three-part", "three part"]):
+            terms.extend(["formula", "part", "parts", "step", "steps", "component", "components", "hook", "highlight", "handoff"])
         if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
             terms.extend(["representation", "encoding", "token", "patch", "spacetime", "latent", "compressed", "input", "visual representation", "encoder", "transformer", "diffusion", "diffusion transformer"])
         if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):

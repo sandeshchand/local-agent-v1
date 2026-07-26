@@ -506,6 +506,44 @@ Result:
 
 Current conclusion: large-number/integer mechanism questions now have generic deterministic evidence and focused extractive answering. The next slow representative queries still use `evidence_path=llm_judge`; start with `intro_three_part_formula`, then inspect Pydantic purpose, AI side-hustle steps, Python HTTP server, and CRFs.
 
+## After Formula Fast Path
+
+The next slow representative case was `intro_three_part_formula`. The answer extractor already had a generic formula window, but evidence selection classified `What is the article's three-part formula...` as a definition question before it could reach list-style evidence handling.
+
+The fix treats formula and part-formula questions as list-shaped evidence, adds generic formula component markers to deterministic evidence scoring, and allows high-confidence formula answers to skip normal LLM generation when the candidate contains structured formula components.
+
+Formula benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids intro_three_part_formula --warmup --output var\logs\latency_formula_fast_path_report.json
+```
+
+Result:
+
+- `intro_three_part_formula` improved from `9674.45 ms` to `255.41 ms`,
+- broad-profile rerun measured it at `165.34 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `9.5/10`.
+
+Representative benchmark after the formula fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_formula_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `2805.31 ms`,
+- p50 latency: `1158.23 ms`,
+- p95 latency: `7027.56 ms`,
+- slowest query: `pydantic_env_file_purpose` at `7100.35 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `8` deterministic fast path, `4` LLM judge.
+
+Current conclusion: formula/list-style article questions now avoid LLM evidence judging and answer generation when the retrieved evidence already contains the numbered components. The next slow representative queries still use `evidence_path=llm_judge`; start with `pydantic_env_file_purpose`, then inspect AI side-hustle steps, Python HTTP server, and CRFs.
+
 ## Existing Evidence Selection Optimization
 
 An earlier baseline showed evidence selection as the slowest stage for sampled Sora questions. The first fix added a deterministic prefilter so every expanded retrieval result is not sent to the local LLM evidence judge.
