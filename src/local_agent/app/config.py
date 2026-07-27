@@ -35,6 +35,11 @@ class AppConfig(BaseModel):
         )
     rerank_candidates: int = Field(8, alias="RERANK_CANDIDATES")
     warm_retrieval_on_startup: bool = Field(False, alias="WARM_RETRIEVAL_ON_STARTUP")
+    embedding_cache_size: int = Field(128, alias="EMBEDDING_CACHE_SIZE")
+    document_router_cache_enabled: bool = Field(
+        True,
+        alias="DOCUMENT_ROUTER_CACHE_ENABLED",
+    )
     file_mcp_enabled: bool = Field(True, alias="FILE_MCP_ENABLED")
     file_mcp_roots: list[Path] = Field(default_factory=list, alias="FILE_MCP_ROOTS")
 
@@ -62,6 +67,8 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
         "RERANKER_MODEL": _env("RERANKER_MODEL", DEFAULT_RERANKER_MODEL),
         "RERANK_CANDIDATES": os.getenv("RERANK_CANDIDATES", "8"),
         "WARM_RETRIEVAL_ON_STARTUP": _parse_bool_env("WARM_RETRIEVAL_ON_STARTUP", False),
+        "EMBEDDING_CACHE_SIZE": os.getenv("EMBEDDING_CACHE_SIZE", "128"),
+        "DOCUMENT_ROUTER_CACHE_ENABLED": _parse_bool_env("DOCUMENT_ROUTER_CACHE_ENABLED", True),
         "FILE_MCP_ENABLED": _parse_bool_env("FILE_MCP_ENABLED", True),
         "FILE_MCP_ROOTS": _parse_path_list(
             _env("FILE_MCP_ROOTS", DEFAULT_FILE_MCP_ROOTS),
@@ -93,6 +100,8 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
         RERANKER_MODEL=config.rerank_model,
         RERANK_CANDIDATES=config.rerank_candidates,
         WARM_RETRIEVAL_ON_STARTUP=config.warm_retrieval_on_startup,
+        EMBEDDING_CACHE_SIZE=config.embedding_cache_size,
+        DOCUMENT_ROUTER_CACHE_ENABLED=config.document_router_cache_enabled,
         FILE_MCP_ENABLED=config.file_mcp_enabled,
         FILE_MCP_ROOTS=config.file_mcp_roots,
     )

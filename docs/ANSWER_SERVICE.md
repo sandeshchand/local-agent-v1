@@ -96,6 +96,12 @@ The fast path is intentionally conservative. It does not use document-specific k
 
 For definition questions such as `what is ...`, the candidate must mention the focused entity and include a definition-style relation such as `is`, `are`, `refers to`, `means`, `called`, or `known as`. This keeps the optimization generic for future PDFs.
 
+For recommended item questions such as `which tools does the article recommend`, the service can extract named items from generic list/series wording such as `tools: A, B, and C`. It validates that the answer is a cited recommendation list before allowing the fast path.
+
+For setup/run questions, the source-window path extracts command sequences such as virtual environment creation, activation, package installation, system package installation, and run commands. The fast-path validator requires setup-sequence coverage, so a one-command answer cannot pass for a multi-step setup question.
+
+For limitation, feature, strength, role, and component lists, the validator allows concise cited extractive lists only when they show focused list coverage. This avoids unnecessary LLM generation while keeping broad or noisy lists out.
+
 The fast path also rejects low-value bullet-like candidates that look like scraped article metadata, publication prompts, follower counts, social calls to action, or very short fragments. This prevents a noisy extraction from being accepted just because it has a citation.
 
 This filter must stay precise. Technical names that contain punctuation, and ordinary terms such as `prompt following`, should not be treated as social metadata. Social metadata should be rejected only when there are clear metadata signals such as followers, following counts, publication prompts, read-time text, or clap/share language.
@@ -188,6 +194,7 @@ Important candidates include:
 
 - `_best_practices_extractive_answer`
 - `_capability_extractive_answer`
+- `_recommended_items_answer`
 - `_limitation_extractive_answer`
 - `_definition_extractive_answer`
 - `_used_for_extractive_answer`
@@ -233,6 +240,8 @@ It supports question shapes like:
 - generic window fallback
 
 Source-window answers are useful for Medium-style PDFs where nearby headings and list text often contain the exact answer.
+
+For setup/run questions, the source-window extractor now parses commands directly instead of returning large noisy code windows. This is useful for tutorial PDFs where commands are embedded in dense code or article text.
 
 ## Generic Extractive Answers
 

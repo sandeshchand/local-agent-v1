@@ -26,6 +26,9 @@ CONFIG_ENV_NAMES = [
     "USE_RERANKER",
     "RERANKER_MODEL",
     "RERANK_CANDIDATES",
+    "WARM_RETRIEVAL_ON_STARTUP",
+    "EMBEDDING_CACHE_SIZE",
+    "DOCUMENT_ROUTER_CACHE_ENABLED",
     "FILE_MCP_ENABLED",
     "FILE_MCP_ROOTS",
 ]
@@ -55,6 +58,8 @@ def assert_missing_env_uses_safe_defaults() -> None:
     assert config.qdrant_path == DEFAULT_QDRANT_PATH.resolve()
     assert config.sqlite_path == DEFAULT_SQLITE_PATH.resolve()
     assert config.debug is False
+    assert config.embedding_cache_size == 128
+    assert config.document_router_cache_enabled is True
 
 
 def assert_env_file_relative_paths_are_stable() -> None:
@@ -71,6 +76,8 @@ def assert_env_file_relative_paths_are_stable() -> None:
                     "QDRANT_PATH=./qdrant",
                     "SQLITE_PATH=./sqlite/app.db",
                     "DEBUG=yes",
+                    "EMBEDDING_CACHE_SIZE=7",
+                    "DOCUMENT_ROUTER_CACHE_ENABLED=no",
                     "FILE_MCP_ROOTS=docs,README.md",
                 ]
             ),
@@ -82,6 +89,8 @@ def assert_env_file_relative_paths_are_stable() -> None:
         assert config.qdrant_path == (tmp_path / "qdrant").resolve()
         assert config.sqlite_path == (tmp_path / "sqlite" / "app.db").resolve()
         assert config.debug is True
+        assert config.embedding_cache_size == 7
+        assert config.document_router_cache_enabled is False
         assert config.file_mcp_roots == [
             (tmp_path / "docs").resolve(),
             (tmp_path / "README.md").resolve(),

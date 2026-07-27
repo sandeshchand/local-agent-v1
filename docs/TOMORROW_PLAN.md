@@ -42,25 +42,30 @@ The latest work moved the project closer to production readiness and improved RA
 - All `12` representative queries now use extractive answer fast paths.
 - The current slowest broad-profile case is `sora_prompt_following` at `230.65 ms`.
 - Trace UI summaries now show compact evidence path, answer path, evidence shape, accepted fast-path source, and rejected candidate reasons.
-- Full RAG regression passed with `9.48/10` average quality and all items above the configured `7/10` item gate.
+- Added v1 document-routing cache with SQLite signature invalidation.
+- Added v1 repeated-query embedding cache in the Ollama embedding client.
+- Added generic recommended-item extraction for questions such as `which tools does the article recommend`.
+- Added generic setup/run command-sequence extraction for tutorial PDFs.
+- Added high-confidence coverage checks for focused lists and limitation lists to avoid unnecessary LLM fallback.
+- Full RAG regression passed with `9.52/10` average quality and all items above the configured `7/10` item gate.
+- The final repeated representative profile is `199.46 ms` average with `237.07 ms` p95 across `3` runs and `36` total queries.
 - The latest focused-list change passed smoke-only regression and targeted `ml_tsetlin_machine` quality at `9.17/10`.
 - The latest CRF usage change passed targeted quality at `10.0/10`.
 - The latest SmolDocling pipeline change passed targeted quality at `10.0/10`.
 
 ## First Task Tomorrow
 
-Start with production-scale retrieval performance. The representative profile is already fast and trace metadata is now easier to read, so the next engineering task is preparing for larger document sets.
+Start with production-scale retrieval performance validation. The representative profile is already fast, routing cache v1 is implemented, and repeated-query embedding cache v1 is implemented. The next engineering task is measuring these changes under larger document counts.
 
 ```powershell
 git status --short
 ```
 
-Then inspect routing and embedding hot paths:
+Then inspect scale-sensitive hot paths:
 
-- document routing cache,
-- repeated query embedding cache,
 - Qdrant local path versus server mode plan,
 - latency impact under larger document counts.
+- optional sparse/BM25 chunk-search caching if traces show it is still expensive.
 
 ## Recommended Feature Order
 

@@ -59,8 +59,10 @@ COMPILE_TARGETS = [
     "scripts/smoke_answer_cleaning.py",
     "scripts/smoke_answer_fact_coverage.py",
     "scripts/smoke_focused_list_extractor.py",
+    "scripts/smoke_answer_sequence_extractors.py",
     "scripts/smoke_answer_generation_budget.py",
     "scripts/smoke_evidence_prefilter.py",
+    "scripts/smoke_performance_caches.py",
     "scripts/smoke_config.py",
     "scripts/smoke_empty_index.py",
     "scripts/smoke_sqlite_threading.py",
@@ -144,8 +146,10 @@ def main() -> None:
     run_step("Answer cleaning smoke", [sys.executable, "scripts/smoke_answer_cleaning.py"])
     run_step("Answer fact coverage smoke", [sys.executable, "scripts/smoke_answer_fact_coverage.py"])
     run_step("Focused list extractor smoke", [sys.executable, "scripts/smoke_focused_list_extractor.py"])
+    run_step("Answer sequence extractor smoke", [sys.executable, "scripts/smoke_answer_sequence_extractors.py"])
     run_step("Answer generation budget smoke", [sys.executable, "scripts/smoke_answer_generation_budget.py"])
     run_step("Evidence prefilter smoke", [sys.executable, "scripts/smoke_evidence_prefilter.py"])
+    run_step("Performance cache smoke", [sys.executable, "scripts/smoke_performance_caches.py"])
     run_step("Config smoke", [sys.executable, "scripts/smoke_config.py"])
     run_step("Empty index smoke", [sys.executable, "scripts/smoke_empty_index.py"])
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])

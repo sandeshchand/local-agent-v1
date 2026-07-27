@@ -97,7 +97,10 @@ class LimitationExtractorMixin:
         body = re.sub(r"\s*\[\d+\]\s*$", "", fact).strip()
         if category.startswith("spatial") and "spatial" not in fact_lower:
             body = f"Spatial limitation: {body}"
-        elif category.startswith("human-computer") and "human-computer" not in fact_lower and "hci" not in fact_lower:
+        elif category.startswith("human-computer") and (
+            len(body.split()) < 6
+            or ("human-computer" not in fact_lower and "hci" not in fact_lower)
+        ):
             body = f"Human-computer interaction (HCI) limitation: {body}"
         elif category.startswith("physical") and "cause" not in fact_lower:
             body = f"Physical/cause-and-effect limitation: {body}"

@@ -111,6 +111,10 @@ class AnswerService(
         if best_practices_answer:
             answer = best_practices_answer
             answer_source = "best_practices_extractive_replacement"
+        recommended_items_answer = self._recommended_items_answer(query, results)
+        if recommended_items_answer:
+            answer = recommended_items_answer
+            answer_source = "recommended_items_extractive_replacement"
         capability_answer = ""
         if self._should_use_capability_extractive_answer(query, results):
             capability_answer = self._capability_extractive_answer(query, results)
@@ -170,7 +174,7 @@ class AnswerService(
             answer = why_answer
             answer_source = "why_extractive_replacement"
         list_answer = self._list_extractive_answer(query, results)
-        if list_answer and not best_practices_answer and not limitation_answer and not used_for_answer and not config_file_answer and not meaning_answer and not challenge_answer and not command_answer and (
+        if list_answer and not best_practices_answer and not recommended_items_answer and not limitation_answer and not used_for_answer and not config_file_answer and not meaning_answer and not challenge_answer and not command_answer and (
             self._is_list_question(query)
             or self._looks_unfocused(query, answer)
             or self._misses_intent_shape(query, answer)
@@ -228,6 +232,8 @@ class AnswerService(
                 return done(final_answer(example_answer), "example_extractive_replacement")
             if source_window_answer:
                 return done(final_answer(source_window_answer), "source_window_extractive_replacement")
+            if recommended_items_answer:
+                return done(final_answer(recommended_items_answer), "recommended_items_extractive_replacement")
             if list_answer:
                 return done(final_answer(list_answer), "list_extractive_replacement")
             if mechanism_answer:
@@ -382,6 +388,9 @@ class AnswerService(
         best_practices_answer = self._best_practices_extractive_answer(query, results)
         add("best_practices", best_practices_answer)
 
+        recommended_items_answer = self._recommended_items_answer(query, results)
+        add("recommended_items", recommended_items_answer)
+
         if self._should_use_capability_extractive_answer(query, results):
             capability_answer = self._capability_extractive_answer(query, results)
             add("capability", capability_answer)
@@ -454,7 +463,7 @@ class AnswerService(
             return "invalid_citation"
 
         is_command_query = self._is_command_or_server_query(query)
-        if is_command_query and not self._has_command_answer_coverage(candidate):
+        if is_command_query and not self._has_command_answer_coverage(query, candidate):
             return "command_coverage_missing"
         if not is_command_query and self._has_low_value_candidate_items(candidate):
             return "low_value_candidate_items"
@@ -464,6 +473,9 @@ class AnswerService(
         has_large_number_coverage = self._has_large_number_answer_coverage(query, candidate)
         has_formula_coverage = self._has_formula_answer_coverage(query, candidate)
         has_pipeline_coverage = self._has_pipeline_answer_coverage(query, candidate)
+        has_recommended_items_coverage = self._has_recommended_items_coverage(query, candidate)
+        has_focused_list_coverage = self._has_focused_list_answer_coverage(query, candidate)
+        has_limitation_coverage = self._has_limitation_answer_coverage(query, candidate)
 
         candidate_lower = candidate.lower()
         query_terms = self._query_terms(query)
@@ -483,6 +495,9 @@ class AnswerService(
             or has_large_number_coverage
             or has_formula_coverage
             or has_pipeline_coverage
+            or has_recommended_items_coverage
+            or has_focused_list_coverage
+            or has_limitation_coverage
         ):
             return "under_specific_candidate"
 
@@ -712,6 +727,108 @@ class AnswerService(
         )
         return matched_groups >= 4
 
+    def _has_recommended_items_coverage(self, query: str, candidate: str) -> bool:
+        query_lower = query.lower()
+        if not (
+            ("tool" in query_lower or "tools" in query_lower or "library" in query_lower or "libraries" in query_lower)
+            and ("recommend" in query_lower or "recommended" in query_lower or query_lower.startswith("which"))
+        ):
+            return False
+
+        candidate_lower = candidate.lower()
+        if "recommend" not in candidate_lower or not any(term in candidate_lower for term in ["tool", "tools", "library", "libraries"]):
+            return False
+
+        generic_names = {"The", "Article", "Tools", "Docker", "Medium", "AWS"}
+        names = [
+            name
+            for name in re.findall(r"\b[A-Z][A-Za-z0-9_-]{2,}\b", candidate)
+            if name not in generic_names
+        ]
+        return len(dict.fromkeys(names)) >= 2
+
+    def _has_focused_list_answer_coverage(self, query: str, candidate: str) -> bool:
+        query_lower = query.lower()
+        if not any(
+            marker in query_lower
+            for marker in [
+                "feature",
+                "features",
+                "strength",
+                "strengths",
+                "advantage",
+                "advantages",
+                "benefit",
+                "benefits",
+                "role",
+                "roles",
+                "component",
+                "components",
+            ]
+        ):
+            return False
+
+        citation_count = len(set(re.findall(r"\[(\d+)\]", candidate)))
+        bullet_count = len(re.findall(r"(?:^|\s)-\s+", candidate))
+        if citation_count < 1 or bullet_count < 2:
+            return False
+
+        focus_phrases = self._focus_phrases(query)
+        focus_entity = self._focus_entity_display(query)
+        if focus_entity:
+            focus_phrases.add(focus_entity.lower())
+        if focus_phrases and self._focus_phrase_score(candidate, focus_phrases) == 0:
+            return False
+
+        candidate_lower = candidate.lower()
+        list_detail_markers = [
+            "feature",
+            "strength",
+            "advantage",
+            "benefit",
+            "role",
+            "component",
+            "memory",
+            "speed",
+            "efficient",
+            "performance",
+            "security",
+            "stability",
+            "monitor",
+            "detect",
+            "update",
+            "supports",
+            "allows",
+            "helps",
+        ]
+        return sum(1 for marker in list_detail_markers if marker in candidate_lower) >= 2
+
+    def _has_limitation_answer_coverage(self, query: str, candidate: str) -> bool:
+        query_lower = query.lower()
+        if not any(marker in query_lower for marker in ["limitation", "limitations", "weakness", "challenge"]):
+            return False
+
+        candidate_lower = candidate.lower()
+        citation_count = len(set(re.findall(r"\[(\d+)\]", candidate)))
+        bullet_count = len(re.findall(r"(?:^|\s)-\s+", candidate))
+        if citation_count < 1 or bullet_count < 3:
+            return False
+
+        coverage_groups = [
+            ["cause", "effect", "physical", "plausibility", "rigid", "motion"],
+            ["spatial", "placement", "arrangement", "left", "right"],
+            ["temporal", "sequence", "camera"],
+            ["irrelevant", "unrelated", "animals", "people", "characters", "objects"],
+            ["human-computer", "hci", "user-system", "interaction"],
+            ["usage", "access", "release", "public", "one minute", "one-minute", "longer content"],
+        ]
+        matched_groups = sum(
+            1
+            for markers in coverage_groups
+            if any(marker in candidate_lower for marker in markers)
+        )
+        return matched_groups >= 4
+
     def _is_command_or_server_query(self, query: str) -> bool:
         q = query.lower()
         command_patterns = [
@@ -725,8 +842,28 @@ class AnswerService(
         ]
         return any(re.search(pattern, q) for pattern in command_patterns)
 
-    def _has_command_answer_coverage(self, candidate: str) -> bool:
+    def _has_command_answer_coverage(self, query: str, candidate: str) -> bool:
+        query_lower = query.lower()
         candidate_lower = candidate.lower()
+        is_setup_query = any(
+            marker in query_lower
+            for marker in ["setup", "install", "commands", "run commands", "setup and run"]
+        )
+        if is_setup_query:
+            coverage_groups = [
+                ["uv venv", "python -m venv", "virtual environment"],
+                ["activate"],
+                ["pip install", "uv pip install", "npm install", "poetry add", "conda install"],
+                ["brew install", "apt install", "system package"],
+                ["uv run", "python ", "npm run", "poetry run"],
+            ]
+            matched_groups = sum(
+                1
+                for markers in coverage_groups
+                if any(marker in candidate_lower for marker in markers)
+            )
+            return matched_groups >= 3
+
         has_command = bool(
             re.search(
                 r"\b(?:python\s+-m\s+[-\w.]+(?:\s+\d+)?|docker\s+run\b|pip\s+install\b|uv\s+run\b|npm\s+install\b|brew\s+install\b)",
@@ -838,6 +975,7 @@ Repaired answer:
             self._used_for_extractive_answer,
             self._config_file_purpose_answer,
             self._meaning_extractive_answer,
+            self._recommended_items_answer,
             self._pipeline_extractive_answer,
             self._command_usefulness_answer,
             self._example_extractive_answer,

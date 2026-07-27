@@ -33,6 +33,11 @@ Implemented:
 - Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
 - Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
 - Trace UI summary cards for evidence path, answer path, evidence shape, accepted fast-path source, and rejected candidate reasons.
+- Document-routing cache with SQLite signature invalidation.
+- Repeated-query embedding cache in the Ollama embedding client.
+- Generic recommended-item extraction for recommendation/list questions.
+- Generic setup/run command-sequence extraction for tutorial PDFs.
+- High-confidence coverage checks for limitation lists and focused feature/strength/role/component lists.
 - Narrow low-value social/article metadata filtering so valid technical terms can use the answer fast path.
 - Named latency benchmark profiles for Sora-only and multi-document representative coverage.
 - Safer answer intent routing so feature/strength/formula/step questions are not treated as definitions.
@@ -76,6 +81,7 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - the pipeline fast path reduced `smoldocling_app_pipeline` from `4971.18 ms` to `204.28 ms` with targeted RAG quality `10.0/10`,
 - the latest broad representative profile is `190.57 ms` average with `220.62 ms` p95,
 - the repeated broad representative profile is `200.67 ms` average with `226.45 ms` p95 across `3` runs and `36` total queries,
+- after routing/embedding cache and answer-sequence stability fixes, full RAG quality is `9.52/10` and the repeated representative profile is `199.46 ms` average with `237.07 ms` p95,
 - p95 spread across repeated runs is `16.06 ms`,
 - all `12` representative queries now use `evidence_path=deterministic_fast_path`,
 - all `12` representative queries now use `answer_path=extractive_fast_path`,
@@ -92,7 +98,7 @@ Use these fields to inspect slow answers before changing behavior.
 
 Recommended order:
 
-1. Shift the next performance work toward production scale: larger document counts, Qdrant server mode, routing cache, and embedding cache.
+1. Shift the next performance work toward production scale: larger document counts, Qdrant server mode, and cache impact measurement.
 2. Improve trace UI summaries further only after user feedback from the new path cards.
 3. Inspect the current slowest traces, starting with `sora_prompt_following`, only if repeated runs show a real pattern.
 4. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
@@ -130,8 +136,8 @@ If latency remains high after answer-path observability, optimize one slow stage
 
 - if normal LLM answer generation is slow, inspect prompt size and context size,
 - if reranking is slow after warmup, tune `RERANK_CANDIDATES`,
-- if routing is slow, cache document routing results,
-- if embedding is slow, cache repeated query embeddings,
+- if routing is slow, inspect router cache invalidation and large-corpus build time,
+- if embedding is slow, inspect repeated query embedding cache hit patterns,
 - if retrieval is slow for larger data, consider Qdrant server mode instead of local path mode.
 
 Keep these constraints:

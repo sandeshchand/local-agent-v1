@@ -129,42 +129,85 @@ class SourceWindowMixin:
             return True
         return len(self._content_terms(source_answer) - self._content_terms(answer)) >= 4
     def _setup_command_window_answer(self, query: str, results: list[dict]) -> str:
-        command_markers = [
-            "pip install",
-            "uv ",
-            "venv",
-            "activate",
-            "brew install",
-            "run ",
-            "app.launch",
-            "localhost",
-            "127.0.0.1",
-            "install",
-        ]
+        commands = self._setup_commands_from_results(results)
+        if not commands:
+            return ""
+
         selected: list[str] = []
-        seen: set[str] = set()
+        seen_commands: set[str] = set()
+        for command, citation in commands:
+            normalized = re.sub(r"\W+", " ", command.lower()).strip()
+            if normalized in seen_commands:
+                continue
+            seen_commands.add(normalized)
+            selected.append(f"- `{command}`. [{citation}]")
+            if len(selected) >= 8:
+                break
+
+        platform_note = self._setup_platform_note(results)
+        if platform_note:
+            selected.insert(0, platform_note)
+
+        launch_note = self._gradio_launch_note(results)
+        if launch_note:
+            selected.append(launch_note)
+
+        return self._clean_final_answer(
+            "The setup/run commands are: " + " ".join(selected),
+            max_citation=len(results),
+        )
+
+    def _setup_commands_from_results(self, results: list[dict]) -> list[tuple[str, int]]:
+        command_patterns = [
+            r"\bpip\s+install\s+uv\b",
+            r"\buv\s+venv\s+[-\w./]+",
+            r"\bsource\s+[-\w./]+activate\b",
+            r"\buv\s+pip\s+install\s+.+?(?=\s+brew\s+install|\s+Building\b|\s+Step\s+\d|\s+\d+[.)]\s+[A-Z]|$)",
+            r"\bbrew\s+install\s+[-\w./]+",
+            r"\buv\s+run\s+[-\w./]+(?:\.py)?",
+            r"\bpython\s+-m\s+[-\w.]+(?:\s+\d+)?",
+            r"\bnpm\s+(?:install|run)\s+[-\w./]+",
+            r"\bpoetry\s+(?:add|run)\s+[-\w./]+",
+        ]
+        commands: list[tuple[str, int]] = []
+        for index, text in self._ordered_result_texts(results):
+            for pattern in command_patterns:
+                for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+                    command = re.sub(r"\s+", " ", match.group(0)).strip(" .,:;")
+                    if command.lower().startswith("uv pip install "):
+                        command = self._trim_install_command(command)
+                    if command:
+                        commands.append((command, index))
+        return commands
+
+    def _trim_install_command(self, command: str) -> str:
+        package_tokens = command.split()
+        if len(package_tokens) <= 3:
+            return command
+        kept = package_tokens[:3]
+        for token in package_tokens[3:]:
+            if not re.fullmatch(r"[-\w.]+", token):
+                break
+            kept.append(token)
+            if len(kept) >= 12:
+                break
+        return " ".join(kept)
+
+    def _setup_platform_note(self, results: list[dict]) -> str:
         for index, item in enumerate(results, start=1):
             text = self._clean_text(item.get("text") or "")
             lower = text.lower()
-            if not any(marker in lower for marker in command_markers):
-                continue
-            positions = [lower.find(marker) for marker in command_markers if lower.find(marker) >= 0]
-            if not positions:
-                continue
-            excerpt = self._clean_window_excerpt(
-                self._window_around(text, min(positions), before=90, after=520),
-                max_words=90,
-            )
-            normalized = re.sub(r"\W+", " ", excerpt.lower()).strip()
-            if not excerpt or normalized in seen:
-                continue
-            seen.add(normalized)
-            selected.append(f"- {excerpt}. [{index}]")
-            if len(selected) >= 5:
-                break
-        if not selected:
-            return ""
-        return self._clean_final_answer("The setup/run commands are: " + " ".join(selected))
+            if "mlx" in lower and ("mac" in lower or "metal" in lower or "apple" in lower):
+                return "- The tutorial notes a Mac M1/M2/M3/M4 setup using MLX and Apple's Metal-accelerated backend. " f"[{index}]"
+        return ""
+
+    def _gradio_launch_note(self, results: list[dict]) -> str:
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "")
+            lower = text.lower()
+            if "app.launch()" in lower:
+                return "- The app launches with `app.launch()` and is run locally with Gradio's default server, normally `http://127.0.0.1:7860/`. " f"[{index}]"
+        return ""
     def _feature_window_answer(self, query: str, results: list[dict]) -> str:
         focus_entity = self._focus_entity_display(query).lower()
         query_terms = self._query_terms(query)

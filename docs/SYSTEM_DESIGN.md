@@ -85,10 +85,11 @@ This target layout gives each concern a clear owner:
 
 - `src/local_agent`: installable product code,
 - `src/local_agent/app`: composition root, CLI/web entrypoints, config, paths, dependency wiring,
-- `src/local_agent/llm`: model/provider clients,
+- `src/local_agent/llm`: model/provider clients and embedding-cache behavior,
 - `src/local_agent/tools`: tool registry, web tools, and MCP-style connectors,
 - `src/local_agent/evaluation`: gold QA scoring, feedback eval candidates, and eval runs,
 - `src/local_agent/operations`: local operational workflows such as runtime backup and restore,
+- `src/local_agent/retrieval`: document routing, hybrid search, context expansion, and routing-cache behavior,
 - `tests`: automated tests only,
 - `benchmarks/gold_qa`: versioned evaluation datasets,
 - `data/raw`: user/source documents,

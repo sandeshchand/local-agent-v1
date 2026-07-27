@@ -35,12 +35,16 @@ def bootstrap_app(env_file: str | Path = ".env") -> AppDependencies:
 
     embedding_client = OllamaEmbeddingClient(
         base_url=config.ollama_base_url,
-        model_name=config.embed_model
+        model_name=config.embed_model,
+        cache_size=config.embedding_cache_size,
     )
 
     sqlite_store = SQLiteStore(config.sqlite_path)
     sqlite_store.initialize()
-    doc_router = DocumentRouter(sqlite_store=sqlite_store)
+    doc_router = DocumentRouter(
+        sqlite_store=sqlite_store,
+        cache_enabled=config.document_router_cache_enabled,
+    )
 
     qdrant_store = QdrantStore(
         storage_path=config.qdrant_path,

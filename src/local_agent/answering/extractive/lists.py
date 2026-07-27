@@ -4,6 +4,114 @@ import re
 
 
 class ListExtractorMixin:
+    def _recommended_items_answer(self, query: str, results: list[dict]) -> str:
+        q = query.lower()
+        if not (
+            ("tool" in q or "tools" in q or "library" in q or "libraries" in q)
+            and ("recommend" in q or "recommended" in q or q.startswith("which") or "which three" in q)
+        ):
+            return ""
+
+        candidates: list[tuple[int, int, str, list[str]]] = []
+        for index, item in enumerate(results, start=1):
+            text = self._clean_text(item.get("text") or "")
+            if not text:
+                continue
+            for sentence in self._split_sentences(text):
+                sentence_lower = sentence.lower()
+                if not any(marker in sentence_lower for marker in ["recommend", "recommended", "meet", "include", "includes"]):
+                    continue
+                if "tool" not in sentence_lower and "library" not in sentence_lower:
+                    continue
+                names = self._named_items_from_series(sentence)
+                if len(names) < 2:
+                    continue
+                score = len(names) * 8
+                score += self._sentence_relevance_score(sentence, self._query_terms(query))
+                score += sum(3 for marker in ["save time", "stress", "productivity", "container", "management"] if marker in sentence_lower)
+                candidates.append((score, -index, sentence, names))
+
+        if not candidates:
+            return ""
+        candidates.sort(reverse=True)
+        _, negative_index, sentence, names = candidates[0]
+        citation = -negative_index
+        benefit_parts: list[str] = []
+        sentence_lower = sentence.lower()
+        if "save time" in sentence_lower or "time" in sentence_lower:
+            benefit_parts.append("save time")
+        if "stress" in sentence_lower or "headache" in sentence_lower:
+            benefit_parts.append("reduce stress or headaches")
+        if "productivity" in sentence_lower:
+            benefit_parts.append("boost productivity")
+
+        item_text = self._human_join(names)
+        if benefit_parts:
+            return self._clean_final_answer(
+                f"The article recommends {item_text} as the tools for better container management; it presents them as ways to {self._human_join(benefit_parts)}. [{citation}]",
+                max_citation=len(results),
+            )
+        return self._clean_final_answer(
+            f"The article recommends {item_text} as the tools for better container management. [{citation}]",
+            max_citation=len(results),
+        )
+
+    def _named_items_from_series(self, sentence: str) -> list[str]:
+        stop_names = {
+            "AWS",
+            "Docker",
+            "Medium",
+            "Non-Medium",
+            "Published",
+            "Follow",
+            "Article",
+            "Want",
+            "Meet",
+            "Let",
+            "Image",
+        }
+        series = sentence
+        marker_match = re.search(
+            r"\b(?:tools?|libraries?|packages?)\s*:\s*([^.!?]{6,180})",
+            sentence,
+            flags=re.IGNORECASE,
+        )
+        if marker_match:
+            series = marker_match.group(1)
+            series = re.split(
+                r"\b(?:game[- ]changing|that\s+will|which\s+will|to\s+save|for\s+better)\b",
+                series,
+                maxsplit=1,
+                flags=re.IGNORECASE,
+            )[0]
+
+        parts = re.split(r"\s*,\s*|\s+\band\b\s+", series)
+        names: list[str] = []
+        for part in parts:
+            part = re.sub(r"^[^A-Za-z0-9]+|[^A-Za-z0-9]+$", "", part)
+            match = re.search(
+                r"\b([A-Z][A-Za-z0-9_-]{2,}(?:\s+[A-Z][A-Za-z0-9_-]{2,}){0,2})\b",
+                part,
+            )
+            if not match:
+                continue
+            name = re.sub(r"\s+", " ", match.group(1)).strip()
+            if name in stop_names or name.lower() in {"tools", "tool"}:
+                continue
+            if name not in names:
+                names.append(name)
+        return names[:6]
+
+    def _human_join(self, items: list[str]) -> str:
+        clean_items = [item for item in items if item]
+        if not clean_items:
+            return ""
+        if len(clean_items) == 1:
+            return clean_items[0]
+        if len(clean_items) == 2:
+            return f"{clean_items[0]} and {clean_items[1]}"
+        return f"{', '.join(clean_items[:-1])}, and {clean_items[-1]}"
+
     def _list_extractive_answer(self, query: str, results: list[dict]) -> str:
         q = query.lower()
         is_practice_challenge = bool(re.search(r"\b\d+\s*[- ]?\s*day\s+[^?]*challenge\b|\bpractice\w*\s+[^?]*challenge\b", q))

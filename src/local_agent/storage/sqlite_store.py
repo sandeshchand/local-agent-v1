@@ -912,6 +912,33 @@ class SQLiteStore:
         ]
 
     @_locked
+    def routing_corpus_signature(self) -> tuple[Any, ...]:
+        conn = self.connect()
+        row = conn.execute(
+            """
+            SELECT
+                COUNT(DISTINCT d.doc_id) AS doc_count,
+                COUNT(c.chunk_id) AS chunk_count,
+                COALESCE(SUM(LENGTH(c.text)), 0) AS chunk_text_size,
+                COALESCE(SUM(c.token_estimate), 0) AS token_estimate_total,
+                COALESCE(MAX(d.indexed_at), '') AS latest_indexed_at,
+                COALESCE(MAX(d.checksum), '') AS max_checksum
+            FROM documents d
+            LEFT JOIN chunks c
+                ON d.doc_id = c.doc_id
+            """
+        ).fetchone()
+        return (
+            "routing_v1",
+            int(row["doc_count"] or 0),
+            int(row["chunk_count"] or 0),
+            int(row["chunk_text_size"] or 0),
+            int(row["token_estimate_total"] or 0),
+            row["latest_indexed_at"] or "",
+            row["max_checksum"] or "",
+        )
+
+    @_locked
     def count_documents(self, *, search: str = "") -> int:
         conn = self.connect()
         normalized_search = search.strip()

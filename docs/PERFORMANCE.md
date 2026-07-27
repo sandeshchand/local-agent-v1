@@ -124,7 +124,7 @@ Recommended order for future performance improvements:
 2. Inspect `answer_path` and `evidence_path` before changing behavior.
 3. Reduce unnecessary normal LLM answer generation where trace rejection reasons show a safe generic fix.
 4. Tune reranker candidate count only if reranking remains slow after warmup.
-5. Cache repeated document routing and embedding work.
+5. Cache repeated document routing and embedding work. Completed for v1.
 6. Move Qdrant from local path mode to server mode for larger collections.
 7. Add ingestion batching and parallel parsing for large PDF sets.
 
@@ -816,7 +816,51 @@ Latest stability result:
 - p95 spread across runs: `16.06 ms`,
 - warmup: `ok`.
 
-Current conclusion: the representative profile is not just fast in one sample; it is stable across repeated local runs. The next performance tasks should focus on scale behavior rather than adding more answer fast paths: larger document sets, Qdrant server mode, routing cache, embedding cache, and clearer trace UI summaries.
+Current conclusion: the representative profile is not just fast in one sample; it is stable across repeated local runs. The next performance tasks should focus on scale behavior rather than adding more answer fast paths: larger document sets, Qdrant server mode, and clearer trace UI summaries.
+
+## After Routing And Embedding Cache V1
+
+The retrieval stack now avoids two repeated hot-path costs:
+
+- `DocumentRouter` caches the document-routing BM25 corpus and per-document routing text.
+- `OllamaEmbeddingClient.embed()` caches exact repeated single-query embeddings with a small in-memory LRU cache.
+
+The document router cache is invalidated by a SQLite routing corpus signature. The signature includes document count, chunk count, chunk text size, token-estimate total, latest document index time, and document checksum marker. When new PDFs are ingested or indexed document rows change, routing rebuilds automatically on the next query.
+
+The embedding cache is intentionally query-scoped and model-client local. It only caches exact repeated text passed to `embed()`, returns a copy of cached vectors, and can be disabled by setting cache size to `0`.
+
+Config defaults:
+
+- `EMBEDDING_CACHE_SIZE=128`
+- `DOCUMENT_ROUTER_CACHE_ENABLED=true`
+
+Validation:
+
+```powershell
+venv\Scripts\python.exe scripts\smoke_performance_caches.py
+venv\Scripts\python.exe scripts\run_regression.py --skip-rag
+```
+
+Final validation after cache and answer-sequence stability fixes:
+
+```powershell
+venv\Scripts\python.exe scripts\run_regression.py --full --output var\logs\rag_quality_routing_embedding_cache_final2_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_routing_embedding_cache_final2_report.json
+```
+
+Result:
+
+- full RAG quality: `9.52/10`,
+- all items above the configured `7/10` item gate,
+- representative latency: `199.46 ms` average,
+- representative p50: `201.83 ms`,
+- representative p95: `237.07 ms`,
+- slowest representative query: `sora_prompt_following` at `267.85 ms`,
+- warmup: `ok`.
+
+This validation also added generic extractive stability for recommended item lists, setup/run command sequences, focused list answers, and limitation lists.
+
+Current conclusion: repeated-query and repeated-routing overhead are now reduced without changing citations, verification, repair, or RAG ranking logic. The next performance task is to profile behavior under larger document counts and decide when to move Qdrant from local path mode to server mode.
 
 ## Existing Evidence Selection Optimization
 
