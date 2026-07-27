@@ -25,13 +25,14 @@ Implemented:
 - Tool audit API and UI tab for guardrail/tool execution visibility.
 - Read-only weather tool.
 - MCP-style File and SQLite connectors.
-- UI trace view, compact source box, feedback, eval drafts, document library, and tools panel.
+- UI trace view, compact trace path summaries, compact source box, feedback, eval drafts, document library, and tools panel.
 - System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
 - Runtime backup and restore for local SQLite and Qdrant state.
 - Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
 - Answer-generation fast path for high-confidence citation-backed extractive answers.
 - Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
 - Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
+- Trace UI summary cards for evidence path, answer path, evidence shape, accepted fast-path source, and rejected candidate reasons.
 - Narrow low-value social/article metadata filtering so valid technical terms can use the answer fast path.
 - Named latency benchmark profiles for Sora-only and multi-document representative coverage.
 - Safer answer intent routing so feature/strength/formula/step questions are not treated as definitions.
@@ -91,8 +92,8 @@ Use these fields to inspect slow answers before changing behavior.
 
 Recommended order:
 
-1. Improve trace UI summaries so `evidence_path`, `answer_path`, and rejection reasons are obvious without opening raw JSON.
-2. Shift the next performance work toward production scale: larger document counts, Qdrant server mode, routing cache, and embedding cache.
+1. Shift the next performance work toward production scale: larger document counts, Qdrant server mode, routing cache, and embedding cache.
+2. Improve trace UI summaries further only after user feedback from the new path cards.
 3. Inspect the current slowest traces, starting with `sora_prompt_following`, only if repeated runs show a real pattern.
 4. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
 5. Re-run `multi-doc-representative` with `--repeat 3` after any performance-sensitive change.
@@ -114,10 +115,11 @@ venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile m
 
 Goal: make the new trace metadata easy to read in the web UI.
 
-Add compact labels in the trace panel:
+Completed:
 
 - Evidence path: deterministic fast path, LLM judge, or heuristic fallback.
 - Answer path: extractive fast path, LLM generation, deterministic replacement, or fallback.
+- Evidence shape and accepted fast-path source.
 - Rejection reason summary for answer fast-path candidates.
 
 Keep full JSON details expandable for debugging, but show the compact labels first.

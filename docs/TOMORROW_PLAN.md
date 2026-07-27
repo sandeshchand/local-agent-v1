@@ -41,6 +41,7 @@ The latest work moved the project closer to production readiness and improved RA
 - All `12` representative queries now use deterministic evidence selection.
 - All `12` representative queries now use extractive answer fast paths.
 - The current slowest broad-profile case is `sora_prompt_following` at `230.65 ms`.
+- Trace UI summaries now show compact evidence path, answer path, evidence shape, accepted fast-path source, and rejected candidate reasons.
 - Full RAG regression passed with `9.48/10` average quality and all items above the configured `7/10` item gate.
 - The latest focused-list change passed smoke-only regression and targeted `ml_tsetlin_machine` quality at `9.17/10`.
 - The latest CRF usage change passed targeted quality at `10.0/10`.
@@ -48,13 +49,18 @@ The latest work moved the project closer to production readiness and improved RA
 
 ## First Task Tomorrow
 
-Start with trace UI summaries. The representative profile is already fast and stable, so the next user-facing improvement is making trace metadata readable without opening raw JSON.
+Start with production-scale retrieval performance. The representative profile is already fast and trace metadata is now easier to read, so the next engineering task is preparing for larger document sets.
 
 ```powershell
 git status --short
 ```
 
-Then inspect `src\local_agent\app\web.py` and the UI template/static assets. Add compact labels for `evidence_path`, `answer_path`, and answer fast-path rejection reasons while keeping raw trace JSON expandable.
+Then inspect routing and embedding hot paths:
+
+- document routing cache,
+- repeated query embedding cache,
+- Qdrant local path versus server mode plan,
+- latency impact under larger document counts.
 
 ## Recommended Feature Order
 
@@ -66,8 +72,8 @@ Then inspect `src\local_agent\app\web.py` and the UI template/static assets. Add
    - Consider chat-model warmup for demos or local production startup.
 
 2. Improve trace UI summaries
-   - Show compact labels for `evidence_path` and `answer_path` in the trace view.
-   - Keep full JSON details expandable for debugging.
+   - Done for evidence path, answer path, evidence shape, accepted fast-path source, and rejection reasons.
+   - Next UI work should come from user feedback after testing the new trace cards.
 
 3. Broaden gold QA for new PDFs
    - Add more questions from unseen PDFs, daily medium-style articles, arXiv papers, and technical blog PDFs.
