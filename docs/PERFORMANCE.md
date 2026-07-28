@@ -75,6 +75,25 @@ Run the same benchmark multiple times and write one stability report:
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_multi_doc_stability_report.json
 ```
 
+Run a retrieval scale profile:
+
+```powershell
+venv\Scripts\python.exe scripts\profile_retrieval_scale.py --env-file .env --profile multi-doc-representative --warmup-retrieval --repeat-search 2 --output var\logs\retrieval_scale_profile.json
+```
+
+Use this when you want to understand production scaling pressure before changing code. The report records:
+
+- indexed document count,
+- indexed chunk count,
+- routing cold-build time,
+- routing warm-cache time,
+- repeated-query embedding cold/warm time,
+- retrieval-search p50/p95,
+- Qdrant local path mode warning,
+- recommendations for Qdrant server-mode planning.
+
+If the web server is already running with local Qdrant path mode, retrieval search profiling can fail because Qdrant path mode is single-process. Stop duplicate app processes, then rerun the profile.
+
 Use a specific environment file:
 
 ```powershell
@@ -114,6 +133,14 @@ Use this process whenever improving performance:
 6. Run quality regression to confirm answers did not get worse.
 7. Run latency benchmark again and compare the new report with the old one.
 
+For scale work, add this extra step before changing storage behavior:
+
+```powershell
+venv\Scripts\python.exe scripts\profile_retrieval_scale.py --env-file .env --profile multi-doc-representative --warmup-retrieval --output var\logs\retrieval_scale_profile.json
+```
+
+Use the scale profile to decide whether the next bottleneck is routing index build time, repeated embedding calls, retrieval search, or Qdrant local path mode.
+
 This is the safe production pattern: baseline, change one thing, re-measure.
 
 ## Current Optimization Order
@@ -129,6 +156,30 @@ Recommended order for future performance improvements:
 7. Add ingestion batching and parallel parsing for large PDF sets.
 
 Do not optimize by removing verification or answer repair first. Those protect answer quality.
+
+## Retrieval Scale Profile
+
+`scripts/profile_retrieval_scale.py` is a lower-level diagnostic than `scripts/benchmark_latency.py`.
+
+Use `benchmark_latency.py` to measure full user-facing answer time.
+
+Use `profile_retrieval_scale.py` to measure retrieval infrastructure:
+
+- `corpus`: current SQLite document/chunk size,
+- `routing`: document-router cold vs warm cache behavior,
+- `embedding_cache`: repeated query embedding cache behavior,
+- `retrieval_search`: dense/sparse/fusion/reranker/search timing without answer generation,
+- `recommendations`: next operational action.
+
+Use `--warmup-retrieval` when measuring steady-state performance. Without it, the first retrieval can include Qdrant connection, embedding-model, and reranker-model startup cost.
+
+Recommended interpretation:
+
+- under `100` documents and `10,000` chunks: local Qdrant path mode is fine for development,
+- above `100` documents or `10,000` chunks: start Qdrant server-mode testing,
+- above `1,000` documents or `50,000` chunks: Qdrant server mode becomes high priority,
+- high routing cold time with low warm time means the router cache is helping,
+- high retrieval p95 means inspect reranker cost, Qdrant mode, and candidate limits.
 
 ## Baseline Before Evidence Fast Path
 

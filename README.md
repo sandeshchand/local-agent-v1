@@ -183,6 +183,12 @@ Run a quick latency benchmark:
 venv\Scripts\python.exe scripts\benchmark_latency.py --limit 5 --warmup --output var\logs\latency_benchmark_report.json
 ```
 
+Run a retrieval scale profile before storage or Qdrant changes:
+
+```powershell
+venv\Scripts\python.exe scripts\profile_retrieval_scale.py --env-file .env --profile multi-doc-representative --warmup-retrieval --output var\logs\retrieval_scale_profile.json
+```
+
 Quality rules:
 
 - Add 3 to 5 gold QA items for every important new PDF.
@@ -293,6 +299,7 @@ Evaluation, UI, and roadmap:
 - [docs/EVALUATION.md](docs/EVALUATION.md)
 - [docs/REGRESSION.md](docs/REGRESSION.md)
 - [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
+- [docs/QDRANT_SERVER_MODE.md](docs/QDRANT_SERVER_MODE.md)
 - [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md)
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 - [docs/UI_TRACE_VIEW.md](docs/UI_TRACE_VIEW.md)

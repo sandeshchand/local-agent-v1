@@ -86,6 +86,7 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - all `12` representative queries now use `evidence_path=deterministic_fast_path`,
 - all `12` representative queries now use `answer_path=extractive_fast_path`,
 - the new slowest representative case is `sora_prompt_following` at `230.65 ms`, which is already on deterministic evidence and extractive answer paths.
+- retrieval scale profiling is available through `scripts/profile_retrieval_scale.py` for document/chunk count, routing cache, embedding cache, retrieval-search timing, and Qdrant server-mode planning.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -98,7 +99,7 @@ Use these fields to inspect slow answers before changing behavior.
 
 Recommended order:
 
-1. Shift the next performance work toward production scale: larger document counts, Qdrant server mode, and cache impact measurement.
+1. Run the retrieval scale profile before making the next storage/retrieval performance change.
 2. Improve trace UI summaries further only after user feedback from the new path cards.
 3. Inspect the current slowest traces, starting with `sora_prompt_following`, only if repeated runs show a real pattern.
 4. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
@@ -113,6 +114,7 @@ After each optimization, run:
 
 ```cmd
 venv\Scripts\python.exe scripts\run_regression.py
+venv\Scripts\python.exe scripts\profile_retrieval_scale.py --env-file .env --profile multi-doc-representative --warmup-retrieval --repeat-search 2 --output var\logs\retrieval_scale_profile.json
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_after_change_report.json
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_multi_doc_after_change_report.json
 ```

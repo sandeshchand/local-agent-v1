@@ -18,6 +18,7 @@ The project has strong local foundations:
 - MCP-style read-only local connectors,
 - feedback capture,
 - repeatable evaluation,
+- retrieval scale profiling for document/chunk count, routing cache, embedding cache, and retrieval-search timing,
 - memory-specific multi-turn evaluation,
 - memory management UI/API,
 - trace visibility,
@@ -135,6 +136,7 @@ Before calling this production-ready, the project should pass:
 ```powershell
 venv\Scripts\python.exe scripts\run_regression.py
 venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output var\logs\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\profile_retrieval_scale.py --env-file .env --profile multi-doc-representative --warmup-retrieval --output var\logs\retrieval_scale_profile.json
 ```
 
 It should also have:

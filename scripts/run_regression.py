@@ -83,6 +83,7 @@ COMPILE_TARGETS = [
     "scripts/smoke_weather_tool.py",
     "scripts/query_visual_world.py",
     "scripts/benchmark_latency.py",
+    "scripts/profile_retrieval_scale.py",
     "scripts/eval_rag_quality.py",
     "tests/test_config.py",
     "tests/test_paths.py",
