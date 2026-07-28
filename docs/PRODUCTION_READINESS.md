@@ -25,7 +25,8 @@ The project has strong local foundations:
 - tool-audit visibility,
 - system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools,
 - local backup and restore tooling for SQLite and Qdrant runtime state,
-- local deployment documentation.
+- local deployment documentation,
+- versioned incremental ingestion with per-file status tracking and safe Qdrant cleanup.
 
 The project is ready for serious local iteration and controlled demos. It still needs deployment, security, monitoring, and broader benchmark coverage before production use.
 
@@ -54,10 +55,15 @@ Data ingestion
 ### Data And Indexing
 
 - Define supported document formats and maximum file sizes.
-- Add ingestion status tracking for each document.
-- Record parser version and chunking version for each indexed document.
-- Add safe reingestion workflow for changed PDFs.
 - Keep the local backup and restore process tested for `var/sqlite/app.db` and `var/qdrant/`.
+
+Completed:
+
+- Ingestion status tracking for each attempted PDF.
+- Parser and chunking version metadata for indexed documents.
+- Incremental skip behavior for unchanged/current-version PDFs.
+- `--force` re-index option for deliberate rebuilds.
+- Qdrant vector cleanup by `doc_id` during re-ingestion.
 
 ### Repository Structure
 

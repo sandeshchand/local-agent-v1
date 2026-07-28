@@ -99,6 +99,51 @@ class SQLiteStore:
             )
             """
         )
+        document_columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(documents)").fetchall()
+        }
+        document_column_defaults = {
+            "ingestion_status": "TEXT NOT NULL DEFAULT 'indexed'",
+            "parser_version": "TEXT NOT NULL DEFAULT ''",
+            "chunking_version": "TEXT NOT NULL DEFAULT ''",
+            "embedding_model": "TEXT NOT NULL DEFAULT ''",
+            "chunk_size": "INTEGER NOT NULL DEFAULT 0",
+            "chunk_overlap": "INTEGER NOT NULL DEFAULT 0",
+            "chunk_count": "INTEGER NOT NULL DEFAULT 0",
+            "ingest_started_at": "TIMESTAMP",
+            "ingest_completed_at": "TIMESTAMP",
+            "last_ingest_error": "TEXT NOT NULL DEFAULT ''",
+        }
+        for column_name, column_sql in document_column_defaults.items():
+            if column_name not in document_columns:
+                conn.execute(
+                    f"""
+                    ALTER TABLE documents
+                    ADD COLUMN {column_name} {column_sql}
+                    """
+                )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS document_ingestion_status (
+                source_path TEXT PRIMARY KEY,
+                doc_id TEXT,
+                title TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL,
+                parser_version TEXT NOT NULL DEFAULT '',
+                chunking_version TEXT NOT NULL DEFAULT '',
+                embedding_model TEXT NOT NULL DEFAULT '',
+                chunk_size INTEGER NOT NULL DEFAULT 0,
+                chunk_overlap INTEGER NOT NULL DEFAULT 0,
+                checksum TEXT NOT NULL DEFAULT '',
+                page_count INTEGER NOT NULL DEFAULT 0,
+                chunk_count INTEGER NOT NULL DEFAULT 0,
+                started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed_at TIMESTAMP,
+                error TEXT NOT NULL DEFAULT ''
+            )
+            """
+        )
 
         conn.execute(
             """
@@ -399,28 +444,261 @@ class SQLiteStore:
         return row is not None and row["ok"] == 1
 
     @_locked
-    def upsert_document(self,
-                        doc_id:str,
-                        source_path:str,
-                        title:str,
-                        page_count:int,
-                        checksum:str,) ->None:
+    def upsert_document(
+        self,
+        doc_id: str,
+        source_path: str,
+        title: str,
+        page_count: int,
+        checksum: str,
+        *,
+        parser_version: str = "",
+        chunking_version: str = "",
+        embedding_model: str = "",
+        chunk_size: int = 0,
+        chunk_overlap: int = 0,
+        chunk_count: int = 0,
+        ingestion_status: str = "indexed",
+        last_ingest_error: str = "",
+    ) -> None:
         conn = self.connect()
         conn.execute(
             """
-            INSERT INTO documents (doc_id, source_path, title, page_count, checksum)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO documents (
+                doc_id, source_path, title, page_count, checksum,
+                ingestion_status, parser_version, chunking_version, embedding_model,
+                chunk_size, chunk_overlap, chunk_count, ingest_started_at,
+                ingest_completed_at, last_ingest_error
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
             ON CONFLICT(doc_id) DO UPDATE SET
                 source_path = excluded.source_path,
                 title = excluded.title,
                 page_count = excluded.page_count,
                 checksum = excluded.checksum,
+                ingestion_status = excluded.ingestion_status,
+                parser_version = excluded.parser_version,
+                chunking_version = excluded.chunking_version,
+                embedding_model = excluded.embedding_model,
+                chunk_size = excluded.chunk_size,
+                chunk_overlap = excluded.chunk_overlap,
+                chunk_count = excluded.chunk_count,
+                ingest_completed_at = CURRENT_TIMESTAMP,
+                last_ingest_error = excluded.last_ingest_error,
+                indexed_at = CURRENT_TIMESTAMP
+            ON CONFLICT(source_path) DO UPDATE SET
+                doc_id = excluded.doc_id,
+                title = excluded.title,
+                page_count = excluded.page_count,
+                checksum = excluded.checksum,
+                ingestion_status = excluded.ingestion_status,
+                parser_version = excluded.parser_version,
+                chunking_version = excluded.chunking_version,
+                embedding_model = excluded.embedding_model,
+                chunk_size = excluded.chunk_size,
+                chunk_overlap = excluded.chunk_overlap,
+                chunk_count = excluded.chunk_count,
+                ingest_completed_at = CURRENT_TIMESTAMP,
+                last_ingest_error = excluded.last_ingest_error,
                 indexed_at = CURRENT_TIMESTAMP
             """,
-            (doc_id, source_path, title, page_count, checksum)
+            (
+                doc_id,
+                source_path,
+                title,
+                page_count,
+                checksum,
+                ingestion_status,
+                parser_version,
+                chunking_version,
+                embedding_model,
+                int(chunk_size),
+                int(chunk_overlap),
+                int(chunk_count),
+                last_ingest_error,
+            )
 
         )
         conn.commit()
+
+    @_locked
+    def get_document_by_source_path(self, source_path: str) -> dict[str, Any] | None:
+        conn = self.connect()
+        row = conn.execute(
+            """
+            SELECT
+                doc_id, source_path, title, page_count, checksum, indexed_at,
+                ingestion_status, parser_version, chunking_version, embedding_model,
+                chunk_size, chunk_overlap, chunk_count, ingest_started_at,
+                ingest_completed_at, last_ingest_error
+            FROM documents
+            WHERE source_path = ?
+            """,
+            (source_path,),
+        ).fetchone()
+        if row is None:
+            return None
+        return dict(row)
+
+    @_locked
+    def record_document_ingestion_started(
+        self,
+        *,
+        source_path: str,
+        parser_version: str,
+        chunking_version: str,
+        embedding_model: str,
+        chunk_size: int,
+        chunk_overlap: int,
+    ) -> None:
+        conn = self.connect()
+        conn.execute(
+            """
+            INSERT INTO document_ingestion_status (
+                source_path, status, parser_version, chunking_version,
+                embedding_model, chunk_size, chunk_overlap, started_at, error
+            )
+            VALUES (?, 'running', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, '')
+            ON CONFLICT(source_path) DO UPDATE SET
+                status = 'running',
+                parser_version = excluded.parser_version,
+                chunking_version = excluded.chunking_version,
+                embedding_model = excluded.embedding_model,
+                chunk_size = excluded.chunk_size,
+                chunk_overlap = excluded.chunk_overlap,
+                started_at = CURRENT_TIMESTAMP,
+                completed_at = NULL,
+                error = ''
+            """,
+            (
+                source_path,
+                parser_version,
+                chunking_version,
+                embedding_model,
+                int(chunk_size),
+                int(chunk_overlap),
+            ),
+        )
+        conn.commit()
+
+    @_locked
+    def record_document_ingestion_completed(
+        self,
+        *,
+        source_path: str,
+        doc_id: str,
+        title: str,
+        status: str,
+        checksum: str,
+        page_count: int,
+        chunk_count: int,
+        parser_version: str,
+        chunking_version: str,
+        embedding_model: str,
+        chunk_size: int,
+        chunk_overlap: int,
+    ) -> None:
+        conn = self.connect()
+        conn.execute(
+            """
+            INSERT INTO document_ingestion_status (
+                source_path, doc_id, title, status, parser_version, chunking_version,
+                embedding_model, chunk_size, chunk_overlap, checksum, page_count,
+                chunk_count, started_at, completed_at, error
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '')
+            ON CONFLICT(source_path) DO UPDATE SET
+                doc_id = excluded.doc_id,
+                title = excluded.title,
+                status = excluded.status,
+                parser_version = excluded.parser_version,
+                chunking_version = excluded.chunking_version,
+                embedding_model = excluded.embedding_model,
+                chunk_size = excluded.chunk_size,
+                chunk_overlap = excluded.chunk_overlap,
+                checksum = excluded.checksum,
+                page_count = excluded.page_count,
+                chunk_count = excluded.chunk_count,
+                completed_at = CURRENT_TIMESTAMP,
+                error = ''
+            """,
+            (
+                source_path,
+                doc_id,
+                title,
+                status,
+                parser_version,
+                chunking_version,
+                embedding_model,
+                int(chunk_size),
+                int(chunk_overlap),
+                checksum,
+                int(page_count),
+                int(chunk_count),
+            ),
+        )
+        conn.commit()
+
+    @_locked
+    def record_document_ingestion_failed(
+        self,
+        *,
+        source_path: str,
+        error: str,
+        parser_version: str,
+        chunking_version: str,
+        embedding_model: str,
+        chunk_size: int,
+        chunk_overlap: int,
+    ) -> None:
+        conn = self.connect()
+        truncated_error = " ".join((error or "").split())[:2000]
+        conn.execute(
+            """
+            INSERT INTO document_ingestion_status (
+                source_path, status, parser_version, chunking_version,
+                embedding_model, chunk_size, chunk_overlap, started_at,
+                completed_at, error
+            )
+            VALUES (?, 'failed', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
+            ON CONFLICT(source_path) DO UPDATE SET
+                status = 'failed',
+                parser_version = excluded.parser_version,
+                chunking_version = excluded.chunking_version,
+                embedding_model = excluded.embedding_model,
+                chunk_size = excluded.chunk_size,
+                chunk_overlap = excluded.chunk_overlap,
+                completed_at = CURRENT_TIMESTAMP,
+                error = excluded.error
+            """,
+            (
+                source_path,
+                parser_version,
+                chunking_version,
+                embedding_model,
+                int(chunk_size),
+                int(chunk_overlap),
+                truncated_error,
+            ),
+        )
+        conn.commit()
+
+    @_locked
+    def list_document_ingestion_status(self, limit: int = 50) -> list[dict[str, Any]]:
+        conn = self.connect()
+        bounded_limit = max(1, min(int(limit), 200))
+        rows = conn.execute(
+            """
+            SELECT source_path, doc_id, title, status, parser_version, chunking_version,
+                   embedding_model, chunk_size, chunk_overlap, checksum, page_count,
+                   chunk_count, started_at, completed_at, error
+            FROM document_ingestion_status
+            ORDER BY COALESCE(completed_at, started_at) DESC
+            LIMIT ?
+            """,
+            (bounded_limit,),
+        ).fetchall()
+        return [dict(row) for row in rows]
 
     @_locked
     def delete_chunks_for_doc(self, doc_id: str) -> None:
@@ -472,7 +750,11 @@ class SQLiteStore:
 
         rows= conn.execute(
             f"""
-            SELECT doc_id, source_path, title, page_count, checksum, indexed_at
+            SELECT
+                doc_id, source_path, title, page_count, checksum, indexed_at,
+                ingestion_status, parser_version, chunking_version, embedding_model,
+                chunk_size, chunk_overlap, chunk_count, ingest_started_at,
+                ingest_completed_at, last_ingest_error
             FROM documents
             {where_sql}
             ORDER BY indexed_at DESC
@@ -489,6 +771,16 @@ class SQLiteStore:
                 "page_count": row["page_count"],
                 "checksum": row["checksum"],
                 "indexed_at": row["indexed_at"],
+                "ingestion_status": row["ingestion_status"],
+                "parser_version": row["parser_version"],
+                "chunking_version": row["chunking_version"],
+                "embedding_model": row["embedding_model"],
+                "chunk_size": row["chunk_size"],
+                "chunk_overlap": row["chunk_overlap"],
+                "chunk_count": row["chunk_count"],
+                "ingest_started_at": row["ingest_started_at"],
+                "ingest_completed_at": row["ingest_completed_at"],
+                "last_ingest_error": row["last_ingest_error"],
             }
             for row in rows
         ]

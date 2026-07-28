@@ -118,6 +118,12 @@ Ingest all PDFs:
 local-agent ingest --path data\raw\documents
 ```
 
+Unchanged PDFs are skipped automatically when checksum, parser version, chunking version, embedding model, and chunk settings are already current. Force a rebuild with:
+
+```powershell
+local-agent ingest --path data\raw\documents --force
+```
+
 Ask from the CLI:
 
 ```powershell

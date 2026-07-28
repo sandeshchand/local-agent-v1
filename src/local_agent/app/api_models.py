@@ -155,11 +155,13 @@ class EvalCandidateRunResponse(BaseModel):
 
 class IngestPathRequest(BaseModel):
     path: str = Field(..., min_length=1)
+    force: bool = False
 
 
 class IngestFileResult(BaseModel):
     file_name: str
     success: bool
+    status: str = ""
     message: str
     page_count: int | None = None
     chunk_count: int | None = None
@@ -167,6 +169,7 @@ class IngestFileResult(BaseModel):
 
 class IngestPathResponse(BaseModel):
     success_count: int
+    skipped_count: int = 0
     failed_count: int
     results: list[IngestFileResult]
 
@@ -178,6 +181,16 @@ class DocumentItem(BaseModel):
     page_count: int
     checksum: str
     indexed_at: str
+    ingestion_status: str = "indexed"
+    parser_version: str = ""
+    chunking_version: str = ""
+    embedding_model: str = ""
+    chunk_size: int = 0
+    chunk_overlap: int = 0
+    chunk_count: int = 0
+    ingest_started_at: str | None = None
+    ingest_completed_at: str | None = None
+    last_ingest_error: str = ""
 
 
 class DocumentLibraryResponse(BaseModel):

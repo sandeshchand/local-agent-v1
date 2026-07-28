@@ -20,6 +20,11 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help= "PDF file or folder path",
     )
+    ingest_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Rebuild matching PDFs even when checksum and ingestion versions are current.",
+    )
 
     ask_parser = subparser.add_parser("ask")
     ask_parser.add_argument(
@@ -65,7 +70,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run_ingest(deps: AppDependencies, path:str) -> None:
+def run_ingest(deps: AppDependencies, path: str, *, force: bool = False) -> None:
     pipeline = IngestionPipeline(
         sqlite_store=deps.sqlite_store,
         qdrant_store=deps.qdrant_store,
@@ -81,19 +86,29 @@ def run_ingest(deps: AppDependencies, path:str) -> None:
     print(f"Found{len(pdf_files)} PDF file(s).\n")
 
     success_count = 0
+    skipped_count = 0
     failed_count = 0
 
     for pdf_file in pdf_files:
         try:
-            summary = pipeline.ingest_pdf(pdf_file)
-            success_count += 1
-            print(f"[OK] {Path(summary['source_path']).name}")
+            summary = pipeline.ingest_pdf(pdf_file, force=force)
+            if summary.get("status") == "skipped":
+                skipped_count += 1
+                print(f"[SKIP] {Path(summary['source_path']).name}")
+            else:
+                success_count += 1
+                print(f"[OK] {Path(summary['source_path']).name}")
             print(f"pages={summary['page_count']} chunks={summary['chunk_count']}")
+            if summary.get("message"):
+                print(summary["message"])
         except Exception as exc:
             failed_count += 1
             print(f"[FAIL] {pdf_file.name} -> {exc}")
 
-    print(f"\nIngestion complete. success={success_count}, failed={failed_count}")
+    print(
+        f"\nIngestion complete. success={success_count}, "
+        f"skipped={skipped_count}, failed={failed_count}"
+    )
 
 
 def run_ask(

@@ -87,6 +87,7 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - all `12` representative queries now use `answer_path=extractive_fast_path`,
 - the new slowest representative case is `sora_prompt_following` at `230.65 ms`, which is already on deterministic evidence and extractive answer paths.
 - retrieval scale profiling is available through `scripts/profile_retrieval_scale.py` for document/chunk count, routing cache, embedding cache, retrieval-search timing, and Qdrant server-mode planning.
+- ingestion hardening is available with per-PDF status records, parser/chunking version metadata, incremental skip behavior, `--force` rebuilds, and Qdrant cleanup by document.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -102,11 +103,12 @@ Recommended order:
 1. Run the retrieval scale profile before making the next storage/retrieval performance change.
 2. Improve trace UI summaries further only after user feedback from the new path cards.
 3. Inspect the current slowest traces, starting with `sora_prompt_following`, only if repeated runs show a real pattern.
-4. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
-5. Re-run `multi-doc-representative` with `--repeat 3` after any performance-sensitive change.
-6. Tighten prompt/context only where traces show excess context.
-7. Consider chat-model warmup for demos where first LLM answer latency matters.
-8. Keep citations, verification, and repair intact.
+4. Add broader gold QA coverage for newly ingested PDFs.
+5. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
+6. Re-run `multi-doc-representative` with `--repeat 3` after any performance-sensitive change.
+7. Tighten prompt/context only where traces show excess context.
+8. Consider chat-model warmup for demos where first LLM answer latency matters.
+9. Keep citations, verification, and repair intact.
 
 Do not remove verification or answer repair as the first performance optimization. They protect answer quality.
 

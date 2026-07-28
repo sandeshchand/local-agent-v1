@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
+from qdrant_client.models import Distance, FieldCondition, Filter, FilterSelector, MatchValue, PointStruct, VectorParams
 
 
 class QdrantStore:
@@ -95,6 +95,26 @@ class QdrantStore:
         ]
         client.upsert(collection_name=self.collection_name, points=points)
 
+    def delete_chunks_for_doc(self, doc_id: str) -> None:
+        if not doc_id or not self.collection_exists():
+            return
+
+        client = self.connect()
+        client.delete(
+            collection_name=self.collection_name,
+            points_selector=FilterSelector(
+                filter=Filter(
+                    must=[
+                        FieldCondition(
+                            key="doc_id",
+                            match=MatchValue(value=doc_id),
+                        )
+                    ]
+                )
+            ),
+            wait=True,
+        )
+
     def search(self, query_vector: list[float], limit: int = 5,doc_id:str = None):
         if not self.collection_exists():
             return _EmptyQueryResult()
@@ -103,7 +123,6 @@ class QdrantStore:
         query_filter = None
         
         if doc_id:
-            from qdrant_client.models import Filter, FieldCondition, MatchValue
             query_filter = Filter(
                 must=[
                     FieldCondition(

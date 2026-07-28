@@ -415,18 +415,24 @@ def ingest_path(request_data: IngestPathRequest):
         raise HTTPException(status_code=404, detail="No PDF files found.")
 
     success_count = 0
+    skipped_count = 0
     failed_count = 0
     results: list[IngestFileResult] = []
 
     for pdf_file in pdf_files:
         try:
-            summary = pipeline.ingest_pdf(pdf_file)
-            success_count += 1
+            summary = pipeline.ingest_pdf(pdf_file, force=request_data.force)
+            status = str(summary.get("status") or "indexed")
+            if status == "skipped":
+                skipped_count += 1
+            else:
+                success_count += 1
             results.append(
                 IngestFileResult(
                     file_name=pdf_file.name,
-                    success=True,
-                    message="Indexed successfully",
+                    success=status != "failed",
+                    status=status,
+                    message=str(summary.get("message") or "Indexed successfully"),
                     page_count=summary.get("page_count"),
                     chunk_count=summary.get("chunk_count"),
                 )
@@ -437,12 +443,14 @@ def ingest_path(request_data: IngestPathRequest):
                 IngestFileResult(
                     file_name=pdf_file.name,
                     success=False,
+                    status="failed",
                     message=str(exc),
                 )
             )
 
     return IngestPathResponse(
         success_count=success_count,
+        skipped_count=skipped_count,
         failed_count=failed_count,
         results=results,
     )

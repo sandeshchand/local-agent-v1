@@ -24,6 +24,7 @@ function setSendButtonLoading(isLoading) {
 function setIngestLoading(isLoading) {
   const ingestBtn = document.getElementById("ingest-btn");
   const ingestInput = document.getElementById("ingest-path");
+  const ingestForce = document.getElementById("ingest-force");
 
   if (ingestBtn) {
     ingestBtn.disabled = isLoading;
@@ -32,6 +33,9 @@ function setIngestLoading(isLoading) {
 
   if (ingestInput) {
     ingestInput.disabled = isLoading;
+  }
+  if (ingestForce) {
+    ingestForce.disabled = isLoading;
   }
 }
 
@@ -1635,6 +1639,10 @@ function renderDocuments(payload, append = false) {
 
     item.appendChild(createElement("div", "doc-title", doc.title || "Untitled"));
     item.appendChild(documentMetaRow("Pages", doc.page_count));
+    item.appendChild(documentMetaRow("Chunks", doc.chunk_count));
+    item.appendChild(documentMetaRow("Status", doc.ingestion_status || "indexed"));
+    item.appendChild(documentMetaRow("Parser", doc.parser_version || "legacy"));
+    item.appendChild(documentMetaRow("Chunking", doc.chunking_version || "legacy"));
     item.appendChild(documentMetaRow("Path", sourceFileName(doc.source_path)));
     item.appendChild(documentMetaRow("Indexed", doc.indexed_at));
     item.title = doc.source_path || "";
@@ -1729,6 +1737,7 @@ async function sendChat() {
 async function ingestPath() {
   const input = document.getElementById("ingest-path");
   const statusBox = document.getElementById("ingest-status");
+  const forceInput = document.getElementById("ingest-force");
 
   if (!input || !statusBox) return;
 
@@ -1746,16 +1755,25 @@ async function ingestPath() {
   try {
     const data = await fetchJSON("/api/ingest-path", {
       method: "POST",
-      body: JSON.stringify({ path }),
+      body: JSON.stringify({
+        path,
+        force: Boolean(forceInput && forceInput.checked),
+      }),
     });
 
     const lines = [
       `Success: ${data.success_count}`,
+      `Skipped: ${data.skipped_count || 0}`,
       `Failed: ${data.failed_count}`,
       "",
-      ...data.results.map((r) =>
-        `${r.success ? "[OK]" : "[FAIL]"} ${r.file_name} - ${r.message}`
-      ),
+      ...data.results.map((r) => {
+        const status = r.status || (r.success ? "indexed" : "failed");
+        const prefix = status === "skipped" ? "[SKIP]" : r.success ? "[OK]" : "[FAIL]";
+        const counts = r.page_count || r.chunk_count
+          ? ` pages=${formatValue(r.page_count)} chunks=${formatValue(r.chunk_count)}`
+          : "";
+        return `${prefix} ${r.file_name}${counts} - ${r.message}`;
+      }),
     ];
 
     statusBox.textContent = lines.join("\n");

@@ -23,6 +23,11 @@ COMPILE_TARGETS = [
     "src/local_agent/llm/ollama_client.py",
     "src/local_agent/operations/__init__.py",
     "src/local_agent/operations/runtime_backup.py",
+    "src/local_agent/ingestion/chunking.py",
+    "src/local_agent/ingestion/file_loader.py",
+    "src/local_agent/ingestion/metadata.py",
+    "src/local_agent/ingestion/pipeline.py",
+    "src/local_agent/ingestion/parsers/pdf_parser.py",
     "src/local_agent/tools/tool_registry.py",
     "src/local_agent/tools/weather_tool.py",
     "src/local_agent/tools/file_mcp.py",
@@ -65,6 +70,8 @@ COMPILE_TARGETS = [
     "scripts/smoke_performance_caches.py",
     "scripts/smoke_config.py",
     "scripts/smoke_empty_index.py",
+    "scripts/smoke_ingestion_status.py",
+    "scripts/smoke_qdrant_doc_cleanup.py",
     "scripts/smoke_sqlite_threading.py",
     "scripts/smoke_system_status.py",
     "scripts/smoke_runtime_backup.py",
@@ -153,6 +160,8 @@ def main() -> None:
     run_step("Performance cache smoke", [sys.executable, "scripts/smoke_performance_caches.py"])
     run_step("Config smoke", [sys.executable, "scripts/smoke_config.py"])
     run_step("Empty index smoke", [sys.executable, "scripts/smoke_empty_index.py"])
+    run_step("Ingestion status smoke", [sys.executable, "scripts/smoke_ingestion_status.py"])
+    run_step("Qdrant document cleanup smoke", [sys.executable, "scripts/smoke_qdrant_doc_cleanup.py"])
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])
     run_step("Memory API smoke", [sys.executable, "scripts/smoke_memory_api.py"])
     run_step("Memory eval smoke", [sys.executable, "scripts/smoke_memory_eval.py"])
