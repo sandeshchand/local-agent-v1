@@ -25,17 +25,24 @@ Implemented:
 - Tool audit API and UI tab for guardrail/tool execution visibility.
 - Read-only weather tool.
 - MCP-style File and SQLite connectors.
-- UI trace view, compact source box, feedback, eval drafts, document library, and tools panel.
+- UI trace view, compact trace path summaries, compact source box, feedback, eval drafts, document library, and tools panel.
 - System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
 - Runtime backup and restore for local SQLite and Qdrant state.
 - Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
 - Answer-generation fast path for high-confidence citation-backed extractive answers.
 - Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
 - Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
+- Trace UI summary cards for evidence path, answer path, evidence shape, accepted fast-path source, and rejected candidate reasons.
+- Document-routing cache with SQLite signature invalidation.
+- Repeated-query embedding cache in the Ollama embedding client.
+- Generic recommended-item extraction for recommendation/list questions.
+- Generic setup/run command-sequence extraction for tutorial PDFs.
+- High-confidence coverage checks for limitation lists and focused feature/strength/role/component lists.
 - Narrow low-value social/article metadata filtering so valid technical terms can use the answer fast path.
 - Named latency benchmark profiles for Sora-only and multi-document representative coverage.
 - Safer answer intent routing so feature/strength/formula/step questions are not treated as definitions.
 - Narrow command intent routing so `starting with AI` style questions are not treated as command/server requests.
+- Focused entity list filtering so answers do not mix neighboring named topics into feature/strength lists.
 - Regression command with compile, smoke, tool, memory, config, empty-index, and answer-cleaning checks.
 
 ## 1. Broaden Latency Coverage Across Document Families
@@ -61,8 +68,26 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - the broad representative profile improved again to `3649.45 ms` average with `8428.04 ms` p95,
 - the large-integer fast-path fix moved `python_large_numbers` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
 - `python_large_numbers` improved from `9122.65 ms` to `183.18 ms` with targeted RAG quality `10.0/10`,
-- the latest broad representative profile is `3618.91 ms` average with `8501.83 ms` p95,
-- the new slowest representative case is `intro_three_part_formula`, which still uses `evidence_path=llm_judge`.
+- the formula fast-path fix moved `intro_three_part_formula` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
+- `intro_three_part_formula` improved from `9674.45 ms` to `255.41 ms` with targeted RAG quality `9.5/10`,
+- the config-purpose fast-path fix moved `pydantic_env_file_purpose` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
+- `pydantic_env_file_purpose` improved from `7100.35 ms` to `254.3 ms` with targeted RAG quality `10.0/10`,
+- the recommended-steps fast-path fix moved `ai_money_starting_steps` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
+- `ai_money_starting_steps` improved from `6994.95 ms` to `172.83 ms` with targeted RAG quality `9.5/10`,
+- the command-usefulness fast-path fix moved `python_builtin_http_server` to `evidence_path=deterministic_fast_path` and `answer_path=extractive_fast_path`,
+- `python_builtin_http_server` improved from `6530.99 ms` to `260.17 ms` with targeted RAG quality `9.5/10`,
+- the focused-list topic filter reduced `ml_tsetlin_machine` from `2859.2 ms` in the pre-fix rerun to `211.38 ms` with targeted RAG quality `9.17/10`,
+- the technical-usage fast path reduced `ml_crfs` from `5462.98 ms` to `259.47 ms` with targeted RAG quality `10.0/10`,
+- the pipeline fast path reduced `smoldocling_app_pipeline` from `4971.18 ms` to `204.28 ms` with targeted RAG quality `10.0/10`,
+- the latest broad representative profile is `190.57 ms` average with `220.62 ms` p95,
+- the repeated broad representative profile is `200.67 ms` average with `226.45 ms` p95 across `3` runs and `36` total queries,
+- after routing/embedding cache and answer-sequence stability fixes, full RAG quality is `9.52/10` and the repeated representative profile is `199.46 ms` average with `237.07 ms` p95,
+- p95 spread across repeated runs is `16.06 ms`,
+- all `12` representative queries now use `evidence_path=deterministic_fast_path`,
+- all `12` representative queries now use `answer_path=extractive_fast_path`,
+- the new slowest representative case is `sora_prompt_following` at `230.65 ms`, which is already on deterministic evidence and extractive answer paths.
+- retrieval scale profiling is available through `scripts/profile_retrieval_scale.py` for document/chunk count, routing cache, embedding cache, retrieval-search timing, and Qdrant server-mode planning.
+- ingestion hardening is available with per-PDF status records, parser/chunking version metadata, incremental skip behavior, `--force` rebuilds, and Qdrant cleanup by document.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -75,14 +100,15 @@ Use these fields to inspect slow answers before changing behavior.
 
 Recommended order:
 
-1. Inspect traces for the slowest `evidence_path=llm_judge` questions.
-2. Check whether the deterministic evidence fast path missed a general query shape such as formula/purpose/steps/usage.
-3. Add only generic evidence-routing fixes for repeated safe patterns.
-4. Re-run `--profile multi-doc-representative` after each performance change.
-5. Inspect `answer_path` and `answer_trace.fast_path.rejections` only after evidence selection is no longer the slowest stage.
-6. Tighten prompt/context only where traces show excess context.
-7. Consider chat-model warmup for demos where first LLM answer latency matters.
-8. Keep citations, verification, and repair intact.
+1. Run the retrieval scale profile before making the next storage/retrieval performance change.
+2. Improve trace UI summaries further only after user feedback from the new path cards.
+3. Inspect the current slowest traces, starting with `sora_prompt_following`, only if repeated runs show a real pattern.
+4. Add broader gold QA coverage for newly ingested PDFs.
+5. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
+6. Re-run `multi-doc-representative` with `--repeat 3` after any performance-sensitive change.
+7. Tighten prompt/context only where traces show excess context.
+8. Consider chat-model warmup for demos where first LLM answer latency matters.
+9. Keep citations, verification, and repair intact.
 
 Do not remove verification or answer repair as the first performance optimization. They protect answer quality.
 
@@ -90,18 +116,20 @@ After each optimization, run:
 
 ```cmd
 venv\Scripts\python.exe scripts\run_regression.py
+venv\Scripts\python.exe scripts\profile_retrieval_scale.py --env-file .env --profile multi-doc-representative --warmup-retrieval --repeat-search 2 --output var\logs\retrieval_scale_profile.json
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --limit 5 --warmup --output var\logs\latency_after_change_report.json
-venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_after_change_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_multi_doc_after_change_report.json
 ```
 
 ## 2. Improve Trace UI Summaries
 
 Goal: make the new trace metadata easy to read in the web UI.
 
-Add compact labels in the trace panel:
+Completed:
 
 - Evidence path: deterministic fast path, LLM judge, or heuristic fallback.
 - Answer path: extractive fast path, LLM generation, deterministic replacement, or fallback.
+- Evidence shape and accepted fast-path source.
 - Rejection reason summary for answer fast-path candidates.
 
 Keep full JSON details expandable for debugging, but show the compact labels first.
@@ -112,8 +140,8 @@ If latency remains high after answer-path observability, optimize one slow stage
 
 - if normal LLM answer generation is slow, inspect prompt size and context size,
 - if reranking is slow after warmup, tune `RERANK_CANDIDATES`,
-- if routing is slow, cache document routing results,
-- if embedding is slow, cache repeated query embeddings,
+- if routing is slow, inspect router cache invalidation and large-corpus build time,
+- if embedding is slow, inspect repeated query embedding cache hit patterns,
 - if retrieval is slow for larger data, consider Qdrant server mode instead of local path mode.
 
 Keep these constraints:

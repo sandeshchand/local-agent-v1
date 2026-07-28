@@ -117,7 +117,8 @@ def main() -> None:
 
     assert strength_chat_client.calls == 0
     assert strength_result.trace["used_answer_fast_path"] is True
-    assert "The strengths are:" in strength_result.answer
+    assert "BetaModel" in strength_result.answer
+    assert "strengths are:" in strength_result.answer
     assert "competitive performance" in strength_result.answer.lower()
     assert "interpretable" in strength_result.answer.lower()
     assert "[1]" in strength_result.answer
@@ -152,6 +153,142 @@ def main() -> None:
     assert "10**100" in large_number_result.answer
     assert "[1]" in large_number_result.answer
 
+    crf_chat_client = CountingChatClient()
+    crf_service = AnswerService(chat_client=crf_chat_client)
+    crf_result = crf_service.answer_from_context_result(
+        "What are Conditional Random Fields used for?",
+        [
+            {
+                "chunk_id": "crf-usage",
+                "title": "Model Notes",
+                "section_title": "Conditional Random Fields",
+                "page_number": 1,
+                "text": (
+                    "Conditional Random Fields (CRFs) are probabilistic models used for structured prediction. "
+                    "Unlike traditional classifiers that make independent predictions, CRFs take context into "
+                    "account, making them useful for sequential data. Conditional Random Field structure [source] "
+                    "import numpy as np from sklearn_crfsuite import CRF # Sample dataset "
+                    "(Simplified NER-like format)."
+                ),
+            }
+        ],
+    )
+
+    assert crf_chat_client.calls == 0
+    assert crf_result.trace["used_answer_fast_path"] is True
+    assert "structured prediction" in crf_result.answer.lower()
+    assert "sequential data" in crf_result.answer.lower()
+    assert "NER-like format" in crf_result.answer
+    assert "import numpy" not in crf_result.answer
+    assert "sklearn_crfsuite" not in crf_result.answer
+    assert "[1]" in crf_result.answer
+
+    pipeline_chat_client = CountingChatClient()
+    pipeline_service = AnswerService(chat_client=pipeline_chat_client)
+    pipeline_result = pipeline_service.answer_from_context_result(
+        "What is the main pipeline of the AtlasDoc document processing app?",
+        [
+            {
+                "chunk_id": "pipeline-input",
+                "title": "Document Processing App",
+                "section_title": "Building the App",
+                "page_number": 1,
+                "text": (
+                    "This is the setup: 1. Load PDFs or Images from a local file or via URL. "
+                    "2. Load the AtlasDoc model with load_model(). "
+                    "3. Process Documents and generate DocTags for each page image."
+                ),
+            },
+            {
+                "chunk_id": "pipeline-output",
+                "title": "Document Processing App",
+                "section_title": "Export and UI",
+                "page_number": 2,
+                "text": (
+                    "The generated output creates a DocTagsDocument and DoclingDocument. "
+                    "Export the result as Markdown, HTML, JSON, or PDF. "
+                    "Render a preview and provide download controls in the Gradio UI."
+                ),
+            },
+        ],
+    )
+
+    assert pipeline_chat_client.calls == 0
+    assert pipeline_result.trace["used_answer_fast_path"] is True
+    assert pipeline_result.trace["fast_path"]["accepted_candidate_source"] == "pipeline"
+    assert "The main pipeline is:" in pipeline_result.answer
+    assert "Load PDFs or images" in pipeline_result.answer
+    assert "Load the AtlasDoc model" in pipeline_result.answer
+    assert "Generate DocTags" in pipeline_result.answer
+    assert "DocTagsDocument" in pipeline_result.answer
+    assert "DoclingDocument" in pipeline_result.answer
+    assert "Markdown" in pipeline_result.answer
+    assert "HTML" in pipeline_result.answer
+    assert "JSON" in pipeline_result.answer
+    assert "Gradio UI" in pipeline_result.answer
+    assert "[1]" in pipeline_result.answer or "[2]" in pipeline_result.answer
+    assert pipeline_service._pipeline_document_classes(
+        'doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(outputs); '
+        'doc = DoclingDocument(name="ProcessedDocument")'
+    ) == ["DocTagsDocument", "DoclingDocument"]
+
+    formula_chat_client = CountingChatClient()
+    formula_service = AnswerService(chat_client=formula_chat_client)
+    formula_result = formula_service.answer_from_context_result(
+        "What is the article's three-part formula for a memorable one-minute introduction?",
+        [
+            {
+                "chunk_id": "intro-formula",
+                "title": "One-Minute Introductions",
+                "section_title": "The 3-Part Formula",
+                "page_number": 1,
+                "text": (
+                    "The 3-Part Formula (Steal This!) "
+                    "1. The Hook: Start With a Story, Not Your Name. "
+                    "2. The Highlight: Add a WTF Detail. "
+                    "3. The Handoff: Make It About Them."
+                ),
+            }
+        ],
+    )
+
+    assert formula_chat_client.calls == 0
+    assert formula_result.trace["used_answer_fast_path"] is True
+    assert "The formula is:" in formula_result.answer
+    assert "hook" in formula_result.answer.lower()
+    assert "highlight" in formula_result.answer.lower()
+    assert "handoff" in formula_result.answer.lower()
+    assert "[1]" in formula_result.answer
+
+    env_chat_client = CountingChatClient()
+    env_service = AnswerService(chat_client=env_chat_client)
+    env_result = env_service.answer_from_context_result(
+        "Why does the article recommend using a .env file during local development?",
+        [
+            {
+                "chunk_id": "env-purpose",
+                "title": "Manage Environment Variables",
+                "section_title": ".env file",
+                "page_number": 1,
+                "text": (
+                    "Developers set up environment variables that allow the app to run. "
+                    "These variables can be API keys of external services, URL of your database, "
+                    "and tokens. For local development, it is inconvenient to declare these "
+                    "variables on the machine because it is a slow and messy process. "
+                    "A .env file stores all environment variables in key : value format."
+                ),
+            }
+        ],
+    )
+
+    assert env_chat_client.calls == 0
+    assert env_result.trace["used_answer_fast_path"] is True
+    assert "The .env file is recommended because:" in env_result.answer
+    assert "slow" in env_result.answer.lower()
+    assert "api keys" in env_result.answer.lower()
+    assert "database" in env_result.answer.lower()
+    assert "[1]" in env_result.answer
+
     assert (
         fast_service._has_low_value_candidate_items(
             "Sora works this way: "
@@ -164,6 +301,7 @@ def main() -> None:
     assert fast_service._definition_query_entity("What are the key features of LazyDocker?") == ""
     assert fast_service._definition_query_entity("What are the key strengths of Tsetlin Machines?") == ""
     assert fast_service._definition_query_entity("What is the article's three-part formula for starting with AI?") == ""
+    assert fast_service._definition_query_entity("What is the main pipeline of the document processing app?") == ""
     assert fast_service._definition_query_entity("What is Sora?") == "Sora"
     assert fast_service._is_command_or_server_query("What steps does the article suggest for starting with AI?") is False
     assert fast_service._is_command_or_server_query("What command starts the HTTP server?") is True

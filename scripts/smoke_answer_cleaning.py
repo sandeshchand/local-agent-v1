@@ -44,6 +44,13 @@ def main() -> None:
     )
     assert source_bullet_answer == "The result is: Improving simulation quality. [1]"
 
+    env_answer = service._clean_final_answer(
+        "The .env file is recommended because: - A .env file stores variables. [1]",
+        max_citation=1,
+    )
+    assert env_answer.startswith("The .env file")
+    assert "A .env file stores variables" in env_answer
+
     print("Answer cleaning smoke test passed.")
 
 

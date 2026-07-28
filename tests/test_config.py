@@ -21,6 +21,8 @@ CONFIG_ENV_NAMES = [
     "RERANKER_MODEL",
     "RERANK_CANDIDATES",
     "WARM_RETRIEVAL_ON_STARTUP",
+    "EMBEDDING_CACHE_SIZE",
+    "DOCUMENT_ROUTER_CACHE_ENABLED",
     "FILE_MCP_ENABLED",
     "FILE_MCP_ROOTS",
 ]
@@ -44,6 +46,8 @@ def test_load_config_uses_safe_defaults_when_env_file_is_missing(monkeypatch) ->
     assert config.sqlite_path == DEFAULT_SQLITE_PATH.resolve()
     assert config.debug is False
     assert config.warm_retrieval_on_startup is False
+    assert config.embedding_cache_size == 128
+    assert config.document_router_cache_enabled is True
 
 
 def test_load_config_resolves_relative_paths_from_env_file(tmp_path, monkeypatch) -> None:
@@ -59,6 +63,8 @@ def test_load_config_resolves_relative_paths_from_env_file(tmp_path, monkeypatch
                 "SQLITE_PATH=./sqlite/app.db",
                 "DEBUG=yes",
                 "WARM_RETRIEVAL_ON_STARTUP=yes",
+                "EMBEDDING_CACHE_SIZE=7",
+                "DOCUMENT_ROUTER_CACHE_ENABLED=no",
                 "FILE_MCP_ROOTS=docs,README.md",
             ]
         ),
@@ -71,6 +77,8 @@ def test_load_config_resolves_relative_paths_from_env_file(tmp_path, monkeypatch
     assert config.sqlite_path == (tmp_path / "sqlite" / "app.db").resolve()
     assert config.debug is True
     assert config.warm_retrieval_on_startup is True
+    assert config.embedding_cache_size == 7
+    assert config.document_router_cache_enabled is False
     assert config.file_mcp_roots == [
         (tmp_path / "docs").resolve(),
         (tmp_path / "README.md").resolve(),

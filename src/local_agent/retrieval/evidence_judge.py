@@ -289,6 +289,10 @@ Return only valid JSON:
         q = query.lower().strip()
         if any(phrase in q for phrase in ["compare", "across documents", "both papers", "each document"]):
             return ""
+        if any(term in q for term in ["pipeline", "workflow", "processing app", "app flow"]):
+            return "pipeline"
+        if any(term in q for term in ["formula", "part formula", "three-part", "three part"]):
+            return "list"
         if q.startswith("what is") or q.startswith("define ") or "definition of" in q:
             return "definition"
         if any(term in q for term in ["limitation", "limitations", "challenge", "risk", "weakness", "constraint"]):
@@ -322,7 +326,9 @@ Return only valid JSON:
             return "mechanism"
         if q.startswith("why"):
             return "explanation"
-        if any(term in q for term in ["used for", "useful for", "purpose"]):
+        if "command" in q and any(term in q for term in ["useful", "usefulness", "why", "start", "run", "provide"]):
+            return "usage"
+        if any(term in q for term in ["used for", "useful for", "useful", "usefulness", "purpose"]):
             return "usage"
         return ""
 
@@ -334,6 +340,7 @@ Return only valid JSON:
             "mechanism": 14.0,
             "explanation": 14.0,
             "usage": 13.0,
+            "pipeline": 13.0,
         }.get(shape, 99.0)
 
     def _fast_path_is_sufficient(self, shape: str, selected: list[dict], query: str) -> bool:
@@ -350,6 +357,9 @@ Return only valid JSON:
             evidence_text = " ".join(self._evidence_text(item) for item in selected[:2])
             intent_hits = sum(1 for term in self._intent_terms(query.lower()) if term in evidence_text)
             return intent_hits >= 2 or self._directness_score(shape, evidence_text) >= 5
+        if shape == "pipeline":
+            evidence_text = " ".join(self._evidence_text(item) for item in selected)
+            return self._pipeline_stage_coverage(evidence_text) >= 3
         return False
 
     def _directness_score(self, shape: str, evidence_text: str) -> int:
@@ -411,6 +421,11 @@ Return only valid JSON:
                 "debugging agents",
                 "documentation agents",
                 "components",
+                "formula",
+                "part formula",
+                "hook",
+                "highlight",
+                "handoff",
                 "collaborate",
                 "specialization",
                 "first",
@@ -449,6 +464,8 @@ Return only valid JSON:
                 "due to",
                 "therefore",
                 "as a result",
+                "recommend",
+                "recommended",
                 "helps",
                 "allows",
                 "enables",
@@ -456,20 +473,114 @@ Return only valid JSON:
                 "demonstrates",
                 "capability",
                 "ability",
+                "local development",
+                "environment variables",
+                "api key",
+                "api keys",
+                "database url",
+                "url of your database",
+                "tokens",
+                "secrets",
+                "slow and messy",
+                "inconvenient",
+                "key : value",
+                "key-value",
+                "private",
+                "secure",
+                "safe",
             ],
             "usage": [
                 "used for",
                 "useful for",
+                "useful",
                 "helps",
                 "allows",
                 "enables",
                 "purpose",
                 "application",
                 "applications",
+                "command",
+                "single command",
+                "built-in",
+                "web server",
+                "http server",
+                "start one instantly",
+                "quickly test",
+                "test web applications",
+                "share files",
+                "local network",
+                "third-party tools",
+                "browser",
+                "localhost",
+                "serve files",
+                "probabilistic",
+                "structured prediction",
+                "structured",
+                "prediction",
+                "independent predictions",
+                "context",
+                "sequential data",
+                "sequential",
+                "sequence",
+                "label",
+                "labels",
+                "named entity",
+                "ner",
+            ],
+            "pipeline": [
+                "pipeline",
+                "workflow",
+                "setup",
+                "load",
+                "input",
+                "file",
+                "upload",
+                "url",
+                "image",
+                "pdf",
+                "model",
+                "load_model",
+                "process",
+                "processing",
+                "generate",
+                "output",
+                "doctags",
+                "markup",
+                "document",
+                "doctagsdocument",
+                "doclingdocument",
+                "export",
+                "markdown",
+                "html",
+                "json",
+                "download",
+                "preview",
+                "interface",
+                "ui",
+                "gradio",
             ],
         }
         markers = markers_by_shape.get(shape, [])
-        return sum(1 for marker in markers if marker in evidence_text)
+        score = sum(1 for marker in markers if marker in evidence_text)
+        if shape == "list":
+            numbered_items = len(re.findall(r"(?<!\d)\b\d{1,2}\.\s+", evidence_text))
+            score += min(4, numbered_items)
+            if re.search(r"\b(?:first steps?|do this first|start today|here'?s how|recommended?|suggests?)\b", evidence_text):
+                score += 1
+        if shape == "pipeline":
+            score += self._pipeline_stage_coverage(evidence_text) * 2
+        return score
+
+    def _pipeline_stage_coverage(self, evidence_text: str) -> int:
+        stage_groups = [
+            ["pdf", "image", "file", "upload", "url", "input"],
+            ["model", "load_model", "load the"],
+            ["process", "processing", "generate", "output", "doctags", "markup"],
+            ["document", "doctagsdocument", "doclingdocument"],
+            ["export", "markdown", "html", "json", "format"],
+            ["preview", "download", "interface", "ui", "gradio"],
+        ]
+        return sum(1 for markers in stage_groups if any(marker in evidence_text for marker in markers))
 
     def _is_speculative_or_secondary(self, evidence_text: str) -> bool:
         return any(
@@ -554,6 +665,47 @@ Return only valid JSON:
                 "advantages",
                 "benefit",
                 "benefits",
+                "command",
+                "single command",
+                "built-in",
+                "web server",
+                "http server",
+                "quickly test",
+                "test web applications",
+                "share files",
+                "local network",
+                "third-party tools",
+                "browser",
+                "localhost",
+                "environment variables",
+                "local development",
+                "api key",
+                "api keys",
+                "tokens",
+                "secrets",
+                "database",
+                "key : value",
+                "slow and messy",
+                "inconvenient",
+                "structured prediction",
+                "independent predictions",
+                "sequential data",
+                "named entity",
+                "ner",
+                "pipeline",
+                "workflow",
+                "setup",
+                "load_model",
+                "doctags",
+                "doctagsdocument",
+                "doclingdocument",
+                "export",
+                "markdown",
+                "html",
+                "json",
+                "download",
+                "preview",
+                "gradio",
             ]
         ):
             score += 1
@@ -701,6 +853,36 @@ Return only valid JSON:
             terms.extend(["strength", "strengths", "advantage", "advantages", "benefit", "benefits", "memory", "speed", "performance", "hardware", "efficient", "interpretable", "competitive"])
         if any(phrase in query_lower for phrase in ["large number", "large numbers", "large integer", "large integers", "very large", "big number", "big numbers"]):
             terms.extend(["large", "number", "numbers", "integer", "integers", "big numbers", "automatically manages", "special data types", "int", "long", "memory", "dynamic", "dynamically", "allocates", "digits", "10**"])
+        if any(phrase in query_lower for phrase in ["formula", "part formula", "three-part", "three part"]):
+            terms.extend(["formula", "part", "parts", "step", "steps", "component", "components", "hook", "highlight", "handoff"])
+        if any(phrase in query_lower for phrase in ["pipeline", "workflow", "processing app", "app flow"]):
+            terms.extend(["pipeline", "workflow", "setup", "load", "input", "file", "url", "upload", "pdf", "image", "model", "load_model", "process", "processing", "generate", "output", "doctags", "document", "doctagsdocument", "doclingdocument", "export", "markdown", "html", "json", "download", "preview", "interface", "ui", "gradio"])
+        if any(phrase in query_lower for phrase in [".env", "env file", "environment file", "environment variable", "environment variables"]):
+            terms.extend([".env", "env file", "local development", "environment variables", "variables", "api key", "api keys", "tokens", "secrets", "database", "database url", "url of your database", "key : value", "key-value", "slow", "messy", "inconvenient", "private", "secure", "safe"])
+        if "command" in query_lower or any(term in query_lower for term in ["useful", "usefulness", "server"]):
+            terms.extend(["command", "single command", "built-in", "http server", "web server", "start", "run", "useful", "test", "web applications", "share files", "local network", "third-party", "browser", "localhost"])
+        if any(phrase in query_lower for phrase in ["used for", "useful for", "purpose"]):
+            terms.extend([
+                "used for",
+                "useful",
+                "application",
+                "applications",
+                "probabilistic",
+                "structured",
+                "structured prediction",
+                "prediction",
+                "context",
+                "independent",
+                "independent predictions",
+                "sequential",
+                "sequential data",
+                "sequence",
+                "label",
+                "labels",
+                "named entity",
+                "ner",
+                "format",
+            ])
         if any(word in query_lower for word in ["represent", "representation", "encode", "encoding", "before feeding", "model input"]):
             terms.extend(["representation", "encoding", "token", "patch", "spacetime", "latent", "compressed", "input", "visual representation", "encoder", "transformer", "diffusion", "diffusion transformer"])
         if any(word in query_lower for word in ["native", "size", "sizes", "resolution", "aspect ratio"]):

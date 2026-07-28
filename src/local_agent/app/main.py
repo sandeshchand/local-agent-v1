@@ -21,7 +21,7 @@ def main() ->None:
     deps = bootstrap_app(".env")
 
     if args.command == "ingest":
-        run_ingest(deps, args.path)
+        run_ingest(deps, args.path, force=args.force)
     elif args.command == "ask":
         run_ask(deps, args.query, approved_tools=args.approve_tool)
     elif args.command == "list-docs":

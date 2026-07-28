@@ -1,15 +1,25 @@
 from __future__ import annotations
 
 from collections import Counter
+from dataclasses import dataclass
 import math
 import os
 import re
+from threading import RLock
 from typing import Any, List, Mapping
 
 from rank_bm25 import BM25Okapi
-from sentence_transformers import CrossEncoder
 
 from local_agent.storage.sqlite_store import SQLiteStore
+
+
+@dataclass(frozen=True)
+class _RoutingIndex:
+    signature: tuple[Any, ...]
+    docs: list[dict[str, Any]]
+    corpus: list[list[str]]
+    doc_text_cache: dict[str, str]
+    bm25: BM25Okapi
 
 class DocumentRouter:
     """
@@ -17,39 +27,26 @@ class DocumentRouter:
     rank documents before chunk retrieval
 
     """
-    def __init__(self,sqlite_store: SQLiteStore) -> None:
+    def __init__(self,sqlite_store: SQLiteStore, cache_enabled: bool = True) -> None:
         self.sqlite_store = sqlite_store
+        self.cache_enabled = cache_enabled
+        self._cache_lock = RLock()
+        self._routing_index: _RoutingIndex | None = None
 
     
     def route(self,query:str, top_n:int = 3)-> List[Mapping[str,Any]]:
-        docs = self.sqlite_store.list_documents_for_routing()
+        routing_index = self._get_routing_index()
+        docs = routing_index.docs
         if not docs:
             return[]
-        
-        corpus = []
-        doc_text_cache: dict[str, str] = {}
-        
-        for doc in docs:
-            basename = os.path.basename(doc["source_path"])
-            chunk_text = self._document_chunk_text(str(doc["doc_id"]))
-            doc_text_cache[str(doc["doc_id"])] = chunk_text
-            routing_text =(
-                f"{doc['title']} "
-                f"{basename} "
-                f"{doc.get('section_titles','')} "
-                f"{chunk_text}"
-                
-            ).strip()
-            corpus.append(self._tokenize(routing_text))
 
         query_tokens = self._content_tokens(query)
         if not query_tokens:
             query_tokens = self._tokenize(query)
         if not query_tokens:
-             return docs[:top_n]
+             return [dict(doc) for doc in docs[:top_n]]
 
-        bm25 = BM25Okapi(corpus)
-        scores = bm25.get_scores(query_tokens)
+        scores = routing_index.bm25.get_scores(query_tokens)
 
         scored_docs : List[dict[str,Any]] = []
         q_lower = query.lower()
@@ -60,7 +57,7 @@ class DocumentRouter:
             title_lower = (doc['title'] or '').lower()
             path_lower = (doc['source_path'] or '').lower()
             sections_lower = (doc.get('section_titles','') or '').lower()
-            chunk_text_lower = doc_text_cache.get(str(doc["doc_id"]), "").lower()
+            chunk_text_lower = routing_index.doc_text_cache.get(str(doc["doc_id"]), "").lower()
             searchable_text = self._normalize_for_phrase_search(
                 " ".join([title_lower, path_lower, sections_lower, chunk_text_lower])
             )
@@ -120,6 +117,47 @@ class DocumentRouter:
             
         scored_docs.sort(key=lambda x: x["routing_score"], reverse=True)
         return scored_docs[:top_n]    
+
+    def clear_cache(self) -> None:
+        with self._cache_lock:
+            self._routing_index = None
+
+    def _get_routing_index(self) -> _RoutingIndex:
+        signature = self.sqlite_store.routing_corpus_signature()
+        with self._cache_lock:
+            if (
+                self.cache_enabled
+                and self._routing_index is not None
+                and self._routing_index.signature == signature
+            ):
+                return self._routing_index
+
+            docs = [dict(doc) for doc in self.sqlite_store.list_documents_for_routing()]
+            corpus: list[list[str]] = []
+            doc_text_cache: dict[str, str] = {}
+
+            for doc in docs:
+                basename = os.path.basename(doc["source_path"])
+                chunk_text = self._document_chunk_text(str(doc["doc_id"]))
+                doc_text_cache[str(doc["doc_id"])] = chunk_text
+                routing_text = (
+                    f"{doc['title']} "
+                    f"{basename} "
+                    f"{doc.get('section_titles','')} "
+                    f"{chunk_text}"
+                ).strip()
+                corpus.append(self._tokenize(routing_text))
+
+            routing_index = _RoutingIndex(
+                signature=signature,
+                docs=docs,
+                corpus=corpus,
+                doc_text_cache=doc_text_cache,
+                bm25=BM25Okapi(corpus),
+            )
+            if self.cache_enabled:
+                self._routing_index = routing_index
+            return routing_index
     
     def _tokenize(self, text: str) -> List[str]:
         return re.findall(r"\b\w+\b", text.lower())

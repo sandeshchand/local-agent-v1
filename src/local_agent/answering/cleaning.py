@@ -208,7 +208,8 @@ class AnswerCleaningMixin:
             )
 
         answer = re.sub(r"(?:^|\s)-\s*(?:\[\d+\]\s*)+(?=$|\s+-)", " ", answer)
-        return re.sub(r"\s+([,.])", r"\1", answer)
+        answer = re.sub(r"\s+([,])", r"\1", answer)
+        return re.sub(r"\s+\.(?=(?:\s|$|\[\d+\]))", ".", answer)
     def _remove_mixed_abstention(self, answer: str) -> str:
         lines = [
             line

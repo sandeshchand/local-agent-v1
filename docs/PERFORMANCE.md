@@ -69,6 +69,31 @@ Run a named profile:
 venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_representative_report.json
 ```
 
+Run the same benchmark multiple times and write one stability report:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_multi_doc_stability_report.json
+```
+
+Run a retrieval scale profile:
+
+```powershell
+venv\Scripts\python.exe scripts\profile_retrieval_scale.py --env-file .env --profile multi-doc-representative --warmup-retrieval --repeat-search 2 --output var\logs\retrieval_scale_profile.json
+```
+
+Use this when you want to understand production scaling pressure before changing code. The report records:
+
+- indexed document count,
+- indexed chunk count,
+- routing cold-build time,
+- routing warm-cache time,
+- repeated-query embedding cold/warm time,
+- retrieval-search p50/p95,
+- Qdrant local path mode warning,
+- recommendations for Qdrant server-mode planning.
+
+If the web server is already running with local Qdrant path mode, retrieval search profiling can fail because Qdrant path mode is single-process. Stop duplicate app processes, then rerun the profile.
+
 Use a specific environment file:
 
 ```powershell
@@ -89,6 +114,8 @@ The script writes a JSON report with:
 - p50 latency,
 - p95 latency,
 - slowest query,
+- repeat/run stability when `--repeat` is used,
+- evidence-path and answer-path counts when `--repeat` is used,
 - per-query timings,
 - per-query `evidence_paths`,
 - per-query `answer_paths`,
@@ -106,6 +133,14 @@ Use this process whenever improving performance:
 6. Run quality regression to confirm answers did not get worse.
 7. Run latency benchmark again and compare the new report with the old one.
 
+For scale work, add this extra step before changing storage behavior:
+
+```powershell
+venv\Scripts\python.exe scripts\profile_retrieval_scale.py --env-file .env --profile multi-doc-representative --warmup-retrieval --output var\logs\retrieval_scale_profile.json
+```
+
+Use the scale profile to decide whether the next bottleneck is routing index build time, repeated embedding calls, retrieval search, or Qdrant local path mode.
+
 This is the safe production pattern: baseline, change one thing, re-measure.
 
 ## Current Optimization Order
@@ -116,11 +151,35 @@ Recommended order for future performance improvements:
 2. Inspect `answer_path` and `evidence_path` before changing behavior.
 3. Reduce unnecessary normal LLM answer generation where trace rejection reasons show a safe generic fix.
 4. Tune reranker candidate count only if reranking remains slow after warmup.
-5. Cache repeated document routing and embedding work.
+5. Cache repeated document routing and embedding work. Completed for v1.
 6. Move Qdrant from local path mode to server mode for larger collections.
 7. Add ingestion batching and parallel parsing for large PDF sets.
 
 Do not optimize by removing verification or answer repair first. Those protect answer quality.
+
+## Retrieval Scale Profile
+
+`scripts/profile_retrieval_scale.py` is a lower-level diagnostic than `scripts/benchmark_latency.py`.
+
+Use `benchmark_latency.py` to measure full user-facing answer time.
+
+Use `profile_retrieval_scale.py` to measure retrieval infrastructure:
+
+- `corpus`: current SQLite document/chunk size,
+- `routing`: document-router cold vs warm cache behavior,
+- `embedding_cache`: repeated query embedding cache behavior,
+- `retrieval_search`: dense/sparse/fusion/reranker/search timing without answer generation,
+- `recommendations`: next operational action.
+
+Use `--warmup-retrieval` when measuring steady-state performance. Without it, the first retrieval can include Qdrant connection, embedding-model, and reranker-model startup cost.
+
+Recommended interpretation:
+
+- under `100` documents and `10,000` chunks: local Qdrant path mode is fine for development,
+- above `100` documents or `10,000` chunks: start Qdrant server-mode testing,
+- above `1,000` documents or `50,000` chunks: Qdrant server mode becomes high priority,
+- high routing cold time with low warm time means the router cache is helping,
+- high retrieval p95 means inspect reranker cost, Qdrant mode, and candidate limits.
 
 ## Baseline Before Evidence Fast Path
 
@@ -505,6 +564,354 @@ Result:
 - evidence paths: `7` deterministic fast path, `5` LLM judge.
 
 Current conclusion: large-number/integer mechanism questions now have generic deterministic evidence and focused extractive answering. The next slow representative queries still use `evidence_path=llm_judge`; start with `intro_three_part_formula`, then inspect Pydantic purpose, AI side-hustle steps, Python HTTP server, and CRFs.
+
+## After Formula Fast Path
+
+The next slow representative case was `intro_three_part_formula`. The answer extractor already had a generic formula window, but evidence selection classified `What is the article's three-part formula...` as a definition question before it could reach list-style evidence handling.
+
+The fix treats formula and part-formula questions as list-shaped evidence, adds generic formula component markers to deterministic evidence scoring, and allows high-confidence formula answers to skip normal LLM generation when the candidate contains structured formula components.
+
+Formula benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids intro_three_part_formula --warmup --output var\logs\latency_formula_fast_path_report.json
+```
+
+Result:
+
+- `intro_three_part_formula` improved from `9674.45 ms` to `255.41 ms`,
+- broad-profile rerun measured it at `165.34 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `9.5/10`.
+
+Representative benchmark after the formula fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_formula_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `2805.31 ms`,
+- p50 latency: `1158.23 ms`,
+- p95 latency: `7027.56 ms`,
+- slowest query: `pydantic_env_file_purpose` at `7100.35 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `8` deterministic fast path, `4` LLM judge.
+
+Current conclusion: formula/list-style article questions now avoid LLM evidence judging and answer generation when the retrieved evidence already contains the numbered components. The next slow representative queries still use `evidence_path=llm_judge`; start with `pydantic_env_file_purpose`, then inspect AI side-hustle steps, Python HTTP server, and CRFs.
+
+## After Config-Purpose Fast Path
+
+The next slow representative case was `pydantic_env_file_purpose`. The answer path already used the `.env` config-purpose extractor, but evidence selection still used the LLM judge because explanation directness did not recognize config-purpose signals such as local development, environment variables, secrets, API keys, database URLs, tokens, slow setup, and key-value config files.
+
+The fix adds generic config-purpose markers to deterministic evidence scoring and intent terms. It also narrows answer punctuation cleanup so file names such as `.env` keep their leading space instead of becoming `The.env` or `A.env`.
+
+Config-purpose benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids pydantic_env_file_purpose --warmup --output var\logs\latency_pydantic_env_fast_path_report.json
+```
+
+Result:
+
+- `pydantic_env_file_purpose` improved from `7100.35 ms` to `254.3 ms`,
+- broad-profile rerun measured it at `214.22 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `10.0/10`.
+
+Representative benchmark after the config-purpose fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_pydantic_env_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `2246.97 ms`,
+- p50 latency: `245.74 ms`,
+- p95 latency: `6394.89 ms`,
+- slowest query: `ai_money_starting_steps` at `6994.95 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `9` deterministic fast path, `3` LLM judge.
+
+Current conclusion: config/secrets/local-development purpose questions now avoid LLM evidence judging when retrieved evidence contains direct purpose signals. The next slow representative queries still use `evidence_path=llm_judge`; start with `ai_money_starting_steps`, then inspect Python HTTP server command usefulness and CRF usage.
+
+## After Recommended-Steps Fast Path
+
+The next slow representative case was `ai_money_starting_steps`. Retrieval already found the right chunk and answer generation already used the extractive list path, but deterministic evidence selection rejected the fast path because a single numbered list did not score as direct enough.
+
+The fix is generic: list-shaped questions now give directness credit to numbered list items and common recommendation/start phrasing such as "first steps", "do this first", "start today", "here's how", and "recommended". This helps article and guide-style PDFs where the answer is a compact numbered action list.
+
+Recommended-steps benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids ai_money_starting_steps --warmup --output var\logs\latency_ai_money_steps_fast_path_report.json
+```
+
+Result:
+
+- `ai_money_starting_steps` improved from `6994.95 ms` to `172.83 ms`,
+- broad-profile rerun measured it at `159.54 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `9.5/10`.
+
+Representative benchmark after the recommended-steps fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_ai_money_steps_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `1686.67 ms`,
+- p50 latency: `206.93 ms`,
+- p95 latency: `5961.88 ms`,
+- slowest query: `python_builtin_http_server` at `6530.99 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `10` deterministic fast path, `2` LLM judge.
+
+Current conclusion: guide-style numbered recommendation lists now avoid LLM evidence judging. The next slow representative queries still use `evidence_path=llm_judge`; start with Python HTTP server command usefulness, then inspect CRF usage.
+
+## After Command-Usefulness Fast Path
+
+The next slow representative case was `python_builtin_http_server`. Answer generation already used the command extractor, but evidence selection did not classify command/usefulness questions as a deterministic evidence shape.
+
+The fix treats command questions that ask why a command is useful as usage-shaped evidence. It adds generic command-usefulness markers such as single command, built-in web server, quickly test, share files, local network, browser, localhost, and third-party tools. This is meant for command/setup guides in any document family, not only Python articles.
+
+Command-usefulness benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids python_builtin_http_server --warmup --output var\logs\latency_python_http_server_fast_path_report.json
+```
+
+Result:
+
+- `python_builtin_http_server` improved from `6530.99 ms` to `260.17 ms`,
+- broad-profile rerun measured it at `195.97 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `9.5/10`.
+
+Representative benchmark after the command-usefulness fast-path fix:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_python_http_server_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `1292.09 ms`,
+- p50 latency: `220.23 ms`,
+- p95 latency: `5597.91 ms`,
+- slowest query: `ml_tsetlin_machine` at `6142.94 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `11` deterministic fast path, `1` LLM judge.
+
+Current conclusion: command-usefulness questions now avoid LLM evidence judging. The next slow representative case is `ml_tsetlin_machine`, which already uses deterministic evidence and extractive answering, so inspect retrieval/reranker timing before changing answer behavior. Also inspect `ml_crfs`, the remaining representative `evidence_path=llm_judge` case.
+
+## After Focused List Topic Filter
+
+The `ml_tsetlin_machine` trace showed that retrieval and extractive answer generation were already fast, but the first list answer mixed neighboring sections such as Symbolic Regression and Random Kitchen Sinks into the Tsetlin answer. Verification correctly rejected that mixed-topic answer, and LLM answer repair added most of the latency.
+
+The fix keeps focused list questions generic: when a query names a focus entity, the list extractor now filters competing named-topic facts, keeps section follow-up facts only when they read like details of the focused entity, and uses an entity-specific prefix for feature, strength, role, and component answers. The high-confidence answer gate also rejects focused feature/list candidates that introduce a separate named topic, so source-window candidates can fall through to stricter extractive list answers. A synthetic focused-list smoke test was added to regression coverage.
+
+Focused-list benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids ml_tsetlin_machine --warmup --output var\logs\latency_tsetlin_focused_list_final_report.json
+```
+
+Result:
+
+- `ml_tsetlin_machine` improved from `2859.2 ms` in the pre-fix rerun to `211.38 ms`,
+- broad-profile rerun measured it at `193.14 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- verification passed without `answer_repair`,
+- targeted RAG quality: `9.17/10`.
+
+Representative benchmark after the focused-list topic filter:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_focused_list_final_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `742.0 ms`,
+- p50 latency: `196.03 ms`,
+- p95 latency: `3320.76 ms`,
+- slowest query: `ml_crfs` at `5462.98 ms`,
+- next deterministic-but-slow query: `smoldocling_app_pipeline` at `1568.04 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `11` deterministic fast path, `1` LLM judge.
+
+Current conclusion: focused entity list answers now avoid slow repair when neighboring chunks mention other named topics. The next slow case is `ml_crfs`, the remaining representative `evidence_path=llm_judge` item. After that, inspect `smoldocling_app_pipeline`, which is deterministic evidence but still slow due to the replacement path.
+
+## After Technical Usage Fast Path
+
+The `ml_crfs` trace showed that answer generation was already extractive, but evidence selection still used the LLM judge for a technical "used for" question. The fast path detected the query shape as `usage`, but the deterministic sufficiency check did not recognize structured-prediction, sequential-data, context, label, and NER signals as usage evidence.
+
+The fix extends generic technical usage evidence markers and intent terms. It also improves the used-for extractor so code-heavy example snippets are converted into a clean cited application fact, for example `NER-like format`, instead of leaking imports into the answer.
+
+Technical-usage benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids ml_crfs --warmup --output var\logs\latency_ml_crfs_usage_fast_path_report.json
+```
+
+Result:
+
+- `ml_crfs` improved from `5462.98 ms` in the previous representative run to `259.47 ms`,
+- broad-profile rerun measured it at `195.31 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- verification passed without repair,
+- targeted RAG quality: `10.0/10`.
+
+Representative benchmark after the technical usage fast path:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_ml_crfs_usage_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `588.94 ms`,
+- p50 latency: `192.36 ms`,
+- p95 latency: `2365.39 ms`,
+- slowest query: `smoldocling_app_pipeline` at `4971.18 ms`,
+- answer paths: `11` extractive fast path, `1` pipeline extractive replacement,
+- evidence paths: `12` deterministic fast path.
+
+Current conclusion: every representative query now avoids LLM evidence judging. The next slow case is `smoldocling_app_pipeline`, which has deterministic evidence but still uses the slower pipeline replacement path.
+
+## After Pipeline Fast Path
+
+The `smoldocling_app_pipeline` trace showed that the correct pipeline candidate was available, but the answer fast path rejected it as `low_value_candidate_items`. The query also looked like a `what is` definition in parts of the routing logic, and the selected evidence window did not always keep the conversion chunk that mentioned document-class construction.
+
+The fix is generic for workflow and app-pipeline questions:
+
+- pipeline/workflow/app-flow questions are not treated as definition questions,
+- short pipeline bullets such as load, generate, create, export, preview, and download count as useful answer markers,
+- strong pipeline answers can pass the high-confidence answer fast path when they cover enough stages,
+- pipeline evidence selection has its own deterministic shape so input, model, generation, document conversion, export, and UI chunks are selected together,
+- document-class extraction prefers class-like identifiers such as `DocTagsDocument.from...` or `DoclingDocument(...)` and ignores quoted display names such as `"ProcessedDocument"`.
+
+Pipeline benchmark:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --ids smoldocling_app_pipeline --warmup --output var\logs\latency_smoldocling_pipeline_fast_path_report.json
+```
+
+Result:
+
+- `smoldocling_app_pipeline` improved from `4971.18 ms` to `204.28 ms`,
+- broad-profile rerun measured it at `188.15 ms`,
+- `evidence_path`: `deterministic_fast_path`,
+- `answer_path`: `extractive_fast_path`,
+- targeted RAG quality: `10.0/10`.
+
+Representative benchmark after the pipeline fast path:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --output var\logs\latency_multi_doc_smoldocling_pipeline_fast_path_report.json
+```
+
+Result:
+
+- sample size: `12` queries,
+- average latency: `190.57 ms`,
+- p50 latency: `184.09 ms`,
+- p95 latency: `220.62 ms`,
+- slowest query: `sora_prompt_following` at `230.65 ms`,
+- answer paths: `12` extractive fast path,
+- evidence paths: `12` deterministic fast path.
+
+Current conclusion: the representative multi-document profile is now consistently fast without removing citations, verification, repair, reranking, or document routing. The next performance work should shift from broad fast-path additions to production profiling: repeated runs, p95 stability, larger document counts, Qdrant server mode, routing/embedding caches, and UI trace summaries.
+
+## After Latency Stability Mode
+
+The latency benchmark now supports repeated runs:
+
+```powershell
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_multi_doc_stability_report.json
+```
+
+This writes:
+
+- one aggregate stability report at the requested `--output`,
+- one per-run report beside it, using `_run_1`, `_run_2`, and so on,
+- run-level average/p50/p95 summaries,
+- p95 spread across runs,
+- evidence-path and answer-path counts across all runs.
+
+Latest stability result:
+
+- runs: `3`,
+- total queries: `36`,
+- average latency: `200.67 ms`,
+- p50 latency: `203.54 ms`,
+- p95 latency: `226.45 ms`,
+- slowest query: `sora_prompt_following` at `236.35 ms`,
+- p95 spread across runs: `16.06 ms`,
+- warmup: `ok`.
+
+Current conclusion: the representative profile is not just fast in one sample; it is stable across repeated local runs. The next performance tasks should focus on scale behavior rather than adding more answer fast paths: larger document sets, Qdrant server mode, and clearer trace UI summaries.
+
+## After Routing And Embedding Cache V1
+
+The retrieval stack now avoids two repeated hot-path costs:
+
+- `DocumentRouter` caches the document-routing BM25 corpus and per-document routing text.
+- `OllamaEmbeddingClient.embed()` caches exact repeated single-query embeddings with a small in-memory LRU cache.
+
+The document router cache is invalidated by a SQLite routing corpus signature. The signature includes document count, chunk count, chunk text size, token-estimate total, latest document index time, and document checksum marker. When new PDFs are ingested or indexed document rows change, routing rebuilds automatically on the next query.
+
+The embedding cache is intentionally query-scoped and model-client local. It only caches exact repeated text passed to `embed()`, returns a copy of cached vectors, and can be disabled by setting cache size to `0`.
+
+Config defaults:
+
+- `EMBEDDING_CACHE_SIZE=128`
+- `DOCUMENT_ROUTER_CACHE_ENABLED=true`
+
+Validation:
+
+```powershell
+venv\Scripts\python.exe scripts\smoke_performance_caches.py
+venv\Scripts\python.exe scripts\run_regression.py --skip-rag
+```
+
+Final validation after cache and answer-sequence stability fixes:
+
+```powershell
+venv\Scripts\python.exe scripts\run_regression.py --full --output var\logs\rag_quality_routing_embedding_cache_final2_report.json
+venv\Scripts\python.exe scripts\benchmark_latency.py --env-file .env --profile multi-doc-representative --warmup --repeat 3 --output var\logs\latency_routing_embedding_cache_final2_report.json
+```
+
+Result:
+
+- full RAG quality: `9.52/10`,
+- all items above the configured `7/10` item gate,
+- representative latency: `199.46 ms` average,
+- representative p50: `201.83 ms`,
+- representative p95: `237.07 ms`,
+- slowest representative query: `sora_prompt_following` at `267.85 ms`,
+- warmup: `ok`.
+
+This validation also added generic extractive stability for recommended item lists, setup/run command sequences, focused list answers, and limitation lists.
+
+Current conclusion: repeated-query and repeated-routing overhead are now reduced without changing citations, verification, repair, or RAG ranking logic. The next performance task is to profile behavior under larger document counts and decide when to move Qdrant from local path mode to server mode.
 
 ## Existing Evidence Selection Optimization
 

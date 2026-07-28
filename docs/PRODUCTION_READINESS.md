@@ -18,13 +18,15 @@ The project has strong local foundations:
 - MCP-style read-only local connectors,
 - feedback capture,
 - repeatable evaluation,
+- retrieval scale profiling for document/chunk count, routing cache, embedding cache, and retrieval-search timing,
 - memory-specific multi-turn evaluation,
 - memory management UI/API,
 - trace visibility,
 - tool-audit visibility,
 - system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools,
 - local backup and restore tooling for SQLite and Qdrant runtime state,
-- local deployment documentation.
+- local deployment documentation,
+- versioned incremental ingestion with per-file status tracking and safe Qdrant cleanup.
 
 The project is ready for serious local iteration and controlled demos. It still needs deployment, security, monitoring, and broader benchmark coverage before production use.
 
@@ -53,10 +55,15 @@ Data ingestion
 ### Data And Indexing
 
 - Define supported document formats and maximum file sizes.
-- Add ingestion status tracking for each document.
-- Record parser version and chunking version for each indexed document.
-- Add safe reingestion workflow for changed PDFs.
 - Keep the local backup and restore process tested for `var/sqlite/app.db` and `var/qdrant/`.
+
+Completed:
+
+- Ingestion status tracking for each attempted PDF.
+- Parser and chunking version metadata for indexed documents.
+- Incremental skip behavior for unchanged/current-version PDFs.
+- `--force` re-index option for deliberate rebuilds.
+- Qdrant vector cleanup by `doc_id` during re-ingestion.
 
 ### Repository Structure
 
@@ -135,6 +142,7 @@ Before calling this production-ready, the project should pass:
 ```powershell
 venv\Scripts\python.exe scripts\run_regression.py
 venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output var\logs\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
+venv\Scripts\python.exe scripts\profile_retrieval_scale.py --env-file .env --profile multi-doc-representative --warmup-retrieval --output var\logs\retrieval_scale_profile.json
 ```
 
 It should also have:

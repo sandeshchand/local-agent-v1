@@ -169,7 +169,9 @@ class ProcessExtractorMixin:
         return terms
     def _pipeline_document_classes(self, text: str) -> list[str]:
         classes: list[str] = []
-        for match in re.findall(r"\b[A-Z][A-Za-z0-9]*Document\b", text):
+        code_like_matches = re.findall(r"\b([A-Z][A-Za-z0-9]*Document)\b(?=\s*(?:[.(]|=))", text)
+        fallback_matches = re.findall(r"(?<![\"'])\b([A-Z][A-Za-z0-9]*Document)\b(?![\"'])", text)
+        for match in [*code_like_matches, *fallback_matches]:
             if match not in classes:
                 classes.append(match)
         return classes

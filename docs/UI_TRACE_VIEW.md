@@ -24,10 +24,19 @@ For each chat response, the trace tab shows:
 - top-k setting,
 - evidence count,
 - tool result count,
+- compact evidence-path and answer-path summary cards,
+- accepted answer fast-path source or rejection reason summary,
 - orchestration timeline,
 - retrieved evidence preview,
 - tool results,
 - raw trace JSON.
+
+The compact path summary is meant for daily debugging:
+
+- evidence path shows deterministic fast path, LLM judge, or fallback,
+- answer path shows extractive fast path, LLM generation, replacement, or fallback,
+- evidence shape shows the detected evidence intent when available,
+- rejected answer candidates are summarized without opening raw JSON.
 
 The answer card keeps the main action area visible:
 
@@ -146,6 +155,7 @@ Run:
 
 ```cmd
 venv\Scripts\python.exe -m py_compile src\local_agent\app\web.py src\local_agent\app\api_models.py src\local_agent\storage\sqlite_store.py
+venv\Scripts\python.exe -m py_compile scripts\benchmark_latency.py
 venv\Scripts\python.exe scripts\smoke_feedback_analytics.py
 venv\Scripts\python.exe scripts\smoke_feedback_issue_tags.py
 venv\Scripts\python.exe scripts\smoke_eval_candidates.py

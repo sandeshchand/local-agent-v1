@@ -174,6 +174,185 @@ def main() -> None:
     assert large_number_trace["fast_path_shape"] == "mechanism"
     assert any("10**100" in item["text"] for item in large_number_selected)
 
+    formula_chat_client = CountingChatClient()
+    formula_judge = EvidenceJudge(formula_chat_client, max_llm_judgments=6)
+    formula_results = [
+        make_item(1, "General background about communication and short presentations."),
+        make_item(
+            2,
+            (
+                "The article gives a three-part formula for memorable introductions: "
+                "1. The Hook starts with a story. "
+                "2. The Highlight adds a surprising detail. "
+                "3. The Handoff makes the ending about the other person."
+            ),
+        ),
+        make_item(3, "Unrelated publication metadata and follow-up links."),
+    ]
+
+    formula_selected, _, formula_trace = formula_judge.select_evidence_with_trace(
+        "What is the article's three-part formula for a memorable one-minute introduction?",
+        formula_results,
+        max_items=3,
+    )
+
+    assert formula_chat_client.calls == 0
+    assert formula_trace["path"] == "deterministic_fast_path"
+    assert formula_trace["fast_path_shape"] == "list"
+    assert any("The Hook" in item["text"] for item in formula_selected)
+
+    env_chat_client = CountingChatClient()
+    env_judge = EvidenceJudge(env_chat_client, max_llm_judgments=6)
+    env_results = [
+        make_item(1, "General background about application configuration."),
+        make_item(
+            2,
+            (
+                "For local development, declaring environment variables on the machine is "
+                "inconvenient, slow, and messy. A .env file stores environment variables "
+                "such as API keys, database URLs, and tokens in key : value format."
+            ),
+        ),
+        make_item(3, "Unrelated documentation about deployment pipelines."),
+    ]
+
+    env_selected, _, env_trace = env_judge.select_evidence_with_trace(
+        "Why does the article recommend using a .env file during local development?",
+        env_results,
+        max_items=3,
+    )
+
+    assert env_chat_client.calls == 0
+    assert env_trace["path"] == "deterministic_fast_path"
+    assert env_trace["fast_path_shape"] == "explanation"
+    assert any("slow" in item["text"] and "API keys" in item["text"] for item in env_selected)
+
+    steps_chat_client = CountingChatClient()
+    steps_judge = EvidenceJudge(steps_chat_client, max_llm_judgments=6)
+    steps_results = [
+        make_item(1, "General motivation about earning side income with new tools."),
+        make_item(
+            2,
+            (
+                "Want to start? Do this first: "
+                "1. Pick one skill you already have. "
+                "2. Ask AI tools to help you draft, research, or brainstorm faster. "
+                "3. Package the skill as a service. "
+                "4. Go where people already need help. "
+                "5. Do it messy, do it fast, and do not overthink it."
+            ),
+        ),
+        make_item(3, "Unrelated author biography and publication links."),
+    ]
+
+    steps_selected, _, steps_trace = steps_judge.select_evidence_with_trace(
+        "What first steps does the article recommend for starting a side hustle?",
+        steps_results,
+        max_items=3,
+    )
+
+    assert steps_chat_client.calls == 0
+    assert steps_trace["path"] == "deterministic_fast_path"
+    assert steps_trace["fast_path_shape"] == "list"
+    assert any("Pick one skill" in item["text"] for item in steps_selected)
+
+    command_chat_client = CountingChatClient()
+    command_judge = EvidenceJudge(command_chat_client, max_llm_judgments=6)
+    command_results = [
+        make_item(1, "General background about local developer tools."),
+        make_item(
+            2,
+            (
+                "The tool has a built-in web server. You can start it with a single command: "
+                "tool serve 8000."
+            ),
+        ),
+        make_item(
+            3,
+            (
+                "Why is this useful? You can quickly test web applications, serve files in a "
+                "browser, share files over a local network, and avoid third-party tools."
+            ),
+        ),
+    ]
+
+    command_selected, _, command_trace = command_judge.select_evidence_with_trace(
+        "What built-in server command does the article provide and why is it useful?",
+        command_results,
+        max_items=3,
+    )
+
+    assert command_chat_client.calls == 0
+    assert command_trace["path"] == "deterministic_fast_path"
+    assert command_trace["fast_path_shape"] == "usage"
+    assert any("single command" in item["text"] for item in command_selected)
+    assert any("local network" in item["text"] for item in command_selected)
+
+    technical_usage_chat_client = CountingChatClient()
+    technical_usage_judge = EvidenceJudge(technical_usage_chat_client, max_llm_judgments=6)
+    technical_usage_results = [
+        make_item(1, "General background about sequence models and classifiers."),
+        make_item(
+            2,
+            (
+                "Conditional Random Fields (CRFs) are probabilistic models used for "
+                "structured prediction. Unlike traditional classifiers that make independent "
+                "predictions, CRFs take context into account, making them useful for sequential "
+                "data. A simplified NER-like format is shown as an example dataset."
+            ),
+        ),
+        make_item(3, "Unrelated information about recommendation systems and advertising."),
+    ]
+
+    technical_usage_selected, _, technical_usage_trace = technical_usage_judge.select_evidence_with_trace(
+        "What are Conditional Random Fields used for?",
+        technical_usage_results,
+        max_items=3,
+    )
+
+    assert technical_usage_chat_client.calls == 0
+    assert technical_usage_trace["path"] == "deterministic_fast_path"
+    assert technical_usage_trace["fast_path_shape"] == "usage"
+    assert any("structured prediction" in item["text"] for item in technical_usage_selected)
+    assert any("NER-like format" in item["text"] for item in technical_usage_selected)
+
+    pipeline_chat_client = CountingChatClient()
+    pipeline_judge = EvidenceJudge(pipeline_chat_client, max_llm_judgments=6)
+    pipeline_results = [
+        make_item(1, "General background about document understanding tools."),
+        make_item(
+            2,
+            (
+                "The app workflow starts by loading PDFs or images from an upload, local file, "
+                "or URL. It then loads the model and generates DocTags output for each page."
+            ),
+        ),
+        make_item(
+            3,
+            (
+                "The process creates a DocTagsDocument and a DoclingDocument, then exports "
+                "Markdown, HTML, or JSON."
+            ),
+        ),
+        make_item(
+            4,
+            "The Gradio UI renders a preview and provides download controls for the result.",
+        ),
+    ]
+
+    pipeline_selected, _, pipeline_trace = pipeline_judge.select_evidence_with_trace(
+        "What is the main pipeline of the document processing app?",
+        pipeline_results,
+        max_items=4,
+    )
+
+    assert pipeline_chat_client.calls == 0
+    assert pipeline_trace["path"] == "deterministic_fast_path"
+    assert pipeline_trace["fast_path_shape"] == "pipeline"
+    assert any("PDFs or images" in item["text"] for item in pipeline_selected)
+    assert any("DocTagsDocument" in item["text"] for item in pipeline_selected)
+    assert any("Gradio UI" in item["text"] for item in pipeline_selected)
+
     print("Evidence prefilter smoke test passed.")
 
 

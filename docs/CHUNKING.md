@@ -7,6 +7,7 @@ The implementation is in:
 ```text
 src/local_agent/ingestion/parsers/pdf_parser.py
 src/local_agent/ingestion/chunking.py
+src/local_agent/ingestion/metadata.py
 src/local_agent/ingestion/pipeline.py
 ```
 
@@ -159,6 +160,7 @@ SQLite stores:
 
 - document metadata in `documents`,
 - chunk metadata and text in `chunks`.
+- latest ingestion attempt metadata in `document_ingestion_status`.
 
 Qdrant stores:
 
@@ -166,6 +168,45 @@ Qdrant stores:
 - payload with document title, source path, page number, section title, chunk id, and text.
 
 The Qdrant point id is a deterministic numeric hash of `chunk_id`.
+
+## Ingestion Status And Versions
+
+Ingestion now records production metadata for each document:
+
+```text
+ingestion_status
+parser_version
+chunking_version
+embedding_model
+chunk_size
+chunk_overlap
+chunk_count
+last_ingest_error
+```
+
+The active version constants are defined in:
+
+```text
+src/local_agent/ingestion/metadata.py
+```
+
+Default ingestion is incremental:
+
+```powershell
+local-agent ingest --path data\raw\documents
+```
+
+If a PDF has the same checksum, parser version, chunking version, embedding model, chunk size, and chunk overlap as the stored index, it is skipped. This lets daily batch ingestion run safely across large folders without rebuilding unchanged documents.
+
+Force rebuild a document or folder with:
+
+```powershell
+local-agent ingest --path data\raw\documents --force
+```
+
+Use `--force` after a deliberate re-index decision, for example when validating a new chunking strategy.
+
+During re-ingestion, the pipeline removes old SQLite chunks and old Qdrant vectors for the affected `doc_id` before writing the new index. This prevents stale vectors from older chunking runs from being retrieved.
 
 ## Retrieval Context Expansion
 
@@ -236,6 +277,10 @@ Reingest documents when changing:
 - chunk overlap,
 - low-value filtering,
 - embedding model.
+
+If the change is represented by `PARSER_VERSION` or `CHUNKING_VERSION`, normal ingestion will detect that the stored index is outdated and rebuild the affected PDFs. If you are testing a one-off rebuild without a version bump, use `--force`.
+
+If the embedding model changes vector dimension, reset or migrate the Qdrant collection before re-ingesting. The incremental re-ingest flow cleans vectors by document, but it does not silently recreate a whole Qdrant collection.
 
 For a local reset, follow the reset instructions in `README.md`.
 

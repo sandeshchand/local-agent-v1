@@ -24,6 +24,7 @@ function setSendButtonLoading(isLoading) {
 function setIngestLoading(isLoading) {
   const ingestBtn = document.getElementById("ingest-btn");
   const ingestInput = document.getElementById("ingest-path");
+  const ingestForce = document.getElementById("ingest-force");
 
   if (ingestBtn) {
     ingestBtn.disabled = isLoading;
@@ -32,6 +33,9 @@ function setIngestLoading(isLoading) {
 
   if (ingestInput) {
     ingestInput.disabled = isLoading;
+  }
+  if (ingestForce) {
+    ingestForce.disabled = isLoading;
   }
 }
 
@@ -87,6 +91,63 @@ function formatValue(value) {
   if (Array.isArray(value)) return value.length ? value.join(", ") : "-";
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
+}
+
+const TRACE_PATH_LABELS = {
+  deterministic_fast_path: "Deterministic fast path",
+  extractive_fast_path: "Extractive fast path",
+  llm_judge: "LLM judge",
+  llm_generation: "LLM generation",
+  heuristic_fallback_after_llm: "Heuristic fallback",
+  generic_extractive_fallback: "Extractive fallback",
+  source_window_extractive_replacement: "Source-window replacement",
+  definition_extractive_replacement: "Definition replacement",
+  pipeline_extractive_replacement: "Pipeline replacement",
+  no_answer_context: "No answer context",
+  not_selected: "Not selected",
+};
+
+function humanizePath(value) {
+  const key = String(value || "").trim();
+  if (!key) return "-";
+  return TRACE_PATH_LABELS[key] || key.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function pathTone(value) {
+  const key = String(value || "").toLowerCase();
+  if (!key) return "";
+  if (key.includes("fast_path") || key.includes("verified")) return "ok";
+  if (key.includes("llm") || key.includes("replacement") || key.includes("fallback")) return "warn";
+  if (key.includes("no_") || key.includes("error") || key.includes("deny")) return "bad";
+  return "";
+}
+
+function compactReason(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return text.replace(/_/g, " ");
+}
+
+function latestStepOfType(trace, type) {
+  const steps = Array.isArray(trace.steps) ? trace.steps : [];
+  return [...steps].reverse().find((step) => step.type === type) || null;
+}
+
+function answerFastPath(step) {
+  const answerTrace = step && step.answer_trace ? step.answer_trace : {};
+  return answerTrace.fast_path || {};
+}
+
+function rejectionSummary(rejections) {
+  if (!Array.isArray(rejections) || !rejections.length) return "";
+  const counts = {};
+  rejections.forEach((item) => {
+    const reason = compactReason(item && item.reason ? item.reason : "rejected");
+    counts[reason] = (counts[reason] || 0) + 1;
+  });
+  return Object.entries(counts)
+    .map(([reason, count]) => `${reason}${count > 1 ? ` x${count}` : ""}`)
+    .join(", ");
 }
 
 function formatPercent(value) {
@@ -436,6 +497,50 @@ function metric(label, value, tone = "") {
   return item;
 }
 
+function traceChip(text, tone = "") {
+  return createElement("span", `trace-chip ${tone}`, text);
+}
+
+function renderTracePathSummary(trace) {
+  const summary = createElement("div", "trace-path-grid");
+  const retrieveStep = latestStepOfType(trace, "retrieve");
+  if (!retrieveStep) {
+    summary.appendChild(createElement("div", "muted", "No retrieval path metadata for this trace."));
+    return summary;
+  }
+
+  const fastPath = answerFastPath(retrieveStep);
+  const answerTrace = retrieveStep.answer_trace || {};
+  const evidenceTrace = retrieveStep.evidence_trace || {};
+  const cards = [
+    ["Evidence path", humanizePath(retrieveStep.evidence_path), pathTone(retrieveStep.evidence_path)],
+    ["Answer path", humanizePath(retrieveStep.answer_path), pathTone(retrieveStep.answer_path)],
+    ["Evidence shape", humanizePath(evidenceTrace.fast_path_shape || evidenceTrace.path), pathTone(evidenceTrace.path)],
+    [
+      "Answer fast path",
+      fastPath.used ? `Accepted ${humanizePath(fastPath.accepted_candidate_source)}` : compactReason(fastPath.reason || answerTrace.fallback_reason || "not used"),
+      fastPath.used ? "ok" : "warn",
+    ],
+  ];
+
+  cards.forEach(([label, value, tone]) => {
+    const card = createElement("div", "trace-path-card");
+    card.appendChild(createElement("span", "", label));
+    card.appendChild(traceChip(value, tone));
+    summary.appendChild(card);
+  });
+
+  const rejections = rejectionSummary(fastPath.rejections);
+  if (rejections) {
+    const card = createElement("div", "trace-path-card wide");
+    card.appendChild(createElement("span", "", "Rejected candidates"));
+    card.appendChild(createElement("strong", "", shortText(rejections, 180)));
+    summary.appendChild(card);
+  }
+
+  return summary;
+}
+
 function setTraceStatus(text) {
   const empty = document.getElementById("trace-empty");
   const detail = document.getElementById("trace-detail");
@@ -490,6 +595,18 @@ function renderStep(step) {
 
   const details = createElement("div", "trace-step-details");
   if (step.type === "retrieve") {
+    const pathRow = createElement("div", "trace-step-paths");
+    pathRow.appendChild(traceChip(`Evidence: ${humanizePath(step.evidence_path)}`, pathTone(step.evidence_path)));
+    pathRow.appendChild(traceChip(`Answer: ${humanizePath(step.answer_path)}`, pathTone(step.answer_path)));
+    const fastPath = answerFastPath(step);
+    if (fastPath.used && fastPath.accepted_candidate_source) {
+      pathRow.appendChild(traceChip(`Accepted: ${humanizePath(fastPath.accepted_candidate_source)}`, "ok"));
+    }
+    const rejections = rejectionSummary(fastPath.rejections);
+    if (rejections) {
+      pathRow.appendChild(traceChip(`Rejected: ${shortText(rejections, 120)}`, "warn"));
+    }
+    details.appendChild(pathRow);
     renderKeyValues(details, {
       query: shortText(step.retrieval_query, 120),
       scope: step.candidate_scope,
@@ -562,12 +679,13 @@ function renderTrace(trace) {
   const query = document.getElementById("trace-query");
   const statusPill = document.getElementById("trace-status-pill");
   const metrics = document.getElementById("trace-metrics");
+  const pathSummary = document.getElementById("trace-path-summary");
   const steps = document.getElementById("trace-steps");
   const evidence = document.getElementById("trace-evidence");
   const tools = document.getElementById("trace-tools");
   const raw = document.getElementById("trace-raw-json");
 
-  if (!detail || !empty || !metrics || !steps || !evidence || !tools || !raw) return;
+  if (!detail || !empty || !metrics || !pathSummary || !steps || !evidence || !tools || !raw) return;
 
   empty.style.display = "none";
   detail.classList.remove("hidden");
@@ -589,6 +707,9 @@ function renderTrace(trace) {
   metrics.appendChild(metric("Top K", trace.top_k));
   metrics.appendChild(metric("Evidence", retrievedItems.length));
   metrics.appendChild(metric("Tools", toolResults.length));
+
+  pathSummary.innerHTML = "";
+  pathSummary.appendChild(renderTracePathSummary(trace));
 
   steps.innerHTML = "";
   const stepItems = Array.isArray(trace.steps) ? trace.steps : [];
@@ -1518,6 +1639,10 @@ function renderDocuments(payload, append = false) {
 
     item.appendChild(createElement("div", "doc-title", doc.title || "Untitled"));
     item.appendChild(documentMetaRow("Pages", doc.page_count));
+    item.appendChild(documentMetaRow("Chunks", doc.chunk_count));
+    item.appendChild(documentMetaRow("Status", doc.ingestion_status || "indexed"));
+    item.appendChild(documentMetaRow("Parser", doc.parser_version || "legacy"));
+    item.appendChild(documentMetaRow("Chunking", doc.chunking_version || "legacy"));
     item.appendChild(documentMetaRow("Path", sourceFileName(doc.source_path)));
     item.appendChild(documentMetaRow("Indexed", doc.indexed_at));
     item.title = doc.source_path || "";
@@ -1612,6 +1737,7 @@ async function sendChat() {
 async function ingestPath() {
   const input = document.getElementById("ingest-path");
   const statusBox = document.getElementById("ingest-status");
+  const forceInput = document.getElementById("ingest-force");
 
   if (!input || !statusBox) return;
 
@@ -1629,16 +1755,25 @@ async function ingestPath() {
   try {
     const data = await fetchJSON("/api/ingest-path", {
       method: "POST",
-      body: JSON.stringify({ path }),
+      body: JSON.stringify({
+        path,
+        force: Boolean(forceInput && forceInput.checked),
+      }),
     });
 
     const lines = [
       `Success: ${data.success_count}`,
+      `Skipped: ${data.skipped_count || 0}`,
       `Failed: ${data.failed_count}`,
       "",
-      ...data.results.map((r) =>
-        `${r.success ? "[OK]" : "[FAIL]"} ${r.file_name} - ${r.message}`
-      ),
+      ...data.results.map((r) => {
+        const status = r.status || (r.success ? "indexed" : "failed");
+        const prefix = status === "skipped" ? "[SKIP]" : r.success ? "[OK]" : "[FAIL]";
+        const counts = r.page_count || r.chunk_count
+          ? ` pages=${formatValue(r.page_count)} chunks=${formatValue(r.chunk_count)}`
+          : "";
+        return `${prefix} ${r.file_name}${counts} - ${r.message}`;
+      }),
     ];
 
     statusBox.textContent = lines.join("\n");
