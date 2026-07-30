@@ -14,6 +14,7 @@ COMPILE_TARGETS = [
     "src/local_agent/agent/guardrails.py",
     "src/local_agent/agent/schemas.py",
     "src/local_agent/app/bootstrap.py",
+    "src/local_agent/app/auth.py",
     "src/local_agent/app/cli.py",
     "src/local_agent/app/main.py",
     "src/local_agent/app/system_status.py",
@@ -69,8 +70,10 @@ COMPILE_TARGETS = [
     "scripts/smoke_evidence_prefilter.py",
     "scripts/smoke_performance_caches.py",
     "scripts/smoke_config.py",
+    "scripts/smoke_auth.py",
     "scripts/smoke_empty_index.py",
     "scripts/smoke_ingestion_status.py",
+    "scripts/smoke_ingestion_status_api.py",
     "scripts/smoke_qdrant_doc_cleanup.py",
     "scripts/smoke_sqlite_threading.py",
     "scripts/smoke_system_status.py",
@@ -80,6 +83,8 @@ COMPILE_TARGETS = [
     "scripts/smoke_eval_candidates.py",
     "scripts/smoke_eval_candidate_review.py",
     "scripts/smoke_eval_candidate_run.py",
+    "scripts/audit_gold_qa_coverage.py",
+    "scripts/smoke_gold_qa_coverage.py",
     "scripts/smoke_feedback_issue_tags.py",
     "scripts/smoke_guardrails.py",
     "scripts/smoke_tool_audit.py",
@@ -159,8 +164,10 @@ def main() -> None:
     run_step("Evidence prefilter smoke", [sys.executable, "scripts/smoke_evidence_prefilter.py"])
     run_step("Performance cache smoke", [sys.executable, "scripts/smoke_performance_caches.py"])
     run_step("Config smoke", [sys.executable, "scripts/smoke_config.py"])
+    run_step("Auth smoke", [sys.executable, "scripts/smoke_auth.py"])
     run_step("Empty index smoke", [sys.executable, "scripts/smoke_empty_index.py"])
     run_step("Ingestion status smoke", [sys.executable, "scripts/smoke_ingestion_status.py"])
+    run_step("Ingestion status API smoke", [sys.executable, "scripts/smoke_ingestion_status_api.py"])
     run_step("Qdrant document cleanup smoke", [sys.executable, "scripts/smoke_qdrant_doc_cleanup.py"])
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])
     run_step("Memory API smoke", [sys.executable, "scripts/smoke_memory_api.py"])
@@ -173,6 +180,7 @@ def main() -> None:
     run_step("Feedback eval candidate smoke", [sys.executable, "scripts/smoke_eval_candidates.py"])
     run_step("Eval candidate review smoke", [sys.executable, "scripts/smoke_eval_candidate_review.py"])
     run_step("Eval candidate run smoke", [sys.executable, "scripts/smoke_eval_candidate_run.py"])
+    run_step("Gold QA coverage smoke", [sys.executable, "scripts/smoke_gold_qa_coverage.py"])
     run_step("Feedback issue tag smoke", [sys.executable, "scripts/smoke_feedback_issue_tags.py"])
     run_step("Guardrails smoke", [sys.executable, "scripts/smoke_guardrails.py"])
     run_step("Tool audit smoke", [sys.executable, "scripts/smoke_tool_audit.py"])

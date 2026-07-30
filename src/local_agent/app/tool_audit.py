@@ -12,8 +12,9 @@ def build_tool_audit(
     tool_registry: ToolRegistry,
     *,
     limit: int = 50,
+    session_id: str | None = None,
 ) -> dict[str, Any]:
-    rows = sqlite_store.list_trace_audit_rows(limit=limit)
+    rows = sqlite_store.list_trace_audit_rows(limit=limit, session_id=session_id)
     events: list[dict[str, Any]] = []
     tool_specs = {tool.name: tool for tool in tool_registry.list_tools()}
 

@@ -123,6 +123,74 @@ def inspect_runtime_backup(backup_path: str | Path) -> dict[str, Any]:
     return metadata
 
 
+def list_runtime_backups(
+    backup_root: str | Path | None = None,
+) -> list[dict[str, Any]]:
+    root = _resolve_backup_root(backup_root)
+    if not root.exists():
+        return []
+    if not root.is_dir():
+        raise RuntimeBackupError(f"Backup root is not a directory: {root}")
+
+    backups: list[dict[str, Any]] = []
+    for candidate in sorted(root.iterdir()):
+        if not candidate.is_dir():
+            continue
+        metadata_path = candidate / "metadata.json"
+        if not metadata_path.exists():
+            continue
+        try:
+            backups.append(_backup_summary(inspect_runtime_backup(candidate)))
+        except RuntimeBackupError as exc:
+            backups.append(
+                {
+                    "valid": False,
+                    "backup_path": str(candidate.resolve()),
+                    "created_at": "",
+                    "error": str(exc),
+                    "total_size_bytes": _directory_size(candidate),
+                }
+            )
+
+    backups.sort(key=_backup_sort_key, reverse=True)
+    return backups
+
+
+def prune_runtime_backups(
+    *,
+    backup_root: str | Path | None = None,
+    keep: int = 7,
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    if keep < 0:
+        raise RuntimeBackupError("--keep must be zero or greater.")
+
+    root = _resolve_backup_root(backup_root)
+    backups = [backup for backup in list_runtime_backups(root) if backup.get("valid")]
+    kept = backups[:keep]
+    candidates = backups[keep:]
+
+    deleted: list[dict[str, Any]] = []
+    for backup in candidates:
+        backup_dir = Path(str(backup["backup_path"])).resolve()
+        _assert_backup_child(root=root, backup_dir=backup_dir)
+        deleted.append(backup)
+        if not dry_run:
+            shutil.rmtree(backup_dir)
+
+    action_key = "would_delete" if dry_run else "deleted"
+    return {
+        "backup_root": str(root),
+        "keep": keep,
+        "dry_run": dry_run,
+        "found_count": len(backups),
+        "kept_count": len(kept),
+        f"{action_key}_count": len(deleted),
+        "kept": kept,
+        action_key: deleted,
+    }
+
+
 def _prepare_backup_dir(
     *,
     backup_root: str | Path | None,
@@ -144,6 +212,51 @@ def _prepare_backup_dir(
         suffix += 1
     backup_dir.mkdir(parents=True)
     return backup_dir
+
+
+def _resolve_backup_root(backup_root: str | Path | None) -> Path:
+    return Path(backup_root).expanduser().resolve() if backup_root else DEFAULT_BACKUP_ROOT
+
+
+def _backup_summary(metadata: dict[str, Any]) -> dict[str, Any]:
+    artifacts = metadata.get("artifacts", {})
+    sqlite_artifact = artifacts.get("sqlite", {})
+    qdrant_artifact = artifacts.get("qdrant", {})
+    sqlite_size = int(sqlite_artifact.get("size_bytes") or 0)
+    qdrant_size = int(qdrant_artifact.get("size_bytes") or 0)
+    return {
+        "valid": True,
+        "backup_path": metadata.get("backup_path", ""),
+        "created_at": metadata.get("created_at", ""),
+        "format_version": metadata.get("format_version"),
+        "sqlite_exists": bool(sqlite_artifact.get("exists")),
+        "qdrant_exists": bool(qdrant_artifact.get("exists")),
+        "sqlite_size_bytes": sqlite_size,
+        "qdrant_size_bytes": qdrant_size,
+        "qdrant_file_count": int(qdrant_artifact.get("file_count") or 0),
+        "total_size_bytes": sqlite_size + qdrant_size,
+        "source": metadata.get("source", {}),
+    }
+
+
+def _backup_sort_key(backup: dict[str, Any]) -> tuple[str, str]:
+    return (
+        str(backup.get("created_at") or ""),
+        str(backup.get("backup_path") or ""),
+    )
+
+
+def _assert_backup_child(*, root: Path, backup_dir: Path) -> None:
+    resolved_root = root.resolve()
+    resolved_backup_dir = backup_dir.resolve()
+    if resolved_backup_dir.parent != resolved_root:
+        raise RuntimeBackupError(
+            f"Refusing to prune a path outside the backup root: {resolved_backup_dir}"
+        )
+    if not (resolved_backup_dir / "metadata.json").exists():
+        raise RuntimeBackupError(
+            f"Refusing to prune a directory without backup metadata: {resolved_backup_dir}"
+        )
 
 
 def _backup_sqlite(source: Path, dest: Path) -> dict[str, Any]:

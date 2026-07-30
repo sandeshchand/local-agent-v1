@@ -52,20 +52,39 @@ The latest work moved the project closer to production readiness and improved RA
 - The latest focused-list change passed smoke-only regression and targeted `ml_tsetlin_machine` quality at `9.17/10`.
 - The latest CRF usage change passed targeted quality at `10.0/10`.
 - The latest SmolDocling pipeline change passed targeted quality at `10.0/10`.
+- Added production-scale retrieval profiling in `scripts/profile_retrieval_scale.py`.
+- Added Qdrant server-mode planning documentation.
+- Added versioned incremental ingestion with parser/chunking metadata.
+- Added safe re-ingestion cleanup for stale Qdrant vectors by `doc_id`.
+- Added ingestion status visibility in CLI, API, and the UI `Ingest` workspace tab.
 
 ## First Task Tomorrow
 
-Start with production-scale retrieval performance validation. The representative profile is already fast, routing cache v1 is implemented, and repeated-query embedding cache v1 is implemented. The next engineering task is measuring these changes under larger document counts.
+Completed: production-scale retrieval performance validation is now available through `scripts/profile_retrieval_scale.py`.
+
+Completed: ingestion is now safer for daily document batches through incremental skip behavior, `--force` rebuilds, version metadata, Qdrant cleanup, and ingestion status visibility.
+
+Current task: broaden gold QA for newly ingested PDFs and daily document batches. This should be done before adding more answer fast paths.
 
 ```powershell
 git status --short
 ```
 
-Then inspect scale-sensitive hot paths:
+Completed for this task:
 
-- Qdrant local path versus server mode plan,
-- latency impact under larger document counts.
-- optional sparse/BM25 chunk-search caching if traces show it is still expensive.
+- Added `scripts/audit_gold_qa_coverage.py` to compare indexed SQLite documents, raw PDFs, and gold QA items.
+- Added `scripts/smoke_gold_qa_coverage.py` for deterministic coverage-audit smoke testing.
+- Added the coverage smoke test to `scripts/run_regression.py`.
+- Added workflow documentation in `docs/GOLD_QA_COVERAGE.md` and `docs/EVALUATION.md`.
+
+Next after this task:
+
+- documents in `data/raw/documents`,
+- existing cases in `benchmarks/gold_qa/eval_multi_doc_rag.json`,
+- recent disliked answers and eval drafts,
+- document families not yet represented by gold QA.
+- run the audit report,
+- add 3 to 5 gold QA items for important missing or undercovered PDFs.
 
 ## Recommended Feature Order
 
@@ -83,11 +102,20 @@ Then inspect scale-sensitive hot paths:
 3. Broaden gold QA for new PDFs
    - Add more questions from unseen PDFs, daily medium-style articles, arXiv papers, and technical blog PDFs.
    - Keep every benchmark generic; do not add document-specific hardcoded keywords.
+   - Add 3 to 5 QA items for each important new document family.
+   - Run focused RAG eval after adding each batch.
 
 4. Continue production readiness
    - Define scheduled/off-machine backup policy.
    - Decide authentication and user-isolation plan.
    - Keep local backup/restore as the current base.
+
+Completed after this note:
+
+- Added backup listing and retention pruning with dry-run by default.
+- Added optional API token auth for `/api/*`.
+- Added request session isolation for traces, feedback, memory, and tool audit.
+- Added a UI `Access` panel for token/session settings.
 
 5. MCP and guardrails next step
    - Keep File MCP and SQLite MCP read-only for now.

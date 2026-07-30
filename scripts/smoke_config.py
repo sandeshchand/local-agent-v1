@@ -31,6 +31,8 @@ CONFIG_ENV_NAMES = [
     "DOCUMENT_ROUTER_CACHE_ENABLED",
     "FILE_MCP_ENABLED",
     "FILE_MCP_ROOTS",
+    "AUTH_ENABLED",
+    "AUTH_TOKEN",
 ]
 
 
@@ -60,6 +62,8 @@ def assert_missing_env_uses_safe_defaults() -> None:
     assert config.debug is False
     assert config.embedding_cache_size == 128
     assert config.document_router_cache_enabled is True
+    assert config.auth_enabled is False
+    assert config.auth_token == ""
 
 
 def assert_env_file_relative_paths_are_stable() -> None:
@@ -79,6 +83,8 @@ def assert_env_file_relative_paths_are_stable() -> None:
                     "EMBEDDING_CACHE_SIZE=7",
                     "DOCUMENT_ROUTER_CACHE_ENABLED=no",
                     "FILE_MCP_ROOTS=docs,README.md",
+                    "AUTH_ENABLED=yes",
+                    "AUTH_TOKEN=local-dev-token",
                 ]
             ),
             encoding="utf-8",
@@ -95,6 +101,34 @@ def assert_env_file_relative_paths_are_stable() -> None:
             (tmp_path / "docs").resolve(),
             (tmp_path / "README.md").resolve(),
         ]
+        assert config.auth_enabled is True
+        assert config.auth_token == "local-dev-token"
+
+
+def assert_auth_enabled_requires_token() -> None:
+    clear_config_env()
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        env_file = tmp_path / ".env"
+        env_file.write_text(
+            "\n".join(
+                [
+                    "OLLAMA_BASE_URL=http://localhost:11434",
+                    "CHAT_MODEL=test-chat",
+                    "EMBED_MODEL=test-embed",
+                    "QDRANT_PATH=./qdrant",
+                    "SQLITE_PATH=./sqlite/app.db",
+                    "AUTH_ENABLED=true",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        try:
+            load_config(env_file)
+        except ValueError as exc:
+            assert "AUTH_TOKEN" in str(exc)
+        else:
+            raise AssertionError("AUTH_ENABLED=true should require AUTH_TOKEN.")
 
 
 def main() -> None:
@@ -102,6 +136,7 @@ def main() -> None:
     try:
         assert_missing_env_uses_safe_defaults()
         assert_env_file_relative_paths_are_stable()
+        assert_auth_enabled_requires_token()
     finally:
         restore_config_env(saved)
 

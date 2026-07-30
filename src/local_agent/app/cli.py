@@ -26,6 +26,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Rebuild matching PDFs even when checksum and ingestion versions are current.",
     )
 
+    ingest_status_parser = subparser.add_parser("ingest-status")
+    ingest_status_parser.add_argument("--limit", type=int, default=20)
+    ingest_status_parser.add_argument(
+        "--status",
+        default="",
+        choices=["", "running", "indexed", "skipped", "failed"],
+        help="Filter by latest ingestion status.",
+    )
+
     ask_parser = subparser.add_parser("ask")
     ask_parser.add_argument(
         "--query",
@@ -109,6 +118,47 @@ def run_ingest(deps: AppDependencies, path: str, *, force: bool = False) -> None
         f"\nIngestion complete. success={success_count}, "
         f"skipped={skipped_count}, failed={failed_count}"
     )
+
+
+def run_ingest_status(
+    deps: AppDependencies,
+    *,
+    limit: int = 20,
+    status: str = "",
+) -> None:
+    summary = deps.sqlite_store.get_document_ingestion_status_summary()
+    rows = deps.sqlite_store.list_document_ingestion_status(
+        limit=limit,
+        status=status or None,
+    )
+    print(
+        "Ingestion status: "
+        f"total={summary['total_count']} "
+        f"indexed={summary['indexed_count']} "
+        f"skipped={summary['skipped_count']} "
+        f"failed={summary['failed_count']} "
+        f"running={summary['running_count']}"
+    )
+    if status:
+        print(f"Filter: {status}")
+    if not rows:
+        print("No ingestion status records found.")
+        return
+
+    for index, row in enumerate(rows, start=1):
+        title = row.get("title") or Path(row.get("source_path") or "").name
+        print(f"\n[{index}] {row.get('status', 'unknown')} - {title}")
+        print(f"path: {row.get('source_path')}")
+        print(f"chunks: {row.get('chunk_count')} pages: {row.get('page_count')}")
+        print(
+            "versions: "
+            f"parser={row.get('parser_version') or '-'} "
+            f"chunking={row.get('chunking_version') or '-'} "
+            f"embedding={row.get('embedding_model') or '-'}"
+        )
+        print(f"completed_at: {row.get('completed_at') or '-'}")
+        if row.get("error"):
+            print(f"error: {row['error']}")
 
 
 def run_ask(

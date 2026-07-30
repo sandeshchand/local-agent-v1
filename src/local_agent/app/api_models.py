@@ -22,6 +22,7 @@ class CitationItem(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     trace_id: int
+    session_id: str = "default"
     mode: str
     reason: str =""
     retrieval_query: str | None = None
@@ -172,6 +173,32 @@ class IngestPathResponse(BaseModel):
     skipped_count: int = 0
     failed_count: int
     results: list[IngestFileResult]
+
+
+class IngestionStatusItem(BaseModel):
+    source_path: str
+    doc_id: str | None = None
+    title: str = ""
+    status: str
+    parser_version: str = ""
+    chunking_version: str = ""
+    embedding_model: str = ""
+    chunk_size: int = 0
+    chunk_overlap: int = 0
+    checksum: str = ""
+    page_count: int = 0
+    chunk_count: int = 0
+    started_at: str | None = None
+    completed_at: str | None = None
+    error: str = ""
+
+
+class IngestionStatusResponse(BaseModel):
+    total: int
+    limit: int
+    status: str = ""
+    summary: dict[str, int] = Field(default_factory=dict)
+    items: list[IngestionStatusItem]
 
 
 class DocumentItem(BaseModel):

@@ -95,6 +95,8 @@ SQLITE_PATH=./var/sqlite/app.db
 TOP_K=3
 DEBUG=true
 WARM_RETRIEVAL_ON_STARTUP=false
+AUTH_ENABLED=false
+AUTH_TOKEN=
 ```
 
 To reuse an older local index, point the paths at the existing files:
@@ -134,6 +136,13 @@ List indexed documents:
 
 ```powershell
 local-agent list-docs
+```
+
+Check recent ingestion attempts:
+
+```powershell
+local-agent ingest-status
+local-agent ingest-status --status failed
 ```
 
 ## Run The Web UI
@@ -183,6 +192,12 @@ Run the full RAG benchmark:
 venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output var\logs\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
+Audit gold QA coverage after ingesting new PDFs:
+
+```powershell
+venv\Scripts\python.exe scripts\audit_gold_qa_coverage.py --env-file .env --output var\logs\gold_qa_coverage_report.json
+```
+
 Run a quick latency benchmark:
 
 ```powershell
@@ -225,12 +240,29 @@ GET /api/system/status?check_models=false
 
 The web UI also has a `System` workspace tab for SQLite, Qdrant, Ollama model, embedding model, and tool-registry status.
 
+Enable API token auth for production-like local use:
+
+```env
+AUTH_ENABLED=true
+AUTH_TOKEN=replace-with-a-long-random-token
+```
+
+Then save the token and session id in the UI `Access` panel. Details: [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)
+
 Reset the local index only when parsing, chunking, or storage is inconsistent. See [docs/CHUNKING.md](docs/CHUNKING.md) and [docs/REGRESSION.md](docs/REGRESSION.md) before resetting.
 
 Back up local runtime state before large ingest, parser, chunking, or storage changes:
 
 ```powershell
 venv\Scripts\python.exe scripts\runtime_state.py --env-file .env backup
+```
+
+List and prune old local backups:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py list-backups
+venv\Scripts\python.exe scripts\runtime_state.py prune-backups --keep 7
+venv\Scripts\python.exe scripts\runtime_state.py prune-backups --keep 7 --apply
 ```
 
 Restore from a backup only after stopping the web server:
@@ -263,7 +295,7 @@ Already implemented:
 
 Required before real production use:
 
-- authentication and user/session isolation,
+- production-grade user accounts and per-user document isolation,
 - secrets management outside `.env` for deployed environments,
 - scheduled off-machine backups and deployment rollback policy,
 - deployment/container strategy,
@@ -287,12 +319,14 @@ Architecture and orchestration:
 Retrieval and answers:
 
 - [docs/CHUNKING.md](docs/CHUNKING.md)
+- [docs/INGESTION_STATUS.md](docs/INGESTION_STATUS.md)
 - [docs/ANSWER_SERVICE.md](docs/ANSWER_SERVICE.md)
 - [docs/ANSWER_VERIFICATION.md](docs/ANSWER_VERIFICATION.md)
 - [docs/ANSWER_REPAIR.md](docs/ANSWER_REPAIR.md)
 
 Tools, guardrails, and memory:
 
+- [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)
 - [docs/GUARDRAILS.md](docs/GUARDRAILS.md)
 - [docs/TOOL_AUDIT.md](docs/TOOL_AUDIT.md)
 - [docs/MCP.md](docs/MCP.md)
@@ -303,6 +337,7 @@ Tools, guardrails, and memory:
 Evaluation, UI, and roadmap:
 
 - [docs/EVALUATION.md](docs/EVALUATION.md)
+- [docs/GOLD_QA_COVERAGE.md](docs/GOLD_QA_COVERAGE.md)
 - [docs/REGRESSION.md](docs/REGRESSION.md)
 - [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
 - [docs/QDRANT_SERVER_MODE.md](docs/QDRANT_SERVER_MODE.md)

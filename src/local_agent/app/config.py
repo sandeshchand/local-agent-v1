@@ -42,6 +42,8 @@ class AppConfig(BaseModel):
     )
     file_mcp_enabled: bool = Field(True, alias="FILE_MCP_ENABLED")
     file_mcp_roots: list[Path] = Field(default_factory=list, alias="FILE_MCP_ROOTS")
+    auth_enabled: bool = Field(False, alias="AUTH_ENABLED")
+    auth_token: str = Field("", alias="AUTH_TOKEN")
 
 
 def load_config(env_file: str | Path = ".env") -> AppConfig:
@@ -74,9 +76,13 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
             _env("FILE_MCP_ROOTS", DEFAULT_FILE_MCP_ROOTS),
             base_dir=base_dir,
         ),
+        "AUTH_ENABLED": _parse_bool_env("AUTH_ENABLED", False),
+        "AUTH_TOKEN": _env("AUTH_TOKEN", "") or "",
     }
 
     config = AppConfig.model_validate(data)
+    if config.auth_enabled and not config.auth_token.strip():
+        raise ValueError("AUTH_TOKEN is required when AUTH_ENABLED=true.")
 
     qdrant_path = config.qdrant_path.expanduser().resolve()
     sqlite_path = config.sqlite_path.expanduser().resolve()
@@ -104,6 +110,8 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
         DOCUMENT_ROUTER_CACHE_ENABLED=config.document_router_cache_enabled,
         FILE_MCP_ENABLED=config.file_mcp_enabled,
         FILE_MCP_ROOTS=config.file_mcp_roots,
+        AUTH_ENABLED=config.auth_enabled,
+        AUTH_TOKEN=config.auth_token.strip(),
     )
 
 

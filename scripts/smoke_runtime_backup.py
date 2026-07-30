@@ -7,6 +7,8 @@ from pathlib import Path
 from local_agent.operations import (
     backup_runtime_state,
     inspect_runtime_backup,
+    list_runtime_backups,
+    prune_runtime_backups,
     restore_runtime_state,
 )
 
@@ -70,6 +72,34 @@ def main() -> None:
         assert (qdrant_path / "meta.json").read_text(encoding="utf-8") == '{"status":"before"}'
         assert restored["artifacts"]["sqlite"]["moved_existing_to"]
         assert restored["artifacts"]["qdrant"]["moved_existing_to"]
+
+        backup_runtime_state(
+            sqlite_path=sqlite_path,
+            qdrant_path=qdrant_path,
+            backup_root=backup_root,
+        )
+        backup_runtime_state(
+            sqlite_path=sqlite_path,
+            qdrant_path=qdrant_path,
+            backup_root=backup_root,
+        )
+        backups = list_runtime_backups(backup_root)
+        assert len(backups) == 3
+        assert all(backup["valid"] is True for backup in backups)
+
+        dry_run = prune_runtime_backups(backup_root=backup_root, keep=1, dry_run=True)
+        assert dry_run["dry_run"] is True
+        assert dry_run["kept_count"] == 1
+        assert dry_run["would_delete_count"] == 2
+        assert len(list_runtime_backups(backup_root)) == 3
+
+        pruned = prune_runtime_backups(backup_root=backup_root, keep=1, dry_run=False)
+        assert pruned["dry_run"] is False
+        assert pruned["kept_count"] == 1
+        assert pruned["deleted_count"] == 2
+        remaining = list_runtime_backups(backup_root)
+        assert len(remaining) == 1
+        assert Path(remaining[0]["backup_path"]).exists()
 
     print("Runtime backup smoke test passed.")
 

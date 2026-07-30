@@ -10,6 +10,8 @@ from local_agent.operations import (
     RuntimeBackupError,
     backup_runtime_state,
     inspect_runtime_backup,
+    list_runtime_backups,
+    prune_runtime_backups,
     restore_runtime_state,
 )
 
@@ -34,6 +36,27 @@ def build_parser() -> argparse.ArgumentParser:
 
     inspect_parser = subparsers.add_parser("inspect", help="Inspect backup metadata.")
     inspect_parser.add_argument("--backup-path", required=True, help="Backup directory to inspect.")
+
+    list_parser = subparsers.add_parser("list-backups", help="List runtime backups.")
+    list_parser.add_argument(
+        "--backup-root",
+        default="",
+        help="Directory containing timestamped backups. Defaults to var/backups under the project root.",
+    )
+    list_parser.add_argument("--limit", type=int, default=0, help="Maximum backups to return. 0 means all.")
+
+    prune_parser = subparsers.add_parser("prune-backups", help="Prune old runtime backups by retention count.")
+    prune_parser.add_argument(
+        "--backup-root",
+        default="",
+        help="Directory containing timestamped backups. Defaults to var/backups under the project root.",
+    )
+    prune_parser.add_argument("--keep", type=int, default=7, help="Number of newest valid backups to keep.")
+    prune_parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Actually delete old backups. Without this flag, the command is a dry run.",
+    )
 
     restore_parser = subparsers.add_parser("restore", help="Restore runtime state from a backup.")
     restore_parser.add_argument("--backup-path", required=True, help="Backup directory to restore.")
@@ -64,6 +87,30 @@ def main() -> None:
 
         if args.command == "inspect":
             result = inspect_runtime_backup(args.backup_path)
+            print(json.dumps(result, indent=2))
+            return
+
+        if args.command == "list-backups":
+            backups = list_runtime_backups(args.backup_root or None)
+            if args.limit > 0:
+                backups = backups[: args.limit]
+            print(
+                json.dumps(
+                    {
+                        "count": len(backups),
+                        "backups": backups,
+                    },
+                    indent=2,
+                )
+            )
+            return
+
+        if args.command == "prune-backups":
+            result = prune_runtime_backups(
+                backup_root=args.backup_root or None,
+                keep=args.keep,
+                dry_run=not args.apply,
+            )
             print(json.dumps(result, indent=2))
             return
 

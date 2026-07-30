@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=21" />
+  <link rel="stylesheet" href="/static/style.css?v=22" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,6 +13,28 @@
         <h1>Local Agent V1</h1>
         <p class="subtitle">Local PDF assistant with RAG</p>
       </div>
+
+      <section class="panel access-panel">
+        <div class="panel-header">
+          <h2>Access</h2>
+        </div>
+        <div class="stack">
+          <input
+            id="api-token"
+            type="password"
+            autocomplete="off"
+            placeholder="API token if auth is enabled"
+          />
+          <input
+            id="ui-session-id"
+            type="text"
+            value="default"
+            placeholder="Session id"
+          />
+          <button id="save-access-btn" type="button" class="secondary-btn">Save access</button>
+        </div>
+        <div id="access-status" class="status-box muted">Local mode.</div>
+      </section>
 
       <section class="panel ingest-panel">
         <div class="panel-header">
@@ -99,6 +121,7 @@
           <button type="button" class="workspace-tab" data-workspace-tab="audit" aria-selected="false">Audit</button>
           <button type="button" class="workspace-tab" data-workspace-tab="memory" aria-selected="false">Memory</button>
           <button type="button" class="workspace-tab" data-workspace-tab="system" aria-selected="false">System</button>
+          <button type="button" class="workspace-tab" data-workspace-tab="ingestion" aria-selected="false">Ingest</button>
           <button type="button" class="workspace-tab" data-workspace-tab="history" aria-selected="false">History</button>
           <button type="button" class="workspace-tab" data-workspace-tab="feedback" aria-selected="false">Feedback</button>
           <button type="button" class="workspace-tab" data-workspace-tab="evals" aria-selected="false">Evals</button>
@@ -213,6 +236,26 @@
           </section>
         </div>
 
+        <div class="workspace-tab-panel" data-workspace-panel="ingestion">
+          <section class="trace-shell ingestion-status-shell">
+            <div class="trace-panel-header compact">
+              <h2>Ingestion</h2>
+              <button id="refresh-ingestion-status-btn" type="button" class="secondary-btn">Refresh</button>
+            </div>
+            <div class="ingestion-controls">
+              <select id="ingestion-status-filter" class="compact-input" aria-label="Ingestion status filter">
+                <option value="">All statuses</option>
+                <option value="failed">Failed</option>
+                <option value="running">Running</option>
+                <option value="indexed">Indexed</option>
+                <option value="skipped">Skipped</option>
+              </select>
+            </div>
+            <div id="ingestion-status-summary" class="ingestion-status-summary muted">Loading ingestion status...</div>
+            <div id="ingestion-status-list" class="ingestion-status-list"></div>
+          </section>
+        </div>
+
         <div class="workspace-tab-panel" data-workspace-panel="history">
           <section class="trace-shell recent-traces-shell">
             <div class="trace-panel-header compact">
@@ -258,6 +301,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=21"></script>
+  <script src="/static/chat.js?v=23"></script>
 </body>
 </html>

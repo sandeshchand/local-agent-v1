@@ -389,6 +389,17 @@ class SQLiteStore:
     @_locked
     def delete_memory_item(self, memory_id: int) -> dict[str, Any] | None:
         conn = self.connect()
+        item = self.get_memory_item(memory_id)
+        if item is None:
+            return None
+
+        conn.execute("DELETE FROM memory_items WHERE memory_id = ?", (memory_id,))
+        conn.commit()
+        return item
+
+    @_locked
+    def get_memory_item(self, memory_id: int) -> dict[str, Any] | None:
+        conn = self.connect()
         row = conn.execute(
             """
             SELECT memory_id, session_id, scope, kind, content, source, importance,
@@ -400,11 +411,7 @@ class SQLiteStore:
         ).fetchone()
         if row is None:
             return None
-
-        item = self._memory_row_to_dict(row)
-        conn.execute("DELETE FROM memory_items WHERE memory_id = ?", (memory_id,))
-        conn.commit()
-        return item
+        return self._memory_row_to_dict(row)
 
     @_locked
     def touch_memory_items(self, memory_ids: list[int]) -> None:
@@ -684,21 +691,54 @@ class SQLiteStore:
         conn.commit()
 
     @_locked
-    def list_document_ingestion_status(self, limit: int = 50) -> list[dict[str, Any]]:
+    def list_document_ingestion_status(
+        self,
+        limit: int = 50,
+        *,
+        status: str | None = None,
+    ) -> list[dict[str, Any]]:
         conn = self.connect()
         bounded_limit = max(1, min(int(limit), 200))
+        normalized_status = (status or "").strip()
+        where_sql = ""
+        params: list[Any] = []
+        if normalized_status:
+            where_sql = "WHERE status = ?"
+            params.append(normalized_status)
+        params.append(bounded_limit)
         rows = conn.execute(
-            """
+            f"""
             SELECT source_path, doc_id, title, status, parser_version, chunking_version,
                    embedding_model, chunk_size, chunk_overlap, checksum, page_count,
                    chunk_count, started_at, completed_at, error
             FROM document_ingestion_status
+            {where_sql}
             ORDER BY COALESCE(completed_at, started_at) DESC
             LIMIT ?
             """,
-            (bounded_limit,),
+            params,
         ).fetchall()
         return [dict(row) for row in rows]
+
+    @_locked
+    def get_document_ingestion_status_summary(self) -> dict[str, int]:
+        conn = self.connect()
+        rows = conn.execute(
+            """
+            SELECT status, COUNT(*) AS count
+            FROM document_ingestion_status
+            GROUP BY status
+            """
+        ).fetchall()
+        counts = {str(row["status"] or ""): int(row["count"] or 0) for row in rows}
+        total_count = sum(counts.values())
+        return {
+            "total_count": total_count,
+            "running_count": counts.get("running", 0),
+            "indexed_count": counts.get("indexed", 0),
+            "skipped_count": counts.get("skipped", 0),
+            "failed_count": counts.get("failed", 0),
+        }
 
     @_locked
     def delete_chunks_for_doc(self, doc_id: str) -> None:
@@ -824,32 +864,66 @@ class SQLiteStore:
         return dict(row)
 
     @_locked
-    def list_traces(self, limit: int = 20) -> list[dict[str, Any]]:
+    def list_traces(
+        self,
+        limit: int = 20,
+        *,
+        session_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         conn = self.connect()
-        rows = conn.execute(
-            """
-            SELECT trace_id, session_id, query, final_answer, verification_json, created_at
-            FROM traces
-            ORDER BY trace_id DESC
-            LIMIT ?
-            """,
-            (limit,),
-        ).fetchall()
+        if session_id:
+            rows = conn.execute(
+                """
+                SELECT trace_id, session_id, query, final_answer, verification_json, created_at
+                FROM traces
+                WHERE session_id = ?
+                ORDER BY trace_id DESC
+                LIMIT ?
+                """,
+                (session_id, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT trace_id, session_id, query, final_answer, verification_json, created_at
+                FROM traces
+                ORDER BY trace_id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
         return [dict(row) for row in rows]
 
     @_locked
-    def list_trace_audit_rows(self, limit: int = 50) -> list[dict[str, Any]]:
+    def list_trace_audit_rows(
+        self,
+        limit: int = 50,
+        *,
+        session_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         conn = self.connect()
         bounded_limit = max(1, min(int(limit), 200))
-        rows = conn.execute(
-            """
-            SELECT trace_id, session_id, query, steps_json, tool_results_json, created_at
-            FROM traces
-            ORDER BY trace_id DESC
-            LIMIT ?
-            """,
-            (bounded_limit,),
-        ).fetchall()
+        if session_id:
+            rows = conn.execute(
+                """
+                SELECT trace_id, session_id, query, steps_json, tool_results_json, created_at
+                FROM traces
+                WHERE session_id = ?
+                ORDER BY trace_id DESC
+                LIMIT ?
+                """,
+                (session_id, bounded_limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT trace_id, session_id, query, steps_json, tool_results_json, created_at
+                FROM traces
+                ORDER BY trace_id DESC
+                LIMIT ?
+                """,
+                (bounded_limit,),
+            ).fetchall()
         return [dict(row) for row in rows]
 
     @_locked
@@ -936,13 +1010,36 @@ class SQLiteStore:
         *,
         rating: str | None = None,
         limit: int = 20,
+        session_id: str | None = None,
     ) -> list[dict[str, Any]]:
         if rating is not None and rating not in {"like", "dislike"}:
             raise ValueError("rating must be 'like' or 'dislike'")
 
         conn = self.connect()
         bounded_limit = max(1, min(limit, 100))
-        if rating:
+        if rating and session_id:
+            rows = conn.execute(
+                """
+                SELECT
+                    f.feedback_id,
+                    f.trace_id,
+                    f.rating,
+                    f.issue_type,
+                    f.source,
+                    f.created_at,
+                    f.updated_at,
+                    t.query,
+                    t.final_answer
+                FROM answer_feedback f
+                JOIN traces t ON t.trace_id = f.trace_id
+                WHERE f.rating = ?
+                  AND t.session_id = ?
+                ORDER BY f.updated_at DESC, f.feedback_id DESC
+                LIMIT ?
+                """,
+                (rating, session_id, bounded_limit),
+            ).fetchall()
+        elif rating:
             rows = conn.execute(
                 """
                 SELECT
@@ -962,6 +1059,27 @@ class SQLiteStore:
                 LIMIT ?
                 """,
                 (rating, bounded_limit),
+            ).fetchall()
+        elif session_id:
+            rows = conn.execute(
+                """
+                SELECT
+                    f.feedback_id,
+                    f.trace_id,
+                    f.rating,
+                    f.issue_type,
+                    f.source,
+                    f.created_at,
+                    f.updated_at,
+                    t.query,
+                    t.final_answer
+                FROM answer_feedback f
+                JOIN traces t ON t.trace_id = f.trace_id
+                WHERE t.session_id = ?
+                ORDER BY f.updated_at DESC, f.feedback_id DESC
+                LIMIT ?
+                """,
+                (session_id, bounded_limit),
             ).fetchall()
         else:
             rows = conn.execute(
@@ -986,28 +1104,61 @@ class SQLiteStore:
         return [dict(row) for row in rows]
 
     @_locked
-    def get_answer_feedback_summary(self, *, recent_limit: int = 5) -> dict[str, Any]:
+    def get_answer_feedback_summary(
+        self,
+        *,
+        recent_limit: int = 5,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
         conn = self.connect()
-        summary = conn.execute(
-            """
-            SELECT
-                COUNT(*) AS total_count,
-                COALESCE(SUM(CASE WHEN rating = 'like' THEN 1 ELSE 0 END), 0) AS like_count,
-                COALESCE(SUM(CASE WHEN rating = 'dislike' THEN 1 ELSE 0 END), 0) AS dislike_count,
-                MAX(updated_at) AS latest_feedback_at
-            FROM answer_feedback
-            """
-        ).fetchone()
-        issue_rows = conn.execute(
-            """
-            SELECT issue_type, COUNT(*) AS count
-            FROM answer_feedback
-            WHERE rating = 'dislike'
-              AND issue_type <> ''
-            GROUP BY issue_type
-            ORDER BY count DESC, issue_type ASC
-            """
-        ).fetchall()
+        if session_id:
+            summary = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total_count,
+                    COALESCE(SUM(CASE WHEN f.rating = 'like' THEN 1 ELSE 0 END), 0) AS like_count,
+                    COALESCE(SUM(CASE WHEN f.rating = 'dislike' THEN 1 ELSE 0 END), 0) AS dislike_count,
+                    MAX(f.updated_at) AS latest_feedback_at
+                FROM answer_feedback f
+                JOIN traces t ON t.trace_id = f.trace_id
+                WHERE t.session_id = ?
+                """,
+                (session_id,),
+            ).fetchone()
+            issue_rows = conn.execute(
+                """
+                SELECT f.issue_type, COUNT(*) AS count
+                FROM answer_feedback f
+                JOIN traces t ON t.trace_id = f.trace_id
+                WHERE f.rating = 'dislike'
+                  AND f.issue_type <> ''
+                  AND t.session_id = ?
+                GROUP BY f.issue_type
+                ORDER BY count DESC, f.issue_type ASC
+                """,
+                (session_id,),
+            ).fetchall()
+        else:
+            summary = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total_count,
+                    COALESCE(SUM(CASE WHEN rating = 'like' THEN 1 ELSE 0 END), 0) AS like_count,
+                    COALESCE(SUM(CASE WHEN rating = 'dislike' THEN 1 ELSE 0 END), 0) AS dislike_count,
+                    MAX(updated_at) AS latest_feedback_at
+                FROM answer_feedback
+                """
+            ).fetchone()
+            issue_rows = conn.execute(
+                """
+                SELECT issue_type, COUNT(*) AS count
+                FROM answer_feedback
+                WHERE rating = 'dislike'
+                  AND issue_type <> ''
+                GROUP BY issue_type
+                ORDER BY count DESC, issue_type ASC
+                """
+            ).fetchall()
         total_count = int(summary["total_count"] or 0)
         dislike_count = int(summary["dislike_count"] or 0)
         dislike_rate = (dislike_count / total_count) if total_count else 0.0
@@ -1024,6 +1175,7 @@ class SQLiteStore:
             "recent_dislikes": self.list_answer_feedback(
                 rating="dislike",
                 limit=max(1, min(recent_limit, 20)),
+                session_id=session_id,
             ),
         }
 

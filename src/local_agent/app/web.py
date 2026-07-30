@@ -5,7 +5,7 @@ from functools import lru_cache
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -26,6 +26,8 @@ from local_agent.app.api_models import (
     IngestFileResult,
     IngestPathRequest,
     IngestPathResponse,
+    IngestionStatusItem,
+    IngestionStatusResponse,
     MemoryDeleteResponse,
     MemoryItem,
     MemoryListResponse,
@@ -38,6 +40,7 @@ from local_agent.app.api_models import (
     TraceSummary,
     ToolItem,
 )
+from local_agent.app.auth import AuthIdentity, authenticate_request, sanitize_session_id
 from local_agent.app.bootstrap import bootstrap_app
 from local_agent.app.config import load_config
 from local_agent.app.dependencies import AppDependencies
@@ -62,8 +65,13 @@ def get_deps() -> AppDependencies:
 
 
 @lru_cache(maxsize=1)
+def get_web_config():
+    return load_config(".env")
+
+
+@lru_cache(maxsize=1)
 def get_sqlite_store() -> SQLiteStore:
-    config = load_config(".env")
+    config = get_web_config()
     store = SQLiteStore(config.sqlite_path)
     store.initialize()
     return store
@@ -154,6 +162,66 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
+@app.middleware("http")
+async def api_auth_middleware(request: Request, call_next):
+    if request.url.path.startswith("/api/"):
+        try:
+            request.state.auth_identity = authenticate_request(request, get_web_config())
+        except HTTPException as exc:
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={"detail": exc.detail},
+                headers=exc.headers,
+            )
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=503,
+                content={"detail": str(exc)},
+            )
+    return await call_next(request)
+
+
+def current_auth_identity(request: Request | None = None) -> AuthIdentity:
+    if request is None:
+        return AuthIdentity(
+            enabled=False,
+            authenticated=False,
+            session_id="default",
+        )
+    identity = getattr(request.state, "auth_identity", None)
+    if isinstance(identity, AuthIdentity):
+        return identity
+    return AuthIdentity(
+        enabled=False,
+        authenticated=False,
+        session_id=sanitize_session_id(request.headers.get("X-Local-Agent-Session")),
+    )
+
+
+def session_filter_for_identity(identity: AuthIdentity) -> str | None:
+    return identity.session_id if identity.enabled else None
+
+
+def requested_session_id(identity: AuthIdentity, raw_session_id: str = "default") -> str:
+    if identity.enabled:
+        return identity.session_id
+    return sanitize_session_id(raw_session_id, fallback="default")
+
+
+def ensure_trace_access(trace: dict[str, Any], identity: AuthIdentity) -> None:
+    if identity.enabled and trace.get("session_id") != identity.session_id:
+        raise HTTPException(status_code=404, detail="Trace not found.")
+
+
+def ensure_memory_access(memory: dict[str, Any], identity: AuthIdentity) -> None:
+    if not identity.enabled:
+        return
+    if memory.get("scope") == "global":
+        return
+    if memory.get("session_id") != identity.session_id:
+        raise HTTPException(status_code=404, detail="Memory item not found.")
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(
@@ -180,13 +248,15 @@ def list_tools():
 
 
 @app.get("/api/tools/audit", response_model=ToolAuditResponse)
-def tool_audit(limit: int = 50):
+def tool_audit(request: Request = None, limit: int = 50):
     bounded_limit = min(max(limit, 1), 200)
+    identity = current_auth_identity(request)
     return ToolAuditResponse(
         **build_tool_audit(
             get_sqlite_store(),
             get_deps().tool_registry,
             limit=bounded_limit,
+            session_id=session_filter_for_identity(identity),
         )
     )
 
@@ -222,14 +292,37 @@ def list_library_documents(
     )
 
 
+@app.get("/api/ingestion/status", response_model=IngestionStatusResponse)
+def list_ingestion_status(
+    limit: int = 50,
+    status: str = "",
+):
+    bounded_limit = min(max(limit, 1), 200)
+    normalized_status = status.strip()
+    store = get_sqlite_store()
+    rows = store.list_document_ingestion_status(
+        limit=bounded_limit,
+        status=normalized_status or None,
+    )
+    summary = store.get_document_ingestion_status_summary()
+    return IngestionStatusResponse(
+        total=int(summary.get("total_count", len(rows))),
+        limit=bounded_limit,
+        status=normalized_status,
+        summary=summary,
+        items=[IngestionStatusItem(**row) for row in rows],
+    )
+
+
 @app.get("/api/memory", response_model=MemoryListResponse)
 def list_memory(
+    request: Request = None,
     session_id: str = "default",
     include_global: bool = True,
     limit: int = 50,
 ):
     bounded_limit = min(max(limit, 1), 200)
-    normalized_session_id = session_id.strip() or "default"
+    normalized_session_id = requested_session_id(current_auth_identity(request), session_id)
     rows = get_sqlite_store().list_memory_items(
         session_id=normalized_session_id,
         include_global=include_global,
@@ -244,32 +337,47 @@ def list_memory(
 
 
 @app.delete("/api/memory/{memory_id}", response_model=MemoryDeleteResponse)
-def delete_memory(memory_id: int):
-    row = get_sqlite_store().delete_memory_item(memory_id)
+def delete_memory(memory_id: int, request: Request = None):
+    store = get_sqlite_store()
+    identity = current_auth_identity(request)
+    existing = store.get_memory_item(memory_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"Memory item {memory_id} not found.")
+    ensure_memory_access(existing, identity)
+    row = store.delete_memory_item(memory_id)
     if row is None:
         raise HTTPException(status_code=404, detail=f"Memory item {memory_id} not found.")
     return MemoryDeleteResponse(deleted=True, item=MemoryItem(**row))
 
 
 @app.get("/api/traces", response_model=list[TraceSummary])
-def list_traces(limit: int = 12):
+def list_traces(request: Request = None, limit: int = 12):
     bounded_limit = min(max(limit, 1), 50)
+    identity = current_auth_identity(request)
     return [
         build_trace_summary(row)
-        for row in get_sqlite_store().list_traces(limit=bounded_limit)
+        for row in get_sqlite_store().list_traces(
+            limit=bounded_limit,
+            session_id=session_filter_for_identity(identity),
+        )
     ]
 
 
 @app.get("/api/traces/{trace_id}", response_model=TraceDetail)
-def get_trace(trace_id: int):
+def get_trace(trace_id: int, request: Request = None):
     row = get_sqlite_store().get_trace(trace_id)
     if row is None:
         raise HTTPException(status_code=404, detail=f"Trace {trace_id} not found.")
+    ensure_trace_access(row, current_auth_identity(request))
     return build_trace_detail(row)
 
 
 @app.post("/api/feedback", response_model=TraceFeedbackResponse)
-def save_feedback(request_data: TraceFeedbackRequest):
+def save_feedback(request_data: TraceFeedbackRequest, request: Request = None):
+    trace = get_sqlite_store().get_trace(request_data.trace_id)
+    if trace is None:
+        raise HTTPException(status_code=404, detail=f"trace {request_data.trace_id} does not exist")
+    ensure_trace_access(trace, current_auth_identity(request))
     try:
         row = get_sqlite_store().upsert_answer_feedback(
             trace_id=request_data.trace_id,
@@ -285,14 +393,17 @@ def save_feedback(request_data: TraceFeedbackRequest):
 
 @app.get("/api/feedback", response_model=list[TraceFeedbackItem])
 def list_feedback(
+    request: Request = None,
     limit: int = 12,
     rating: str | None = None,
 ):
     bounded_limit = min(max(limit, 1), 50)
+    identity = current_auth_identity(request)
     try:
         rows = get_sqlite_store().list_answer_feedback(
             rating=rating,
             limit=bounded_limit,
+            session_id=session_filter_for_identity(identity),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -300,12 +411,21 @@ def list_feedback(
 
 
 @app.get("/api/feedback/summary", response_model=FeedbackSummary)
-def feedback_summary():
-    return FeedbackSummary(**get_sqlite_store().get_answer_feedback_summary())
+def feedback_summary(request: Request = None):
+    identity = current_auth_identity(request)
+    return FeedbackSummary(
+        **get_sqlite_store().get_answer_feedback_summary(
+            session_id=session_filter_for_identity(identity),
+        )
+    )
 
 
 @app.post("/api/eval-candidates", response_model=EvalCandidateResponse)
-def create_eval_candidate(request_data: EvalCandidateCreateRequest):
+def create_eval_candidate(request_data: EvalCandidateCreateRequest, request: Request = None):
+    trace = get_sqlite_store().get_trace(request_data.trace_id)
+    if trace is None:
+        raise HTTPException(status_code=404, detail=f"Trace {request_data.trace_id} not found.")
+    ensure_trace_access(trace, current_auth_identity(request))
     try:
         result = create_feedback_eval_candidate(
             get_sqlite_store(),
@@ -375,17 +495,20 @@ def run_eval_candidate(candidate_id: str):
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-def chat(request_data: ChatRequest):
+def chat(request_data: ChatRequest, request: Request = None):
     deps = get_deps()
+    identity = current_auth_identity(request)
 
     results = deps.orchestrator.handle_query(
         request_data.query,
         approved_tools=request_data.approved_tools,
+        session_id=identity.session_id,
     )
 
     return ChatResponse(
         answer=results["answer"],
         trace_id=results["trace_id"],
+        session_id=results.get("session_id") or identity.session_id,
         mode=results["mode"],
         reason=results["reason"],
         retrieval_query=results.get("retrieval_query"),

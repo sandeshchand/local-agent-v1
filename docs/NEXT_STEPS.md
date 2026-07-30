@@ -29,6 +29,7 @@ Implemented:
 - System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
 - Runtime backup and restore for local SQLite and Qdrant state.
 - Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
+- Config-gated API token authentication and request session isolation for traces, feedback, memory, and tool audit.
 - Answer-generation fast path for high-confidence citation-backed extractive answers.
 - Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
 - Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
@@ -88,6 +89,8 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - the new slowest representative case is `sora_prompt_following` at `230.65 ms`, which is already on deterministic evidence and extractive answer paths.
 - retrieval scale profiling is available through `scripts/profile_retrieval_scale.py` for document/chunk count, routing cache, embedding cache, retrieval-search timing, and Qdrant server-mode planning.
 - ingestion hardening is available with per-PDF status records, parser/chunking version metadata, incremental skip behavior, `--force` rebuilds, and Qdrant cleanup by document.
+- ingestion status visibility is available in CLI, API, and the web UI `Ingest` workspace tab.
+- gold QA coverage auditing is available through `scripts/audit_gold_qa_coverage.py` to find indexed documents that need more benchmark questions.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -103,7 +106,7 @@ Recommended order:
 1. Run the retrieval scale profile before making the next storage/retrieval performance change.
 2. Improve trace UI summaries further only after user feedback from the new path cards.
 3. Inspect the current slowest traces, starting with `sora_prompt_following`, only if repeated runs show a real pattern.
-4. Add broader gold QA coverage for newly ingested PDFs.
+4. Add broader gold QA coverage for newly ingested PDFs and daily document batches.
 5. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
 6. Re-run `multi-doc-representative` with `--repeat 3` after any performance-sensitive change.
 7. Tighten prompt/context only where traces show excess context.
@@ -153,6 +156,12 @@ Keep these constraints:
 
 Goal: keep the system general-purpose as more documents arrive.
 
+Before adding new QA, run:
+
+```cmd
+venv\Scripts\python.exe scripts\audit_gold_qa_coverage.py --env-file .env --output var\logs\gold_qa_coverage_report.json
+```
+
 For every new PDF, add 3 to 5 gold QA items:
 
 - definition question,
@@ -163,21 +172,46 @@ For every new PDF, add 3 to 5 gold QA items:
 
 This prevents the system from being tuned only for Sora, Docker, or the current Medium/article PDFs.
 
+See [docs/GOLD_QA_COVERAGE.md](GOLD_QA_COVERAGE.md) for the audit and update workflow.
+
 ## 5. Add Scheduled Backup Policy
 
 Goal: protect runtime state outside the local repo.
 
-Define:
+Implemented base controls:
 
-- backup storage location,
-- backup frequency,
-- retention period,
-- restore-drill schedule,
-- who owns rollback decisions.
+- list backups with `scripts/runtime_state.py list-backups`,
+- prune old backups by retention count with dry-run by default,
+- apply prune only with `--apply`,
+- documented local and production-like retention policy.
 
-Local backup/restore already works; this step turns it into an operating policy.
+Remaining production work:
 
-## 6. Future Guardrail Work
+- choose the real off-machine backup storage location,
+- schedule daily backup execution outside the Python app,
+- define restore-drill schedule,
+- decide who owns rollback decisions.
+
+## 6. Authentication And User Isolation
+
+Goal: make the local app safer for production-like use.
+
+Implemented v1:
+
+- optional API token authentication through `AUTH_ENABLED` and `AUTH_TOKEN`,
+- `/api/*` protection when auth is enabled,
+- UI `Access` panel for token and session id,
+- session-scoped traces, feedback, memory, and tool-audit views,
+- smoke coverage in `scripts/smoke_auth.py`.
+
+Remaining production work:
+
+- full user accounts or an external identity provider,
+- per-user document/index isolation,
+- roles for admin actions such as ingest, eval promotion, backup, and restore,
+- deployed secret management instead of `.env`.
+
+## 7. Future Guardrail Work
 
 Do this before adding write/delete tools.
 
@@ -190,7 +224,7 @@ Next guardrail tasks:
 
 Important rule: memory and tools can guide the agent, but PDF answers must still come from retrieved PDF evidence and citations.
 
-## 7. Future MCP Work
+## 8. Future MCP Work
 
 Current MCP-style tools are local read-only connectors. They are useful and safe for the current app.
 
