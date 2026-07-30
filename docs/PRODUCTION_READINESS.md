@@ -26,6 +26,7 @@ The project has strong local foundations:
 - system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools,
 - local backup and restore tooling for SQLite and Qdrant runtime state,
 - backup listing and retention pruning with dry-run by default,
+- config-gated API token authentication and request session isolation,
 - local deployment documentation,
 - versioned incremental ingestion with per-file status tracking and safe Qdrant cleanup,
 - ingestion status visibility through CLI, API, and UI.
@@ -125,8 +126,9 @@ Completed:
 
 ### Security And Privacy
 
-- Add authentication before multi-user deployment.
-- Add user/session isolation.
+- Keep API token authentication enabled for production-like local use.
+- Add full user accounts before true multi-user deployment.
+- Add per-user document/index isolation before handling private data from multiple users.
 - Move production secrets to a proper secret manager.
 - Define data retention rules for traces, feedback, memory, and uploaded PDFs.
 - Review logs to ensure they do not expose sensitive content unnecessarily.
@@ -163,13 +165,14 @@ It should also have:
 1. Optimize first-query retrieval/model warmup without reducing RAG quality.
 2. Add broader gold QA for new daily PDFs.
 3. Add scheduled/off-machine backup execution for deployed environments.
-4. Add authentication and user/session isolation design.
+4. Add production user accounts and per-user document isolation design.
 
 Completed from this list:
 
 - Health-check and system-status UI/API endpoints.
 - Local SQLite and Qdrant backup/restore script, smoke test, and documentation.
 - Backup listing, safe retention pruning, and local retention policy documentation.
+- Config-gated API token authentication, UI token/session controls, and session-scoped traces/feedback/memory/tool-audit views.
 - Memory multi-turn eval, benchmark cases, smoke test, and short-term redaction.
 - Tool audit API, UI tab, category labels, and smoke test.
 - Memory management API, UI tab, delete control, and smoke test.

@@ -14,6 +14,28 @@
         <p class="subtitle">Local PDF assistant with RAG</p>
       </div>
 
+      <section class="panel access-panel">
+        <div class="panel-header">
+          <h2>Access</h2>
+        </div>
+        <div class="stack">
+          <input
+            id="api-token"
+            type="password"
+            autocomplete="off"
+            placeholder="API token if auth is enabled"
+          />
+          <input
+            id="ui-session-id"
+            type="text"
+            value="default"
+            placeholder="Session id"
+          />
+          <button id="save-access-btn" type="button" class="secondary-btn">Save access</button>
+        </div>
+        <div id="access-status" class="status-box muted">Local mode.</div>
+      </section>
+
       <section class="panel ingest-panel">
         <div class="panel-header">
           <h2>Ingest PDFs</h2>
@@ -279,6 +301,6 @@
     </div>
   </template>
 
-  <script src="/static/chat.js?v=22"></script>
+  <script src="/static/chat.js?v=23"></script>
 </body>
 </html>

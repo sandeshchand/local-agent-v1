@@ -1,3 +1,6 @@
+const API_TOKEN_STORAGE_KEY = "local-agent-api-token";
+const SESSION_STORAGE_KEY = "local-agent-session-id";
+
 function setChatStatus(text) {
   const statusEl = document.getElementById("chat-status");
   if (statusEl) {
@@ -40,9 +43,22 @@ function setIngestLoading(isLoading) {
 }
 
 async function fetchJSON(url, options = {}) {
+  const token = getStoredApiToken();
+  const sessionId = getStoredSessionId();
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  if (sessionId) {
+    headers["X-Local-Agent-Session"] = sessionId;
+  }
+
   const response = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers,
   });
 
   const contentType = response.headers.get("content-type") || "";
@@ -59,6 +75,76 @@ async function fetchJSON(url, options = {}) {
   }
 
   return data;
+}
+
+function getStoredApiToken() {
+  return window.localStorage.getItem(API_TOKEN_STORAGE_KEY) || "";
+}
+
+function getStoredSessionId() {
+  return window.localStorage.getItem(SESSION_STORAGE_KEY) || "default";
+}
+
+function saveAccessSettings() {
+  const tokenInput = document.getElementById("api-token");
+  const sessionInput = document.getElementById("ui-session-id");
+  const memorySessionInput = document.getElementById("memory-session-id");
+  const status = document.getElementById("access-status");
+  const token = tokenInput ? tokenInput.value.trim() : "";
+  const sessionId = sessionInput ? sessionInput.value.trim() || "default" : "default";
+
+  if (token) {
+    window.localStorage.setItem(API_TOKEN_STORAGE_KEY, token);
+  } else {
+    window.localStorage.removeItem(API_TOKEN_STORAGE_KEY);
+  }
+  window.localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+
+  if (memorySessionInput) {
+    memorySessionInput.value = sessionId;
+  }
+  if (status) {
+    status.textContent = token
+      ? `Saved token and session ${sessionId}.`
+      : `Saved session ${sessionId}. Token cleared.`;
+    status.className = "status-box";
+  }
+
+  loadDocuments();
+  loadTools();
+  loadToolAudit();
+  loadMemory();
+  loadSystemStatus();
+  loadIngestionStatus();
+  loadRecentTraces();
+  loadFeedbackSummary();
+  loadFeedbackItems();
+  loadEvalCandidates();
+}
+
+function loadAccessSettings() {
+  const tokenInput = document.getElementById("api-token");
+  const sessionInput = document.getElementById("ui-session-id");
+  const memorySessionInput = document.getElementById("memory-session-id");
+  const status = document.getElementById("access-status");
+  const token = getStoredApiToken();
+  const sessionId = getStoredSessionId();
+
+  if (tokenInput) {
+    tokenInput.value = token;
+  }
+  if (sessionInput) {
+    sessionInput.value = sessionId;
+  }
+  if (memorySessionInput) {
+    memorySessionInput.value = sessionId;
+  }
+  if (status) {
+    status.textContent = token
+      ? `Using saved token for session ${sessionId}.`
+      : `Local mode. Session ${sessionId}.`;
+    status.className = "status-box muted";
+  }
 }
 
 function hideEmptyState() {
@@ -1469,7 +1555,7 @@ async function loadMemory() {
   const sessionInput = document.getElementById("memory-session-id");
   const includeGlobal = document.getElementById("memory-include-global");
   const params = new URLSearchParams({
-    session_id: sessionInput?.value.trim() || "default",
+    session_id: sessionInput?.value.trim() || getStoredSessionId(),
     include_global: includeGlobal?.checked ? "true" : "false",
     limit: "80",
   });
@@ -1912,9 +1998,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const ingestionStatusFilter = document.getElementById("ingestion-status-filter");
   const ingestBtn = document.getElementById("ingest-btn");
   const chatInput = document.getElementById("chat-input");
+  const saveAccessBtn = document.getElementById("save-access-btn");
+
+  loadAccessSettings();
 
   if (sendBtn) {
     sendBtn.addEventListener("click", sendChat);
+  }
+
+  if (saveAccessBtn) {
+    saveAccessBtn.addEventListener("click", saveAccessSettings);
   }
 
   if (refreshDocsBtn) {

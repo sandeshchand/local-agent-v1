@@ -10,7 +10,7 @@ The current supported deployment is a single-machine, local-first deployment usi
 - local Ollama chat and embedding models,
 - read-only local tools by default.
 
-This is suitable for controlled demos, local team development, and single-user operation. Before multi-user production, add authentication, user isolation, external secret management, monitoring, and a stronger backup policy.
+This is suitable for controlled demos, local team development, and single-user operation. For production-like local use, enable API token auth. Before true multi-user production, add full user accounts, per-user document isolation, external secret management, monitoring, and a stronger backup policy.
 
 ## 1. Prepare The Host
 
@@ -73,11 +73,15 @@ RERANK_CANDIDATES=8
 WARM_RETRIEVAL_ON_STARTUP=false
 FILE_MCP_ENABLED=true
 FILE_MCP_ROOTS=data,docs,benchmarks,tests,README.md,pyproject.toml
+AUTH_ENABLED=false
+AUTH_TOKEN=
 ```
 
 Keep `.env` out of Git. Use `.env.example` for safe placeholders.
 
 Set `WARM_RETRIEVAL_ON_STARTUP=true` for demos or local production when first-question latency matters. This warms the Qdrant collection check, embedding model, and reranker during startup. Keep it `false` for the fastest development startup.
+
+For production-like local use, set `AUTH_ENABLED=true` and provide a long random `AUTH_TOKEN`. Save that token and a session id in the web UI `Access` panel. See [AUTHENTICATION.md](AUTHENTICATION.md).
 
 For deployed environments, do not store real secrets in the repo. Move secrets to the host secret manager or deployment platform when the app becomes multi-user.
 

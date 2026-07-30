@@ -22,6 +22,7 @@ class CitationItem(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     trace_id: int
+    session_id: str = "default"
     mode: str
     reason: str =""
     retrieval_query: str | None = None

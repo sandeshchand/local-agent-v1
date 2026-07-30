@@ -29,6 +29,7 @@ Implemented:
 - System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
 - Runtime backup and restore for local SQLite and Qdrant state.
 - Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
+- Config-gated API token authentication and request session isolation for traces, feedback, memory, and tool audit.
 - Answer-generation fast path for high-confidence citation-backed extractive answers.
 - Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
 - Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
@@ -191,7 +192,26 @@ Remaining production work:
 - define restore-drill schedule,
 - decide who owns rollback decisions.
 
-## 6. Future Guardrail Work
+## 6. Authentication And User Isolation
+
+Goal: make the local app safer for production-like use.
+
+Implemented v1:
+
+- optional API token authentication through `AUTH_ENABLED` and `AUTH_TOKEN`,
+- `/api/*` protection when auth is enabled,
+- UI `Access` panel for token and session id,
+- session-scoped traces, feedback, memory, and tool-audit views,
+- smoke coverage in `scripts/smoke_auth.py`.
+
+Remaining production work:
+
+- full user accounts or an external identity provider,
+- per-user document/index isolation,
+- roles for admin actions such as ingest, eval promotion, backup, and restore,
+- deployed secret management instead of `.env`.
+
+## 7. Future Guardrail Work
 
 Do this before adding write/delete tools.
 
@@ -204,7 +224,7 @@ Next guardrail tasks:
 
 Important rule: memory and tools can guide the agent, but PDF answers must still come from retrieved PDF evidence and citations.
 
-## 7. Future MCP Work
+## 8. Future MCP Work
 
 Current MCP-style tools are local read-only connectors. They are useful and safe for the current app.
 

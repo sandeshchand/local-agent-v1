@@ -110,6 +110,13 @@ Next after this task:
    - Decide authentication and user-isolation plan.
    - Keep local backup/restore as the current base.
 
+Completed after this note:
+
+- Added backup listing and retention pruning with dry-run by default.
+- Added optional API token auth for `/api/*`.
+- Added request session isolation for traces, feedback, memory, and tool audit.
+- Added a UI `Access` panel for token/session settings.
+
 5. MCP and guardrails next step
    - Keep File MCP and SQLite MCP read-only for now.
    - Add stronger guardrail audit visibility before enabling any write-capable tools.

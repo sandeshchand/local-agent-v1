@@ -14,6 +14,7 @@ COMPILE_TARGETS = [
     "src/local_agent/agent/guardrails.py",
     "src/local_agent/agent/schemas.py",
     "src/local_agent/app/bootstrap.py",
+    "src/local_agent/app/auth.py",
     "src/local_agent/app/cli.py",
     "src/local_agent/app/main.py",
     "src/local_agent/app/system_status.py",
@@ -69,6 +70,7 @@ COMPILE_TARGETS = [
     "scripts/smoke_evidence_prefilter.py",
     "scripts/smoke_performance_caches.py",
     "scripts/smoke_config.py",
+    "scripts/smoke_auth.py",
     "scripts/smoke_empty_index.py",
     "scripts/smoke_ingestion_status.py",
     "scripts/smoke_ingestion_status_api.py",
@@ -162,6 +164,7 @@ def main() -> None:
     run_step("Evidence prefilter smoke", [sys.executable, "scripts/smoke_evidence_prefilter.py"])
     run_step("Performance cache smoke", [sys.executable, "scripts/smoke_performance_caches.py"])
     run_step("Config smoke", [sys.executable, "scripts/smoke_config.py"])
+    run_step("Auth smoke", [sys.executable, "scripts/smoke_auth.py"])
     run_step("Empty index smoke", [sys.executable, "scripts/smoke_empty_index.py"])
     run_step("Ingestion status smoke", [sys.executable, "scripts/smoke_ingestion_status.py"])
     run_step("Ingestion status API smoke", [sys.executable, "scripts/smoke_ingestion_status_api.py"])

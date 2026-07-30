@@ -95,6 +95,8 @@ SQLITE_PATH=./var/sqlite/app.db
 TOP_K=3
 DEBUG=true
 WARM_RETRIEVAL_ON_STARTUP=false
+AUTH_ENABLED=false
+AUTH_TOKEN=
 ```
 
 To reuse an older local index, point the paths at the existing files:
@@ -238,6 +240,15 @@ GET /api/system/status?check_models=false
 
 The web UI also has a `System` workspace tab for SQLite, Qdrant, Ollama model, embedding model, and tool-registry status.
 
+Enable API token auth for production-like local use:
+
+```env
+AUTH_ENABLED=true
+AUTH_TOKEN=replace-with-a-long-random-token
+```
+
+Then save the token and session id in the UI `Access` panel. Details: [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)
+
 Reset the local index only when parsing, chunking, or storage is inconsistent. See [docs/CHUNKING.md](docs/CHUNKING.md) and [docs/REGRESSION.md](docs/REGRESSION.md) before resetting.
 
 Back up local runtime state before large ingest, parser, chunking, or storage changes:
@@ -284,7 +295,7 @@ Already implemented:
 
 Required before real production use:
 
-- authentication and user/session isolation,
+- production-grade user accounts and per-user document isolation,
 - secrets management outside `.env` for deployed environments,
 - scheduled off-machine backups and deployment rollback policy,
 - deployment/container strategy,
@@ -315,6 +326,7 @@ Retrieval and answers:
 
 Tools, guardrails, and memory:
 
+- [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)
 - [docs/GUARDRAILS.md](docs/GUARDRAILS.md)
 - [docs/TOOL_AUDIT.md](docs/TOOL_AUDIT.md)
 - [docs/MCP.md](docs/MCP.md)
