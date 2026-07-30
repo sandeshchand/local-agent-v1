@@ -64,18 +64,27 @@ Completed: production-scale retrieval performance validation is now available th
 
 Completed: ingestion is now safer for daily document batches through incremental skip behavior, `--force` rebuilds, version metadata, Qdrant cleanup, and ingestion status visibility.
 
-Next task: broaden gold QA for newly ingested PDFs and daily document batches. This should be done before adding more answer fast paths.
+Current task: broaden gold QA for newly ingested PDFs and daily document batches. This should be done before adding more answer fast paths.
 
 ```powershell
 git status --short
 ```
 
-Then inspect the current eval coverage:
+Completed for this task:
+
+- Added `scripts/audit_gold_qa_coverage.py` to compare indexed SQLite documents, raw PDFs, and gold QA items.
+- Added `scripts/smoke_gold_qa_coverage.py` for deterministic coverage-audit smoke testing.
+- Added the coverage smoke test to `scripts/run_regression.py`.
+- Added workflow documentation in `docs/GOLD_QA_COVERAGE.md` and `docs/EVALUATION.md`.
+
+Next after this task:
 
 - documents in `data/raw/documents`,
 - existing cases in `benchmarks/gold_qa/eval_multi_doc_rag.json`,
 - recent disliked answers and eval drafts,
 - document families not yet represented by gold QA.
+- run the audit report,
+- add 3 to 5 gold QA items for important missing or undercovered PDFs.
 
 ## Recommended Feature Order
 

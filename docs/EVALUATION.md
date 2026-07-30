@@ -44,6 +44,24 @@ Example:
 
 This means the answer must contain `3D consistency`, and may satisfy the second requirement with either phrase.
 
+## Gold QA Coverage Audit
+
+Use the coverage audit after ingesting new PDFs or daily document batches:
+
+```cmd
+venv\Scripts\python.exe scripts\audit_gold_qa_coverage.py --env-file .env --output var\logs\gold_qa_coverage_report.json
+```
+
+It compares indexed SQLite documents, raw PDFs under `data/raw/documents`, and the gold QA file. The report highlights missing or undercovered indexed documents and unmatched eval items.
+
+Use this as a gate when coverage must block the change:
+
+```cmd
+venv\Scripts\python.exe scripts\audit_gold_qa_coverage.py --fail-under-minimum
+```
+
+See [docs/GOLD_QA_COVERAGE.md](GOLD_QA_COVERAGE.md) for the full workflow.
+
 ## RAG Quality Eval
 
 The main script is:

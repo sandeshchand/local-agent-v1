@@ -190,6 +190,12 @@ Run the full RAG benchmark:
 venv\Scripts\python.exe scripts\eval_rag_quality.py --eval-file benchmarks\gold_qa\eval_multi_doc_rag.json --output var\logs\rag_quality_report.json --fail-under-average 8 --fail-under-item 7
 ```
 
+Audit gold QA coverage after ingesting new PDFs:
+
+```powershell
+venv\Scripts\python.exe scripts\audit_gold_qa_coverage.py --env-file .env --output var\logs\gold_qa_coverage_report.json
+```
+
 Run a quick latency benchmark:
 
 ```powershell
@@ -311,6 +317,7 @@ Tools, guardrails, and memory:
 Evaluation, UI, and roadmap:
 
 - [docs/EVALUATION.md](docs/EVALUATION.md)
+- [docs/GOLD_QA_COVERAGE.md](docs/GOLD_QA_COVERAGE.md)
 - [docs/REGRESSION.md](docs/REGRESSION.md)
 - [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
 - [docs/QDRANT_SERVER_MODE.md](docs/QDRANT_SERVER_MODE.md)

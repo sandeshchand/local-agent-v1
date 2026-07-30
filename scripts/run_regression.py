@@ -81,6 +81,8 @@ COMPILE_TARGETS = [
     "scripts/smoke_eval_candidates.py",
     "scripts/smoke_eval_candidate_review.py",
     "scripts/smoke_eval_candidate_run.py",
+    "scripts/audit_gold_qa_coverage.py",
+    "scripts/smoke_gold_qa_coverage.py",
     "scripts/smoke_feedback_issue_tags.py",
     "scripts/smoke_guardrails.py",
     "scripts/smoke_tool_audit.py",
@@ -175,6 +177,7 @@ def main() -> None:
     run_step("Feedback eval candidate smoke", [sys.executable, "scripts/smoke_eval_candidates.py"])
     run_step("Eval candidate review smoke", [sys.executable, "scripts/smoke_eval_candidate_review.py"])
     run_step("Eval candidate run smoke", [sys.executable, "scripts/smoke_eval_candidate_run.py"])
+    run_step("Gold QA coverage smoke", [sys.executable, "scripts/smoke_gold_qa_coverage.py"])
     run_step("Feedback issue tag smoke", [sys.executable, "scripts/smoke_feedback_issue_tags.py"])
     run_step("Guardrails smoke", [sys.executable, "scripts/smoke_guardrails.py"])
     run_step("Tool audit smoke", [sys.executable, "scripts/smoke_tool_audit.py"])

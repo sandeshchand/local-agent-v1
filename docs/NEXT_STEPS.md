@@ -89,6 +89,7 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - retrieval scale profiling is available through `scripts/profile_retrieval_scale.py` for document/chunk count, routing cache, embedding cache, retrieval-search timing, and Qdrant server-mode planning.
 - ingestion hardening is available with per-PDF status records, parser/chunking version metadata, incremental skip behavior, `--force` rebuilds, and Qdrant cleanup by document.
 - ingestion status visibility is available in CLI, API, and the web UI `Ingest` workspace tab.
+- gold QA coverage auditing is available through `scripts/audit_gold_qa_coverage.py` to find indexed documents that need more benchmark questions.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -154,6 +155,12 @@ Keep these constraints:
 
 Goal: keep the system general-purpose as more documents arrive.
 
+Before adding new QA, run:
+
+```cmd
+venv\Scripts\python.exe scripts\audit_gold_qa_coverage.py --env-file .env --output var\logs\gold_qa_coverage_report.json
+```
+
 For every new PDF, add 3 to 5 gold QA items:
 
 - definition question,
@@ -163,6 +170,8 @@ For every new PDF, add 3 to 5 gold QA items:
 - practical/application question.
 
 This prevents the system from being tuned only for Sora, Docker, or the current Medium/article PDFs.
+
+See [docs/GOLD_QA_COVERAGE.md](GOLD_QA_COVERAGE.md) for the audit and update workflow.
 
 ## 5. Add Scheduled Backup Policy
 
