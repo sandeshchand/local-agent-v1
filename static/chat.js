@@ -1600,6 +1600,112 @@ async function loadSystemStatus() {
   }
 }
 
+function ingestionStatusTone(status) {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "indexed" || normalized === "skipped") return "ok";
+  if (normalized === "running") return "warn";
+  if (normalized === "failed") return "bad";
+  return "warn";
+}
+
+function renderIngestionStatus(payload) {
+  const summary = document.getElementById("ingestion-status-summary");
+  const container = document.getElementById("ingestion-status-list");
+  if (!container) return;
+
+  const items = Array.isArray(payload?.items) ? payload.items : [];
+  const counts = payload?.summary || {};
+  const activeFilter = payload?.status || "";
+
+  if (summary) {
+    summary.innerHTML = "";
+    const grid = createElement("div", "ingestion-summary-grid");
+    [
+      ["Total", counts.total_count],
+      ["Indexed", counts.indexed_count],
+      ["Skipped", counts.skipped_count],
+      ["Failed", counts.failed_count],
+      ["Running", counts.running_count],
+    ].forEach(([label, value]) => {
+      const card = createElement("div", "ingestion-summary-card");
+      card.appendChild(createElement("span", "", label));
+      card.appendChild(createElement("strong", "", formatValue(value)));
+      grid.appendChild(card);
+    });
+    summary.appendChild(grid);
+    if (activeFilter) {
+      summary.appendChild(createElement("div", "ingestion-filter-note", `Showing ${activeFilter} records`));
+    }
+  }
+
+  container.innerHTML = "";
+  if (!items.length) {
+    container.appendChild(createElement("div", "muted", "No ingestion status records found."));
+    return;
+  }
+
+  items.forEach((record) => {
+    const tone = ingestionStatusTone(record.status);
+    const item = createElement("article", `ingestion-status-item ${tone}`);
+    const top = createElement("div", "ingestion-status-top");
+    const title = record.title || sourceFileName(record.source_path);
+    top.appendChild(createElement("strong", "", title || "Untitled"));
+    top.appendChild(createElement("span", `ingestion-status-pill ${tone}`, record.status || "unknown"));
+    item.appendChild(top);
+
+    const fileName = createElement("div", "ingestion-source-path", sourceFileName(record.source_path));
+    fileName.title = record.source_path || "";
+    item.appendChild(fileName);
+
+    const meta = createElement("div", "ingestion-meta-grid");
+    [
+      ["Pages", record.page_count],
+      ["Chunks", record.chunk_count],
+      ["Parser", record.parser_version || "legacy"],
+      ["Chunking", record.chunking_version || "legacy"],
+      ["Embed", record.embedding_model],
+      ["Completed", record.completed_at || record.started_at],
+    ].forEach(([label, value]) => {
+      meta.appendChild(createElement("span", "", label));
+      meta.appendChild(createElement("strong", "", shortText(formatValue(value), 90)));
+    });
+    item.appendChild(meta);
+
+    if (record.error) {
+      item.appendChild(createElement("div", "ingestion-error-text", shortText(record.error, 260)));
+    }
+
+    container.appendChild(item);
+  });
+}
+
+async function loadIngestionStatus() {
+  const summary = document.getElementById("ingestion-status-summary");
+  const container = document.getElementById("ingestion-status-list");
+  const filter = document.getElementById("ingestion-status-filter");
+  const params = new URLSearchParams({ limit: "50" });
+  if (filter && filter.value) {
+    params.set("status", filter.value);
+  }
+
+  if (summary) {
+    summary.textContent = "Loading ingestion status...";
+  }
+
+  try {
+    const payload = await fetchJSON(`/api/ingestion/status?${params.toString()}`);
+    renderIngestionStatus(payload);
+  } catch (error) {
+    if (summary) {
+      summary.textContent = "Could not load ingestion status.";
+    }
+    if (container) {
+      container.innerHTML = "";
+      container.appendChild(createElement("div", "error-text", `Ingestion status error: ${error.message}`));
+    }
+  }
+}
+
 function renderDocuments(payload, append = false) {
   const container = document.getElementById("documents-list");
   const summary = document.getElementById("document-summary");
@@ -1779,6 +1885,7 @@ async function ingestPath() {
     statusBox.textContent = lines.join("\n");
     statusBox.className = "status-box";
     await loadDocuments();
+    await loadIngestionStatus();
   } catch (error) {
     statusBox.textContent = `Error: ${error.message}`;
     statusBox.className = "status-box error-text";
@@ -1794,6 +1901,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const refreshToolAuditBtn = document.getElementById("refresh-tool-audit-btn");
   const refreshMemoryBtn = document.getElementById("refresh-memory-btn");
   const refreshSystemBtn = document.getElementById("refresh-system-btn");
+  const refreshIngestionStatusBtn = document.getElementById("refresh-ingestion-status-btn");
   const refreshTracesBtn = document.getElementById("refresh-traces-btn");
   const refreshEvalCandidatesBtn = document.getElementById("refresh-eval-candidates-btn");
   const feedbackFilterBtns = document.querySelectorAll(".feedback-filter-btn");
@@ -1801,6 +1909,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const documentSearch = document.getElementById("document-search");
   const loadDocsBtn = document.getElementById("load-docs-btn");
   const toolSearch = document.getElementById("tool-search");
+  const ingestionStatusFilter = document.getElementById("ingestion-status-filter");
   const ingestBtn = document.getElementById("ingest-btn");
   const chatInput = document.getElementById("chat-input");
 
@@ -1828,6 +1937,10 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshSystemBtn.addEventListener("click", loadSystemStatus);
   }
 
+  if (refreshIngestionStatusBtn) {
+    refreshIngestionStatusBtn.addEventListener("click", loadIngestionStatus);
+  }
+
   if (refreshTracesBtn) {
     refreshTracesBtn.addEventListener("click", () => {
       loadRecentTraces();
@@ -1835,6 +1948,7 @@ document.addEventListener("DOMContentLoaded", () => {
       loadFeedbackItems();
       loadEvalCandidates();
       loadSystemStatus();
+      loadIngestionStatus();
       loadToolAudit();
       loadMemory();
     });
@@ -1864,6 +1978,10 @@ document.addEventListener("DOMContentLoaded", () => {
     toolSearch.addEventListener("input", applyToolSearch);
   }
 
+  if (ingestionStatusFilter) {
+    ingestionStatusFilter.addEventListener("change", loadIngestionStatus);
+  }
+
   const memorySessionInput = document.getElementById("memory-session-id");
   const memoryIncludeGlobal = document.getElementById("memory-include-global");
   if (memorySessionInput) {
@@ -1891,6 +2009,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadToolAudit();
   loadMemory();
   loadSystemStatus();
+  loadIngestionStatus();
   loadRecentTraces();
   loadFeedbackSummary();
   loadFeedbackItems();

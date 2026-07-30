@@ -88,6 +88,7 @@ Evidence selection, answer generation, and retrieval/model warmup have already b
 - the new slowest representative case is `sora_prompt_following` at `230.65 ms`, which is already on deterministic evidence and extractive answer paths.
 - retrieval scale profiling is available through `scripts/profile_retrieval_scale.py` for document/chunk count, routing cache, embedding cache, retrieval-search timing, and Qdrant server-mode planning.
 - ingestion hardening is available with per-PDF status records, parser/chunking version metadata, incremental skip behavior, `--force` rebuilds, and Qdrant cleanup by document.
+- ingestion status visibility is available in CLI, API, and the web UI `Ingest` workspace tab.
 
 Fast-path observability is now available in retrieval trace steps:
 
@@ -103,7 +104,7 @@ Recommended order:
 1. Run the retrieval scale profile before making the next storage/retrieval performance change.
 2. Improve trace UI summaries further only after user feedback from the new path cards.
 3. Inspect the current slowest traces, starting with `sora_prompt_following`, only if repeated runs show a real pattern.
-4. Add broader gold QA coverage for newly ingested PDFs.
+4. Add broader gold QA coverage for newly ingested PDFs and daily document batches.
 5. Add no new fast path unless a trace shows a repeated generic rejection pattern across more than one document family.
 6. Re-run `multi-doc-representative` with `--repeat 3` after any performance-sensitive change.
 7. Tighten prompt/context only where traces show excess context.

@@ -136,6 +136,13 @@ List indexed documents:
 local-agent list-docs
 ```
 
+Check recent ingestion attempts:
+
+```powershell
+local-agent ingest-status
+local-agent ingest-status --status failed
+```
+
 ## Run The Web UI
 
 Use the helper script so only one local server owns the app and Qdrant path.
@@ -287,6 +294,7 @@ Architecture and orchestration:
 Retrieval and answers:
 
 - [docs/CHUNKING.md](docs/CHUNKING.md)
+- [docs/INGESTION_STATUS.md](docs/INGESTION_STATUS.md)
 - [docs/ANSWER_SERVICE.md](docs/ANSWER_SERVICE.md)
 - [docs/ANSWER_VERIFICATION.md](docs/ANSWER_VERIFICATION.md)
 - [docs/ANSWER_REPAIR.md](docs/ANSWER_REPAIR.md)

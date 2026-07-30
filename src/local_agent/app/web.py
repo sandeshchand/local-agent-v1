@@ -26,6 +26,8 @@ from local_agent.app.api_models import (
     IngestFileResult,
     IngestPathRequest,
     IngestPathResponse,
+    IngestionStatusItem,
+    IngestionStatusResponse,
     MemoryDeleteResponse,
     MemoryItem,
     MemoryListResponse,
@@ -219,6 +221,28 @@ def list_library_documents(
         offset=bounded_offset,
         query=query,
         items=[DocumentItem(**doc) for doc in docs],
+    )
+
+
+@app.get("/api/ingestion/status", response_model=IngestionStatusResponse)
+def list_ingestion_status(
+    limit: int = 50,
+    status: str = "",
+):
+    bounded_limit = min(max(limit, 1), 200)
+    normalized_status = status.strip()
+    store = get_sqlite_store()
+    rows = store.list_document_ingestion_status(
+        limit=bounded_limit,
+        status=normalized_status or None,
+    )
+    summary = store.get_document_ingestion_status_summary()
+    return IngestionStatusResponse(
+        total=int(summary.get("total_count", len(rows))),
+        limit=bounded_limit,
+        status=normalized_status,
+        summary=summary,
+        items=[IngestionStatusItem(**row) for row in rows],
     )
 
 

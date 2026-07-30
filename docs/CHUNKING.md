@@ -184,6 +184,8 @@ chunk_count
 last_ingest_error
 ```
 
+See [INGESTION_STATUS.md](INGESTION_STATUS.md) for the CLI, API, and UI workflow.
+
 The active version constants are defined in:
 
 ```text

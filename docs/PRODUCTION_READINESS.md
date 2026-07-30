@@ -26,7 +26,8 @@ The project has strong local foundations:
 - system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools,
 - local backup and restore tooling for SQLite and Qdrant runtime state,
 - local deployment documentation,
-- versioned incremental ingestion with per-file status tracking and safe Qdrant cleanup.
+- versioned incremental ingestion with per-file status tracking and safe Qdrant cleanup,
+- ingestion status visibility through CLI, API, and UI.
 
 The project is ready for serious local iteration and controlled demos. It still needs deployment, security, monitoring, and broader benchmark coverage before production use.
 
@@ -64,6 +65,7 @@ Completed:
 - Incremental skip behavior for unchanged/current-version PDFs.
 - `--force` re-index option for deliberate rebuilds.
 - Qdrant vector cleanup by `doc_id` during re-ingestion.
+- CLI/API/UI visibility for latest ingestion attempts and failures.
 
 ### Repository Structure
 

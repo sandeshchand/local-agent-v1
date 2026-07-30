@@ -3,7 +3,15 @@ from __future__ import annotations
 import sys
 
 from local_agent.app.bootstrap import bootstrap_app
-from local_agent.app.cli import build_parser, run_ask, run_ingest, run_list_docs, run_list_memory, run_remember
+from local_agent.app.cli import (
+    build_parser,
+    run_ask,
+    run_ingest,
+    run_ingest_status,
+    run_list_docs,
+    run_list_memory,
+    run_remember,
+)
 
 
 def _configure_console_output() -> None:
@@ -22,6 +30,8 @@ def main() ->None:
 
     if args.command == "ingest":
         run_ingest(deps, args.path, force=args.force)
+    elif args.command == "ingest-status":
+        run_ingest_status(deps, limit=args.limit, status=args.status)
     elif args.command == "ask":
         run_ask(deps, args.query, approved_tools=args.approve_tool)
     elif args.command == "list-docs":

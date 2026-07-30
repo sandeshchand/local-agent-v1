@@ -684,21 +684,54 @@ class SQLiteStore:
         conn.commit()
 
     @_locked
-    def list_document_ingestion_status(self, limit: int = 50) -> list[dict[str, Any]]:
+    def list_document_ingestion_status(
+        self,
+        limit: int = 50,
+        *,
+        status: str | None = None,
+    ) -> list[dict[str, Any]]:
         conn = self.connect()
         bounded_limit = max(1, min(int(limit), 200))
+        normalized_status = (status or "").strip()
+        where_sql = ""
+        params: list[Any] = []
+        if normalized_status:
+            where_sql = "WHERE status = ?"
+            params.append(normalized_status)
+        params.append(bounded_limit)
         rows = conn.execute(
-            """
+            f"""
             SELECT source_path, doc_id, title, status, parser_version, chunking_version,
                    embedding_model, chunk_size, chunk_overlap, checksum, page_count,
                    chunk_count, started_at, completed_at, error
             FROM document_ingestion_status
+            {where_sql}
             ORDER BY COALESCE(completed_at, started_at) DESC
             LIMIT ?
             """,
-            (bounded_limit,),
+            params,
         ).fetchall()
         return [dict(row) for row in rows]
+
+    @_locked
+    def get_document_ingestion_status_summary(self) -> dict[str, int]:
+        conn = self.connect()
+        rows = conn.execute(
+            """
+            SELECT status, COUNT(*) AS count
+            FROM document_ingestion_status
+            GROUP BY status
+            """
+        ).fetchall()
+        counts = {str(row["status"] or ""): int(row["count"] or 0) for row in rows}
+        total_count = sum(counts.values())
+        return {
+            "total_count": total_count,
+            "running_count": counts.get("running", 0),
+            "indexed_count": counts.get("indexed", 0),
+            "skipped_count": counts.get("skipped", 0),
+            "failed_count": counts.get("failed", 0),
+        }
 
     @_locked
     def delete_chunks_for_doc(self, doc_id: str) -> None:

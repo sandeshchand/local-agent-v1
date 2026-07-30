@@ -89,12 +89,14 @@ body {
 
 input,
 textarea,
+select,
 button {
   font: inherit;
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   padding: 12px 14px;
   border-radius: 12px;
@@ -105,7 +107,8 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   border-color: #3b82f6;
 }
 
@@ -229,6 +232,153 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
+}
+
+.ingestion-controls {
+  margin-bottom: 10px;
+}
+
+.ingestion-status-summary {
+  margin-bottom: 10px;
+}
+
+.ingestion-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 7px;
+}
+
+.ingestion-summary-card {
+  min-width: 0;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 8px;
+}
+
+.ingestion-summary-card span {
+  display: block;
+  color: #94a3b8;
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+
+.ingestion-summary-card strong {
+  display: block;
+  color: #e5e7eb;
+  font-size: 14px;
+}
+
+.ingestion-filter-note {
+  color: #94a3b8;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.ingestion-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.ingestion-status-item {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 10px;
+}
+
+.ingestion-status-item.ok {
+  border-color: #14532d;
+}
+
+.ingestion-status-item.warn {
+  border-color: #92400e;
+}
+
+.ingestion-status-item.bad {
+  border-color: #7f1d1d;
+}
+
+.ingestion-status-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.ingestion-status-top strong {
+  min-width: 0;
+  color: #f8fafc;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ingestion-status-pill {
+  flex: 0 0 auto;
+  border: 1px solid #475569;
+  border-radius: 999px;
+  padding: 4px 7px;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ingestion-status-pill.ok {
+  border-color: #22c55e;
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.ingestion-status-pill.warn {
+  border-color: #f59e0b;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.ingestion-status-pill.bad {
+  border-color: #ef4444;
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.ingestion-source-path {
+  color: #94a3b8;
+  font-size: 12px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ingestion-meta-grid {
+  display: grid;
+  grid-template-columns: minmax(68px, 0.45fr) minmax(0, 1fr);
+  gap: 4px 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ingestion-meta-grid span {
+  color: #94a3b8;
+}
+
+.ingestion-meta-grid strong {
+  min-width: 0;
+  color: #cbd5e1;
+  overflow-wrap: anywhere;
+}
+
+.ingestion-error-text {
+  border-top: 1px solid #334155;
+  color: #fca5a5;
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 8px;
+  padding-top: 8px;
+  overflow-wrap: anywhere;
 }
 
 .tool-audit-summary-item {
