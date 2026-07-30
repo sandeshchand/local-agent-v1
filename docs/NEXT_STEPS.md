@@ -177,15 +177,19 @@ See [docs/GOLD_QA_COVERAGE.md](GOLD_QA_COVERAGE.md) for the audit and update wor
 
 Goal: protect runtime state outside the local repo.
 
-Define:
+Implemented base controls:
 
-- backup storage location,
-- backup frequency,
-- retention period,
-- restore-drill schedule,
-- who owns rollback decisions.
+- list backups with `scripts/runtime_state.py list-backups`,
+- prune old backups by retention count with dry-run by default,
+- apply prune only with `--apply`,
+- documented local and production-like retention policy.
 
-Local backup/restore already works; this step turns it into an operating policy.
+Remaining production work:
+
+- choose the real off-machine backup storage location,
+- schedule daily backup execution outside the Python app,
+- define restore-drill schedule,
+- decide who owns rollback decisions.
 
 ## 6. Future Guardrail Work
 

@@ -246,6 +246,14 @@ Back up local runtime state before large ingest, parser, chunking, or storage ch
 venv\Scripts\python.exe scripts\runtime_state.py --env-file .env backup
 ```
 
+List and prune old local backups:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py list-backups
+venv\Scripts\python.exe scripts\runtime_state.py prune-backups --keep 7
+venv\Scripts\python.exe scripts\runtime_state.py prune-backups --keep 7 --apply
+```
+
 Restore from a backup only after stopping the web server:
 
 ```powershell

@@ -80,6 +80,44 @@ Check:
 - source paths
 - file counts and sizes
 
+## List Backups
+
+List backups under the default backup root:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py list-backups
+```
+
+List backups under a custom backup root:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py list-backups --backup-root D:\local-agent-backups
+```
+
+The command returns JSON summaries sorted newest first. It includes the backup path, creation time, SQLite/Qdrant artifact presence, artifact sizes, and source runtime paths.
+
+## Prune Old Backups
+
+Prune is dry-run by default. This shows what would be deleted while keeping the newest `7` valid backups:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py prune-backups --keep 7
+```
+
+Actually delete old backups only after reviewing the dry-run output:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py prune-backups --keep 7 --apply
+```
+
+Use a custom backup root:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py prune-backups --backup-root D:\local-agent-backups --keep 14 --apply
+```
+
+Prune only deletes valid backup directories directly under the selected backup root. Directories without `metadata.json` are ignored by listing and are not prune candidates.
+
 ## Restore A Backup
 
 Stop the web server before restore.
@@ -134,9 +172,27 @@ Create a backup before:
 - deleting or resetting local databases,
 - merging large retrieval/indexing changes.
 
+## Retention Policy
+
+For local development:
+
+- keep at least `7` recent local backups,
+- create a backup before every large ingest, parser/chunking change, or storage migration,
+- run prune in dry-run mode first,
+- apply prune only after confirming the backup root and paths.
+
+For production-like deployments:
+
+- create scheduled daily backups,
+- keep local backups for `7` to `14` days,
+- copy backups to off-machine storage,
+- keep weekly off-machine backups for at least `4` weeks,
+- run a restore drill before trusting the policy.
+
 ## Safety Rules
 
 - Do not commit files under `var/backups/`.
 - Do not restore while another app process owns local Qdrant.
 - Keep backup directories outside the repo for long-term storage.
 - For production deployment, copy backups to a separate disk or managed storage.
+- Use `prune-backups` without `--apply` first; the default dry run is there on purpose.

@@ -25,6 +25,7 @@ The project has strong local foundations:
 - tool-audit visibility,
 - system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools,
 - local backup and restore tooling for SQLite and Qdrant runtime state,
+- backup listing and retention pruning with dry-run by default,
 - local deployment documentation,
 - versioned incremental ingestion with per-file status tracking and safe Qdrant cleanup,
 - ingestion status visibility through CLI, API, and UI.
@@ -57,6 +58,7 @@ Data ingestion
 
 - Define supported document formats and maximum file sizes.
 - Keep the local backup and restore process tested for `var/sqlite/app.db` and `var/qdrant/`.
+- Keep backup listing and retention pruning tested before large ingest or storage work.
 
 Completed:
 
@@ -160,13 +162,14 @@ It should also have:
 
 1. Optimize first-query retrieval/model warmup without reducing RAG quality.
 2. Add broader gold QA for new daily PDFs.
-3. Add scheduled/off-machine backup policy for deployed environments.
+3. Add scheduled/off-machine backup execution for deployed environments.
 4. Add authentication and user/session isolation design.
 
 Completed from this list:
 
 - Health-check and system-status UI/API endpoints.
 - Local SQLite and Qdrant backup/restore script, smoke test, and documentation.
+- Backup listing, safe retention pruning, and local retention policy documentation.
 - Memory multi-turn eval, benchmark cases, smoke test, and short-term redaction.
 - Tool audit API, UI tab, category labels, and smoke test.
 - Memory management API, UI tab, delete control, and smoke test.
