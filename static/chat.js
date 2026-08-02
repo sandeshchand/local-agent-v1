@@ -1395,6 +1395,14 @@ function toolAuditTone(event) {
   return "unknown";
 }
 
+function toolRiskTone(event) {
+  const level = String(event.risk_level || "").toLowerCase();
+  if (level === "high") return "high";
+  if (level === "medium") return "medium";
+  if (level === "low") return "low";
+  return "unknown";
+}
+
 function renderToolAudit(payload) {
   const summary = document.getElementById("tool-audit-summary");
   const container = document.getElementById("tool-audit-list");
@@ -1413,6 +1421,9 @@ function renderToolAudit(payload) {
       ["Denied", counts.deny_count],
       ["Approved", counts.approved_count],
       ["Executed", counts.executed_count],
+      ["Blocked", counts.blocked_count],
+      ["High risk", counts.high_risk_count],
+      ["Write/delete", counts.write_delete_count],
     ].forEach(([label, value]) => {
       const item = createElement("div", "tool-audit-summary-item");
       item.appendChild(createElement("span", "", label));
@@ -1441,6 +1452,13 @@ function renderToolAudit(payload) {
 
     const meta = createElement("div", "tool-meta-row");
     meta.appendChild(createElement("span", "tool-approval-pill", event.tool_category || "tool"));
+    meta.appendChild(
+      createElement(
+        "span",
+        `tool-risk-pill ${toolRiskTone(event)}`,
+        `${event.risk_level || "unknown"} risk`
+      )
+    );
     meta.appendChild(createElement("span", `tool-source-pill ${event.tool_source || "local"}`, event.tool_source || "unknown"));
     meta.appendChild(
       createElement(
@@ -1462,6 +1480,9 @@ function renderToolAudit(payload) {
       executed: event.executed,
       success: event.success,
       reason: event.reason,
+      risk: event.risk_reason,
+      blocked: event.blocked,
+      policy: event.policy_name,
       time: event.created_at,
     });
     item.appendChild(details);

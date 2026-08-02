@@ -43,6 +43,12 @@ def build_tool_audit(
                 or {}
             )
             category = tool_category(tool_name, source=source, metadata=metadata)
+            risk_level, risk_reason = guardrail_risk(
+                status=str(step.get("status") or "unknown"),
+                tool_category=category,
+                requires_approval=bool(step.get("requires_approval")),
+                executed=matching_tool_step is not None,
+            )
             events.append(
                 {
                     "trace_id": int(row["trace_id"]),
@@ -60,6 +66,9 @@ def build_tool_audit(
                     "success": _tool_success(tool_results, tool_name, matching_tool_step),
                     "policy_name": step.get("policy_name") or "",
                     "duration_ms": float(step.get("duration_ms") or 0.0),
+                    "risk_level": risk_level,
+                    "risk_reason": risk_reason,
+                    "blocked": _is_blocked(step, matching_tool_step),
                 }
             )
 
@@ -70,6 +79,15 @@ def build_tool_audit(
         "needs_approval_count": sum(1 for event in events if event["status"] == "needs_approval"),
         "approved_count": sum(1 for event in events if event["approved"]),
         "executed_count": sum(1 for event in events if event["executed"]),
+        "blocked_count": sum(1 for event in events if event["blocked"]),
+        "high_risk_count": sum(1 for event in events if event["risk_level"] == "high"),
+        "medium_risk_count": sum(1 for event in events if event["risk_level"] == "medium"),
+        "low_risk_count": sum(1 for event in events if event["risk_level"] == "low"),
+        "write_delete_count": sum(
+            1 for event in events if event["tool_category"] in {"write_file", "delete_file"}
+        ),
+        "category_counts": _count_by(events, "tool_category"),
+        "risk_counts": _count_by(events, "risk_level"),
     }
     return {"summary": summary, "items": events}
 
@@ -101,6 +119,40 @@ def tool_category(
     if source == "mcp":
         return "mcp_read"
     return "local_read"
+
+
+def guardrail_risk(
+    *,
+    status: str,
+    tool_category: str,
+    requires_approval: bool,
+    executed: bool,
+) -> tuple[str, str]:
+    normalized_status = status.lower()
+    if tool_category in {"write_file", "delete_file"}:
+        return "high", "Write/delete-capable tool category."
+    if normalized_status == "deny":
+        return "high", "Guardrails denied this tool action."
+    if normalized_status == "needs_approval":
+        return "medium", "Execution is blocked until request-scoped approval."
+    if requires_approval:
+        return "medium", "Tool requires explicit request approval."
+    if executed and tool_category in {"read_file", "read_db", "mcp_read", "web_read"}:
+        return "low", "Read-only tool execution."
+    return "low", "Low-risk local/read-only tool decision."
+
+
+def _is_blocked(step: dict[str, Any], matching_tool_step: dict[str, Any] | None) -> bool:
+    status = str(step.get("status") or "").lower()
+    return status in {"deny", "needs_approval"} and matching_tool_step is None
+
+
+def _count_by(items: list[dict[str, Any]], field: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        key = str(item.get(field) or "unknown")
+        counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def _parse_json(raw: Any, default: Any) -> Any:

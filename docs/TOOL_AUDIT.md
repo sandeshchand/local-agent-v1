@@ -19,6 +19,8 @@ The API and UI show one audit row per `guardrail` trace step:
 - request approval status,
 - execution status,
 - tool success,
+- risk level,
+- blocked status,
 - guardrail reason,
 - timestamp.
 
@@ -46,6 +48,25 @@ local_read
 
 These categories are for visibility first. They prepare the system for stronger future policies around write/delete tools.
 
+## Risk Visibility
+
+The audit also adds a generic risk label:
+
+```text
+low
+medium
+high
+```
+
+High risk is used for denied actions and write/delete-capable tool categories. Medium risk is used for approval-required or approval-pending actions. Low risk is used for normal read-only tool decisions.
+
+The UI highlights:
+
+- blocked actions,
+- high-risk actions,
+- write/delete categories,
+- risk reason for each guarded tool call.
+
 ## API
 
 Endpoint:
@@ -64,7 +85,10 @@ Response shape:
     "deny_count": 1,
     "needs_approval_count": 1,
     "approved_count": 1,
-    "executed_count": 2
+    "executed_count": 2,
+    "blocked_count": 2,
+    "high_risk_count": 2,
+    "write_delete_count": 1
   },
   "items": []
 }

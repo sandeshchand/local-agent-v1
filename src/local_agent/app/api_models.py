@@ -296,10 +296,13 @@ class ToolAuditItem(BaseModel):
     success: bool | None = None
     policy_name: str = ""
     duration_ms: float = 0.0
+    risk_level: str = "low"
+    risk_reason: str = ""
+    blocked: bool = False
 
 
 class ToolAuditResponse(BaseModel):
-    summary: dict[str, int] = Field(default_factory=dict)
+    summary: dict[str, Any] = Field(default_factory=dict)
     items: list[ToolAuditItem]
 
 

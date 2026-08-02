@@ -464,6 +464,32 @@ button:disabled {
   color: #fecaca;
 }
 
+.tool-risk-pill {
+  border: 1px solid #475569;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #cbd5e1;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tool-risk-pill.low {
+  border-color: #22c55e;
+  color: #bbf7d0;
+}
+
+.tool-risk-pill.medium {
+  border-color: #f59e0b;
+  color: #fde68a;
+}
+
+.tool-risk-pill.high {
+  border-color: #ef4444;
+  color: #fecaca;
+}
+
 .tool-audit-item p {
   margin: 8px 0;
   color: #cbd5e1;

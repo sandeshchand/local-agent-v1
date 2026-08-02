@@ -22,7 +22,7 @@ Implemented:
 - Memory management API and UI tab for inspecting/deleting long-term memory.
 - Tool-call guardrails with `allow`, `deny`, and `needs_approval`.
 - Request-scoped approval for approval-required tools.
-- Tool audit API and UI tab for guardrail/tool execution visibility.
+- Tool audit API and UI tab for guardrail/tool execution visibility, including risk labels and blocked-action summaries.
 - Read-only weather tool.
 - MCP-style File and SQLite connectors.
 - UI trace view, compact trace path summaries, compact source box, feedback, eval drafts, document library, and tools panel.
@@ -215,10 +215,17 @@ Remaining production work:
 
 Do this before adding write/delete tools.
 
+Completed base:
+
+- generic file-operation categories in the audit layer,
+- low/medium/high risk visibility,
+- blocked-action counts,
+- write/delete category highlighting.
+
 Next guardrail tasks:
 
-- add file-operation categories,
 - add explicit path allowlists for writable tools,
+- add stronger write/delete policy rules,
 - extend audit filters if the trace volume grows,
 - keep approval request-scoped unless there is a real user/session permission model.
 

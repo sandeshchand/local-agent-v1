@@ -98,6 +98,8 @@ GET /api/tools/audit
 
 The web UI has an `Audit` workspace tab that shows recent guardrail decisions, tool categories, approval status, execution status, and links back to the original trace.
 
+The audit also highlights blocked actions, high-risk actions, and write/delete categories. This is visibility only; it does not change policy decisions.
+
 ## Design Rules
 
 Do:
@@ -132,6 +134,6 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_feat
 
 ## Next Improvements
 
-1. Add file-operation categories before write/delete tools are introduced.
-2. Strengthen path policy before wiring writable File MCP tools.
-3. Add stronger policy rules for any future write/delete tools.
+1. Strengthen path policy before wiring writable File MCP tools.
+2. Add stronger policy rules for any future write/delete tools.
+3. Add user/role-aware approval policy before multi-user write tools.
