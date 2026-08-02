@@ -55,7 +55,6 @@ class ReadOnlyFileMCPClient:
         self.max_read_bytes = max(1000, min(max_read_bytes, 50000))
 
     def list_tools(self) -> dict[str, list[dict[str, Any]]]:
-        read_only = {"readOnlyHint": True}
         return {
             "tools": [
                 {
@@ -68,7 +67,7 @@ class ReadOnlyFileMCPClient:
                             "max_entries": {"type": "integer"},
                         },
                     },
-                    "annotations": read_only,
+                    "annotations": self._tool_annotations(allow_empty_path=True),
                 },
                 {
                     "name": "read_text_file",
@@ -81,7 +80,7 @@ class ReadOnlyFileMCPClient:
                         },
                         "required": ["path"],
                     },
-                    "annotations": read_only,
+                    "annotations": self._tool_annotations(),
                 },
                 {
                     "name": "file_info",
@@ -91,7 +90,7 @@ class ReadOnlyFileMCPClient:
                         "properties": {"path": {"type": "string"}},
                         "required": ["path"],
                     },
-                    "annotations": read_only,
+                    "annotations": self._tool_annotations(),
                 },
             ]
         }
@@ -254,6 +253,19 @@ class ReadOnlyFileMCPClient:
             return path.resolve().relative_to(self.base_dir).as_posix()
         except ValueError:
             return str(path)
+
+    def _tool_annotations(self, *, allow_empty_path: bool = False) -> dict[str, Any]:
+        return {
+            "readOnlyHint": True,
+            "localAgentToolCategory": "read_file",
+            "localAgentPathPolicy": {
+                "path_args": ["path"],
+                "base_dir": str(self.base_dir),
+                "allowed_roots": [str(root) for root in self.allowed_roots],
+                "allow_empty_path": allow_empty_path,
+                "block_sensitive": True,
+            },
+        }
 
     def _failure(self, tool: str, path: str, error: str) -> dict[str, Any]:
         return {

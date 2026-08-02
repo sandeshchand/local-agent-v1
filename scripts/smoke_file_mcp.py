@@ -16,9 +16,9 @@ class ChatClientStub:
         raise AssertionError("Structured File MCP output should not call the LLM.")
 
 
-def guardrail_status(registry: ToolRegistry, tool_name: str) -> str:
+def guardrail_status(registry: ToolRegistry, tool_name: str, path: str = "docs") -> str:
     return GuardrailPolicy().evaluate_tool_call(
-        AgentAction(action_type="tool_call", tool_call={"name": tool_name, "args": {"path": "docs"}}),
+        AgentAction(action_type="tool_call", tool_call={"name": tool_name, "args": {"path": path}}),
         registry,
     ).status
 
@@ -52,6 +52,9 @@ def main() -> None:
         assert {read_tool, list_tool, info_tool}.issubset(names)
         assert registry.get_tool_spec(read_tool).requires_approval is False  # type: ignore[union-attr]
         assert guardrail_status(registry, read_tool) == "allow"
+        assert guardrail_status(registry, read_tool, "secret.env") == "deny"
+        assert guardrail_status(registry, read_tool, "data/.env") == "deny"
+        assert guardrail_status(registry, list_tool, "") == "allow"
 
         list_result = registry.execute(list_tool, path="docs")
         list_payload = json.loads(list_result.output or "{}")

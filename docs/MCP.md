@@ -14,6 +14,7 @@ Implemented:
 - approval-required-by-default behavior for MCP tools
 - read-only MCP tool support through `readOnlyHint` or `read_only`
 - read-only local file tools for allowed roots
+- guardrail path policy metadata for File MCP tools
 - read-only SQLite inspection tools for tables, traces, and feedback
 - `/api/tools` endpoint for registered tool visibility
 - MCP adapter smoke test
@@ -120,6 +121,11 @@ Do not add broad roots like `.` or your home directory unless you are comfortabl
 
 Even inside an allowed root, File MCP blocks hidden files and common secret/key files such as `.env`, private key names, and `.pem`/`.key` files. Template files such as `.env.example` remain readable.
 
+The same path boundary is now also checked by guardrails before tool execution. File MCP still performs its own validation after that. This gives two layers:
+
+- guardrails deny unsafe paths early and write the denial into the trace,
+- File MCP validates paths again before reading anything from disk.
+
 ## How To Use SQLite MCP Tools
 
 SQLite MCP tools inspect the local app database through narrow read-only methods on `SQLiteStore`.
@@ -167,7 +173,7 @@ read_only = true
 readOnly = true
 ```
 
-All MCP tools still pass through the existing guardrail policy before execution. File MCP tools also enforce path allowlists. SQLite MCP tools are read-only and use predefined store methods instead of raw SQL from the user.
+All MCP tools still pass through the existing guardrail policy before execution. File MCP tools attach path-policy metadata to their registered `ToolSpec`, so guardrails can deny paths outside allowed roots before the connector runs. SQLite MCP tools are read-only and use predefined store methods instead of raw SQL from the user.
 
 ## Evidence Boundary
 
@@ -211,5 +217,5 @@ venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ## Next MCP Work
 
 1. Add a concrete MCP client wrapper for a chosen transport.
-2. Add stronger path policy before enabling file write/delete tools.
+2. Add stronger write/delete policy before enabling file write/delete tools.
 3. Add a real MCP transport client when an external MCP server is needed.

@@ -36,6 +36,7 @@ For a tool call:
 
 - missing tool call: `deny`
 - unknown tool name: `deny`
+- registered path-aware tool with an unsafe path: `deny`
 - registered tool with `requires_approval=True`: `needs_approval`
 - registered tool with `requires_approval=True` and request-scoped approval: `allow`
 - registered tool with `requires_approval=False`: `allow`
@@ -43,6 +44,27 @@ For a tool call:
 The first registered tool, `list_documents`, remains allowed because it is read-only and registered with `requires_approval=False`.
 
 The `get_current_weather` tool is also allowed by default because it is a narrow read-only current-info tool. Broad web search should use stricter approval.
+
+## Path Policy
+
+File-like tools can attach a generic `path_policy` to `ToolSpec.metadata`.
+
+The current File MCP tools register:
+
+- path argument names, currently `path`,
+- a base directory,
+- allowed roots,
+- whether an empty path is allowed for root listing,
+- sensitive-file blocking.
+
+Guardrails check this policy before approval and before tool execution. A path-aware tool is denied when:
+
+- the required path argument is missing,
+- the path cannot be resolved safely,
+- the resolved path is outside the allowed roots,
+- the path targets a hidden or sensitive file such as `.env`, private keys, or `.pem`/`.key` files.
+
+This duplicates the File MCP client's own root and sensitive-file checks on purpose. The guardrail layer blocks unsafe requests early and records the decision in traces, while the tool layer remains a second safety boundary.
 
 ## Request-Scoped Approval
 
@@ -134,6 +156,6 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_feat
 
 ## Next Improvements
 
-1. Strengthen path policy before wiring writable File MCP tools.
-2. Add stronger policy rules for any future write/delete tools.
-3. Add user/role-aware approval policy before multi-user write tools.
+1. Add stronger policy rules for any future write/delete tools.
+2. Add user/role-aware approval policy before multi-user write tools.
+3. Add audit filters if tool trace volume grows.
