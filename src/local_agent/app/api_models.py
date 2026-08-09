@@ -22,6 +22,8 @@ class CitationItem(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     trace_id: int
+    user_id: str = "local"
+    requested_session_id: str = "default"
     session_id: str = "default"
     mode: str
     reason: str =""

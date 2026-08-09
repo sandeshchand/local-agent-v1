@@ -60,8 +60,9 @@ The latest work moved the project closer to production readiness and improved RA
 - Added gold QA coverage auditing with `scripts/audit_gold_qa_coverage.py`.
 - Added backup listing and retention pruning with dry-run by default.
 - Added optional API token auth for `/api/*`.
-- Added request session isolation for traces, feedback, memory, and tool audit.
-- Added a UI `Access` panel for token/session settings.
+- Added request user/session isolation for traces, feedback, memory, and tool audit.
+- Added a UI `Access` panel for token, user, and session settings.
+- Added user namespace isolation so authenticated users with the same visible session label store traces, feedback, memory, and tool audit under separate effective sessions.
 - Added stronger guardrail audit visibility with risk labels, blocked-action counts, and write/delete category highlighting.
 - Added guardrail path-policy checks for File MCP tools before execution.
 - Added write/delete guardrail policy so future mutating tools require explicit metadata, path policy, and request approval.
@@ -87,6 +88,7 @@ Latest completed work:
 - Added `AUTH_ENABLED` / `AUTH_TOKEN` config.
 - Added `docs/AUTHENTICATION.md`.
 - Added `scripts/smoke_auth.py`.
+- Added `X-Local-Agent-User` support and UI user id settings.
 
 First validation tomorrow:
 
@@ -100,6 +102,7 @@ Then test the UI manually:
 
 - start the web app with `scripts\start_web.ps1`,
 - open the `Access` panel,
+- save a user id,
 - save a session id,
 - ask one question,
 - confirm traces, feedback, memory, and tool audit still load,
@@ -107,7 +110,7 @@ Then test the UI manually:
 
 Recommended next implementation:
 
-- design production user accounts and per-user document/index isolation,
+- design per-user document/index isolation,
 - or add scheduled/off-machine backup execution.
 
 Do not add more answer fast paths unless a new eval or trace shows a repeated generic failure pattern.
@@ -134,7 +137,7 @@ Do not add more answer fast paths unless a new eval or trace shows a repeated ge
 4. Continue production readiness
    - Done: local backup retention controls.
    - Done: API token auth v1.
-   - Done: request session isolation for traces, feedback, memory, and tool audit.
+   - Done: request user/session isolation for traces, feedback, memory, and tool audit.
    - Next: scheduled/off-machine backup execution.
    - Next: production user accounts and per-user document/index isolation.
 

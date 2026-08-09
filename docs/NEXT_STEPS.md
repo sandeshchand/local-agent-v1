@@ -29,7 +29,7 @@ Implemented:
 - System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
 - Runtime backup and restore for local SQLite and Qdrant state.
 - Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
-- Config-gated API token authentication and request session isolation for traces, feedback, memory, and tool audit.
+- Config-gated API token authentication and request user/session isolation for traces, feedback, memory, and tool audit.
 - Answer-generation fast path for high-confidence citation-backed extractive answers.
 - Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
 - Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
@@ -200,8 +200,8 @@ Implemented v1:
 
 - optional API token authentication through `AUTH_ENABLED` and `AUTH_TOKEN`,
 - `/api/*` protection when auth is enabled,
-- UI `Access` panel for token and session id,
-- session-scoped traces, feedback, memory, and tool-audit views,
+- UI `Access` panel for token, user id, and session id,
+- user/session-scoped traces, feedback, memory, and tool-audit views,
 - smoke coverage in `scripts/smoke_auth.py`.
 
 Remaining production work:

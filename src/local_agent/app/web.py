@@ -40,12 +40,13 @@ from local_agent.app.api_models import (
     TraceSummary,
     ToolItem,
 )
-from local_agent.app.auth import AuthIdentity, authenticate_request, sanitize_session_id
+from local_agent.app.auth import AuthIdentity, authenticate_request, sanitize_session_id, sanitize_user_id
 from local_agent.app.bootstrap import bootstrap_app
 from local_agent.app.config import load_config
 from local_agent.app.dependencies import AppDependencies
 from local_agent.evaluation.eval_candidates import (
     create_feedback_eval_candidate,
+    load_feedback_eval_candidates,
     list_feedback_eval_candidates,
     promote_feedback_eval_candidate,
     update_feedback_eval_candidate,
@@ -186,15 +187,20 @@ def current_auth_identity(request: Request | None = None) -> AuthIdentity:
         return AuthIdentity(
             enabled=False,
             authenticated=False,
+            user_id="local",
+            requested_session_id="default",
             session_id="default",
         )
     identity = getattr(request.state, "auth_identity", None)
     if isinstance(identity, AuthIdentity):
         return identity
+    fallback_session = sanitize_session_id(request.headers.get("X-Local-Agent-Session"))
     return AuthIdentity(
         enabled=False,
         authenticated=False,
-        session_id=sanitize_session_id(request.headers.get("X-Local-Agent-Session")),
+        user_id=sanitize_user_id(request.headers.get("X-Local-Agent-User"), fallback="local"),
+        requested_session_id=fallback_session,
+        session_id=fallback_session,
     )
 
 
@@ -220,6 +226,28 @@ def ensure_memory_access(memory: dict[str, Any], identity: AuthIdentity) -> None
         return
     if memory.get("session_id") != identity.session_id:
         raise HTTPException(status_code=404, detail="Memory item not found.")
+
+
+def eval_candidate_visible(candidate: dict[str, Any], identity: AuthIdentity) -> bool:
+    if not identity.enabled:
+        return True
+    trace_id = candidate.get("trace_id")
+    if trace_id is None:
+        return False
+    try:
+        trace = get_sqlite_store().get_trace(int(trace_id))
+    except (TypeError, ValueError):
+        return False
+    return trace is not None and trace.get("session_id") == identity.session_id
+
+
+def ensure_eval_candidate_access(candidate_id: str, identity: AuthIdentity) -> None:
+    if not identity.enabled:
+        return
+    candidates = load_feedback_eval_candidates(EVAL_CANDIDATES_PATH)
+    candidate = next((item for item in candidates if item.get("id") == candidate_id), None)
+    if candidate is None or not eval_candidate_visible(candidate, identity):
+        raise HTTPException(status_code=404, detail=f"Eval candidate {candidate_id} not found.")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -440,16 +468,27 @@ def create_eval_candidate(request_data: EvalCandidateCreateRequest, request: Req
 
 
 @app.get("/api/eval-candidates", response_model=list[EvalCandidateItem])
-def list_eval_candidates(limit: int = 20):
-    rows = list_feedback_eval_candidates(
-        EVAL_CANDIDATES_PATH,
-        limit=min(max(limit, 1), 100),
-    )
+def list_eval_candidates(request: Request = None, limit: int = 20):
+    bounded_limit = min(max(limit, 1), 100)
+    identity = current_auth_identity(request)
+    if identity.enabled:
+        candidates = load_feedback_eval_candidates(EVAL_CANDIDATES_PATH)
+        rows = [
+            candidate
+            for candidate in candidates
+            if eval_candidate_visible(candidate, identity)
+        ][:bounded_limit]
+    else:
+        rows = list_feedback_eval_candidates(
+            EVAL_CANDIDATES_PATH,
+            limit=bounded_limit,
+        )
     return [EvalCandidateItem(**row) for row in rows]
 
 
 @app.patch("/api/eval-candidates/{candidate_id}", response_model=EvalCandidateItem)
-def update_eval_candidate(candidate_id: str, request_data: EvalCandidateUpdateRequest):
+def update_eval_candidate(candidate_id: str, request_data: EvalCandidateUpdateRequest, request: Request = None):
+    ensure_eval_candidate_access(candidate_id, current_auth_identity(request))
     updates = request_data.model_dump(exclude_none=True)
     try:
         candidate = update_feedback_eval_candidate(
@@ -465,7 +504,8 @@ def update_eval_candidate(candidate_id: str, request_data: EvalCandidateUpdateRe
 
 
 @app.post("/api/eval-candidates/{candidate_id}/promote", response_model=EvalCandidatePromoteResponse)
-def promote_eval_candidate(candidate_id: str):
+def promote_eval_candidate(candidate_id: str, request: Request = None):
+    ensure_eval_candidate_access(candidate_id, current_auth_identity(request))
     try:
         result = promote_feedback_eval_candidate(
             candidate_id,
@@ -480,7 +520,8 @@ def promote_eval_candidate(candidate_id: str):
 
 
 @app.post("/api/eval-candidates/{candidate_id}/run-eval", response_model=EvalCandidateRunResponse)
-def run_eval_candidate(candidate_id: str):
+def run_eval_candidate(candidate_id: str, request: Request = None):
+    ensure_eval_candidate_access(candidate_id, current_auth_identity(request))
     try:
         load_gold_eval_item(candidate_id, GOLD_EVAL_PATH)
         result = run_candidate_eval(
@@ -508,6 +549,8 @@ def chat(request_data: ChatRequest, request: Request = None):
     return ChatResponse(
         answer=results["answer"],
         trace_id=results["trace_id"],
+        user_id=identity.user_id,
+        requested_session_id=identity.requested_session_id,
         session_id=results.get("session_id") or identity.session_id,
         mode=results["mode"],
         reason=results["reason"],
