@@ -23,6 +23,11 @@ _SENSITIVE_SUFFIXES = {
     ".pfx",
 }
 
+_WRITE_DELETE_CATEGORIES = {
+    "write_file",
+    "delete_file",
+}
+
 
 class GuardrailPolicy:
     """Policy checks for actions that can execute tools."""
@@ -69,6 +74,14 @@ class GuardrailPolicy:
         if path_decision is not None:
             return path_decision
 
+        write_delete_decision = self._evaluate_write_delete_policy(
+            action,
+            tool_spec,
+            approved_tool_names,
+        )
+        if write_delete_decision is not None:
+            return write_delete_decision
+
         if tool_spec.requires_approval:
             if tool_name in approved_tool_names:
                 return GuardrailDecision(
@@ -113,6 +126,127 @@ class GuardrailPolicy:
         if hasattr(tool_call, "args"):
             return tool_call.args or {}
         return tool_call.get("args", {}) or {}
+
+    def _evaluate_write_delete_policy(
+        self,
+        action: AgentAction,
+        tool_spec: Any,
+        approved_tool_names: set[str],
+    ) -> GuardrailDecision | None:
+        tool_name = self._tool_name(action)
+        category = self._tool_category(tool_name or "", tool_spec)
+        if category not in _WRITE_DELETE_CATEGORIES:
+            return None
+
+        policy = self._write_delete_policy(tool_spec)
+        if not bool(policy.get("enabled")):
+            return self._write_delete_decision(
+                action,
+                tool_name,
+                "deny",
+                (
+                    f"Tool '{tool_name}' is categorized as '{category}', but write/delete "
+                    "tool execution is disabled unless ToolSpec.metadata.write_delete_policy.enabled=true."
+                ),
+                approved=False,
+            )
+
+        if self._path_policy(tool_spec) is None:
+            return self._write_delete_decision(
+                action,
+                tool_name,
+                "deny",
+                f"Tool '{tool_name}' must define a path_policy before write/delete execution.",
+                approved=False,
+            )
+
+        allowed_categories = self._string_set(
+            policy.get("allowed_categories") or policy.get("allowedCategories") or []
+        )
+        if category not in allowed_categories:
+            return self._write_delete_decision(
+                action,
+                tool_name,
+                "deny",
+                f"Tool '{tool_name}' is not explicitly allowed for '{category}' actions.",
+                approved=False,
+            )
+
+        if category == "delete_file" and not bool(policy.get("allow_delete") or policy.get("allowDelete")):
+            return self._write_delete_decision(
+                action,
+                tool_name,
+                "deny",
+                f"Tool '{tool_name}' is not explicitly allowed to delete files.",
+                approved=False,
+            )
+
+        if tool_name not in approved_tool_names:
+            return self._write_delete_decision(
+                action,
+                tool_name,
+                "needs_approval",
+                f"Tool '{tool_name}' is a write/delete action and requires request approval.",
+                approved=False,
+            )
+
+        return self._write_delete_decision(
+            action,
+            tool_name,
+            "allow",
+            f"Tool '{tool_name}' passed write/delete policy and was approved for this request.",
+            approved=True,
+        )
+
+    def _tool_category(self, tool_name: str, tool_spec: Any) -> str:
+        metadata = getattr(tool_spec, "metadata", {}) or {}
+        explicit_category = metadata.get("category")
+        if explicit_category:
+            return str(explicit_category)
+
+        annotations = metadata.get("annotations") or {}
+        if isinstance(annotations, dict):
+            annotated_category = annotations.get("localAgentToolCategory")
+            if annotated_category:
+                return str(annotated_category)
+
+        lower_name = tool_name.lower()
+        if any(term in lower_name for term in ["delete", "remove", "unlink"]):
+            return "delete_file"
+        if any(term in lower_name for term in ["write", "save", "create", "update"]):
+            return "write_file"
+        return "local_read"
+
+    def _write_delete_policy(self, tool_spec: Any) -> dict[str, Any]:
+        metadata = getattr(tool_spec, "metadata", {}) or {}
+        policy = metadata.get("write_delete_policy")
+        if isinstance(policy, dict):
+            return policy
+        annotations = metadata.get("annotations") or {}
+        if isinstance(annotations, dict):
+            annotated_policy = annotations.get("localAgentWriteDeletePolicy")
+            if isinstance(annotated_policy, dict):
+                return annotated_policy
+        return {}
+
+    def _write_delete_decision(
+        self,
+        action: AgentAction,
+        tool_name: str | None,
+        status: str,
+        reason: str,
+        *,
+        approved: bool,
+    ) -> GuardrailDecision:
+        return GuardrailDecision(
+            status=status,  # type: ignore[arg-type]
+            reason=reason,
+            action_type=action.action_type,
+            tool_name=tool_name,
+            requires_approval=True,
+            approved=approved,
+            policy_name=f"{self.policy_name}.write_delete_policy",
+        )
 
     def _evaluate_path_policy(self, action: AgentAction, tool_spec: Any) -> GuardrailDecision | None:
         policy = self._path_policy(tool_spec)
@@ -243,3 +377,10 @@ class GuardrailPolicy:
             return root.relative_to(base_dir).as_posix()
         except ValueError:
             return str(root)
+
+    def _string_set(self, value: Any) -> set[str]:
+        if isinstance(value, str):
+            return {value}
+        if isinstance(value, (list, tuple, set)):
+            return {str(item) for item in value if str(item).strip()}
+        return set()

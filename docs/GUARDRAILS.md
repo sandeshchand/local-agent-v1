@@ -12,7 +12,7 @@ It decides:
 - `deny`: the tool call is missing or the tool is not registered.
 - `needs_approval`: the tool is registered, requires approval, and was not approved for this request.
 
-MCP tools and file-operation guardrails will build on this layer later.
+MCP tools, File MCP path policy, and future write/delete tools all pass through this same layer.
 
 ## Flow
 
@@ -37,6 +37,9 @@ For a tool call:
 - missing tool call: `deny`
 - unknown tool name: `deny`
 - registered path-aware tool with an unsafe path: `deny`
+- write/delete-like tool without explicit write/delete policy: `deny`
+- write/delete-like tool without `path_policy`: `deny`
+- write/delete-like tool without request approval: `needs_approval`
 - registered tool with `requires_approval=True`: `needs_approval`
 - registered tool with `requires_approval=True` and request-scoped approval: `allow`
 - registered tool with `requires_approval=False`: `allow`
@@ -65,6 +68,44 @@ Guardrails check this policy before approval and before tool execution. A path-a
 - the path targets a hidden or sensitive file such as `.env`, private keys, or `.pem`/`.key` files.
 
 This duplicates the File MCP client's own root and sensitive-file checks on purpose. The guardrail layer blocks unsafe requests early and records the decision in traces, while the tool layer remains a second safety boundary.
+
+## Write/Delete Policy
+
+Write/delete-capable tools are blocked by default, even if they are registered and even if the caller tries to approve them.
+
+A future write/delete tool must define all of these before it can run:
+
+- `metadata.category`, such as `write_file` or `delete_file`,
+- `metadata.path_policy`,
+- `metadata.write_delete_policy.enabled=true`,
+- `metadata.write_delete_policy.allowed_categories`,
+- request-scoped approval through `approved_tools`.
+
+Delete tools also require:
+
+```text
+metadata.write_delete_policy.allow_delete=true
+```
+
+Example shape:
+
+```python
+metadata={
+    "category": "write_file",
+    "path_policy": {
+        "path_args": ["path"],
+        "base_dir": "...",
+        "allowed_roots": ["..."],
+        "block_sensitive": True,
+    },
+    "write_delete_policy": {
+        "enabled": True,
+        "allowed_categories": ["write_file"],
+    },
+}
+```
+
+This means approval alone is not a safety boundary. The tool must also advertise that it is intended to mutate files and exactly which mutation category is allowed.
 
 ## Request-Scoped Approval
 
@@ -129,13 +170,15 @@ Do:
 - keep guardrails generic and independent of PDF content,
 - check guardrails before tool execution,
 - record every guardrail decision in traces,
-- use `ToolSpec.requires_approval` for tool-level approval requirements.
+- use `ToolSpec.requires_approval` for tool-level approval requirements,
+- require explicit write/delete policy before any mutating tool can run.
 
 Do not:
 
 - use guardrails to optimize retrieval answers,
 - treat tool output as PDF citation evidence,
 - add document-specific allow/deny rules,
+- rely on approval alone for write/delete tools,
 - persist approval from one request into another request.
 
 ## Verification
@@ -156,6 +199,6 @@ venv\Scripts\python.exe scripts\eval_rag_quality.py --ids docker_lazydocker_feat
 
 ## Next Improvements
 
-1. Add stronger policy rules for any future write/delete tools.
-2. Add user/role-aware approval policy before multi-user write tools.
-3. Add audit filters if tool trace volume grows.
+1. Add user/role-aware approval policy before multi-user write tools.
+2. Add audit filters if tool trace volume grows.
+3. Keep write/delete File MCP tools disabled until there is a real product workflow.

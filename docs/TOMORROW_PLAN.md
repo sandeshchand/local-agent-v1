@@ -64,6 +64,7 @@ The latest work moved the project closer to production readiness and improved RA
 - Added a UI `Access` panel for token/session settings.
 - Added stronger guardrail audit visibility with risk labels, blocked-action counts, and write/delete category highlighting.
 - Added guardrail path-policy checks for File MCP tools before execution.
+- Added write/delete guardrail policy so future mutating tools require explicit metadata, path policy, and request approval.
 
 ## First Task Tomorrow
 
@@ -106,8 +107,8 @@ Then test the UI manually:
 
 Recommended next implementation:
 
-- add stronger write/delete policy before enabling any write-capable File MCP tools,
-- or design production user accounts and per-user document/index isolation.
+- design production user accounts and per-user document/index isolation,
+- or add scheduled/off-machine backup execution.
 
 Do not add more answer fast paths unless a new eval or trace shows a repeated generic failure pattern.
 
@@ -141,7 +142,8 @@ Do not add more answer fast paths unless a new eval or trace shows a repeated ge
    - Keep File MCP and SQLite MCP read-only for now.
    - Done: stronger guardrail audit visibility before enabling any write-capable tools.
    - Done: explicit path policy before writable File MCP tools.
-   - Next: add stronger write/delete policy before writable File MCP tools.
+   - Done: stronger write/delete policy before writable File MCP tools.
+   - Next: keep write/delete tools disabled until there is a concrete product workflow.
    - Plan true external MCP transport only when there is a concrete tool use case.
 
 ## Validation Commands

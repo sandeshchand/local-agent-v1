@@ -15,6 +15,7 @@ Implemented:
 - read-only MCP tool support through `readOnlyHint` or `read_only`
 - read-only local file tools for allowed roots
 - guardrail path policy metadata for File MCP tools
+- guardrail write/delete policy for future mutating File MCP tools
 - read-only SQLite inspection tools for tables, traces, and feedback
 - `/api/tools` endpoint for registered tool visibility
 - MCP adapter smoke test
@@ -173,7 +174,15 @@ read_only = true
 readOnly = true
 ```
 
-All MCP tools still pass through the existing guardrail policy before execution. File MCP tools attach path-policy metadata to their registered `ToolSpec`, so guardrails can deny paths outside allowed roots before the connector runs. SQLite MCP tools are read-only and use predefined store methods instead of raw SQL from the user.
+All MCP tools still pass through the existing guardrail policy before execution. File MCP tools attach path-policy metadata to their registered `ToolSpec`, so guardrails can deny paths outside allowed roots before the connector runs. Write/delete-like tools are denied unless they also define explicit `write_delete_policy` metadata and receive request-scoped approval. SQLite MCP tools are read-only and use predefined store methods instead of raw SQL from the user.
+
+Approval alone does not enable write/delete. Future writable File MCP tools must also define:
+
+- `metadata.category`,
+- `metadata.path_policy`,
+- `metadata.write_delete_policy.enabled=true`,
+- allowed mutation categories,
+- `allow_delete=true` for delete operations.
 
 ## Evidence Boundary
 
@@ -217,5 +226,5 @@ venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ## Next MCP Work
 
 1. Add a concrete MCP client wrapper for a chosen transport.
-2. Add stronger write/delete policy before enabling file write/delete tools.
+2. Keep file write/delete tools disabled until a concrete product workflow exists.
 3. Add a real MCP transport client when an external MCP server is needed.

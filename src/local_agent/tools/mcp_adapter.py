@@ -68,10 +68,13 @@ class MCPToolAdapter:
             }
             category = definition.annotations.get("localAgentToolCategory")
             path_policy = definition.annotations.get("localAgentPathPolicy")
+            write_delete_policy = definition.annotations.get("localAgentWriteDeletePolicy")
             if category:
                 metadata["category"] = str(category)
             if path_policy:
                 metadata["path_policy"] = _as_dict(path_policy)
+            if write_delete_policy:
+                metadata["write_delete_policy"] = _as_dict(write_delete_policy)
 
             spec = ToolSpec(
                 name=registry_name,

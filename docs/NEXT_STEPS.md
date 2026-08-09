@@ -222,10 +222,10 @@ Completed base:
 - blocked-action counts,
 - write/delete category highlighting.
 - explicit File MCP path policy checks before execution.
+- explicit write/delete policy checks before future mutating tools can run.
 
 Next guardrail tasks:
 
-- add stronger write/delete policy rules,
 - extend audit filters if the trace volume grows,
 - keep approval request-scoped unless there is a real user/session permission model.
 
