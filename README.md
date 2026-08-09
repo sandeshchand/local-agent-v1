@@ -14,6 +14,7 @@ This repo is not treated as a toy demo. The engineering target is a production-r
 - Evidence-grounded answer generation with citations.
 - Answer verification, repair, and retrieval retry when quality fails.
 - Short-term conversation memory and long-term project/user memory with UI management.
+- Optional API token auth with user/session namespace isolation and per-user document visibility.
 - Tool-call guardrails with `allow`, `deny`, and `needs_approval`.
 - MCP-style read-only File and SQLite connectors.
 - Read-only weather tool for current weather questions.
@@ -49,6 +50,8 @@ planner
 ```
 
 Memory is used only as project/user guidance. It is not PDF evidence. PDF answers must still come from retrieved document chunks and citations.
+
+When API auth is enabled, document retrieval is scoped to global documents plus the current user's user-owned ingests.
 
 ## Quick Start
 
@@ -295,7 +298,7 @@ Already implemented:
 
 Required before real production use:
 
-- production-grade user accounts and per-user document isolation,
+- production-grade user accounts and role-based admin controls,
 - secrets management outside `.env` for deployed environments,
 - scheduled off-machine backups and deployment rollback policy,
 - deployment/container strategy,
@@ -327,6 +330,7 @@ Retrieval and answers:
 Tools, guardrails, and memory:
 
 - [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)
+- [docs/DOCUMENT_ISOLATION.md](docs/DOCUMENT_ISOLATION.md)
 - [docs/GUARDRAILS.md](docs/GUARDRAILS.md)
 - [docs/TOOL_AUDIT.md](docs/TOOL_AUDIT.md)
 - [docs/MCP.md](docs/MCP.md)

@@ -6,7 +6,7 @@ from typing import Any
 from local_agent.agent.guardrails import GuardrailPolicy
 from local_agent.agent.memory_manager import MemoryManager
 from local_agent.agent.planner import Planner
-from local_agent.agent.schemas import AgentAction, AgentState, GuardrailDecision, VerificationResult
+from local_agent.agent.schemas import AgentAction, AgentState, GuardrailDecision, ToolResult, VerificationResult
 from local_agent.agent.tool_router import ToolRouter
 from local_agent.agent.verifier import Verifier
 from local_agent.tools import ToolRegistry
@@ -59,6 +59,7 @@ class Orchestrator:
         query: str,
         session_id: str = "default",
         approved_tools: list[str] | None = None,
+        accessible_doc_ids: list[str] | None = None,
     ) -> dict:
         total_started_at = time.perf_counter()
         timings_ms: dict[str, float] = {}
@@ -120,6 +121,7 @@ class Orchestrator:
                     state=state,
                     action=action,
                     step_no=step_no,
+                    accessible_doc_ids=accessible_doc_ids,
                 )
                 break
 
@@ -131,6 +133,7 @@ class Orchestrator:
                     action=action,
                     step_no=step_no,
                     approved_tools=approved_tools,
+                    accessible_doc_ids=accessible_doc_ids,
                 )
                 break
 
@@ -235,6 +238,7 @@ class Orchestrator:
         state: AgentState,
         action: AgentAction,
         step_no: int,
+        accessible_doc_ids: list[str] | None = None,
     ) -> tuple[list[dict], VerificationResult]:
         retrieval_query = self.query_rewriter.rewrite(action.retrieve_query or query)
         used_citations = self._run_retrieval_attempt(
@@ -245,6 +249,7 @@ class Orchestrator:
             action=action,
             step_no=step_no,
             attempt=1,
+            accessible_doc_ids=accessible_doc_ids,
         )
         verification = self._verify_and_maybe_repair(query, used_citations, state)
 
@@ -268,6 +273,7 @@ class Orchestrator:
                 attempt=2,
                 broaden_doc_scope=True,
                 retry_reason=retry_reason,
+                accessible_doc_ids=accessible_doc_ids,
             )
             retry_verification = self._verify_and_maybe_repair(query, retry_citations, state)
             accepted = self._retry_is_better(
@@ -305,6 +311,7 @@ class Orchestrator:
         action: AgentAction,
         step_no: int,
         approved_tools: list[str] | None = None,
+        accessible_doc_ids: list[str] | None = None,
     ) -> tuple[list[dict], VerificationResult]:
         guardrail_started_at = time.perf_counter()
         guardrail_decision = self.guardrail_policy.evaluate_tool_call(
@@ -336,7 +343,11 @@ class Orchestrator:
         tool_name, tool_args = self._tool_call_name_args(action)
         tool_spec = self.tool_registry.get_tool_spec(tool_name)
         tool_started_at = time.perf_counter()
-        tool_result = self.tool_registry.execute(tool_name, **tool_args)
+        tool_result = self._execute_tool_call(
+            tool_name=tool_name,
+            tool_args=tool_args,
+            accessible_doc_ids=accessible_doc_ids,
+        )
         tool_duration_ms = self._elapsed_ms(tool_started_at)
         state.tool_results.append(tool_result)
 
@@ -385,28 +396,51 @@ class Orchestrator:
         attempt: int,
         broaden_doc_scope: bool = False,
         retry_reason: str = "",
+        accessible_doc_ids: list[str] | None = None,
     ) -> list[dict]:
         attempt_started_at = time.perf_counter()
         candidate_doc_ids: list[str] | None = None
         routed_docs: list[dict] = []
-        candidate_scope = "all_documents"
+        candidate_scope = "accessible_documents" if accessible_doc_ids is not None else "all_documents"
         doc_routing_ms = 0.0
 
         if self.doc_router is not None:
             doc_routing_started_at = time.perf_counter()
-            routed_docs = self.doc_router.route(retrieval_query, top_n=3)
+            routed_docs = self.doc_router.route(
+                retrieval_query,
+                top_n=3,
+                accessible_doc_ids=accessible_doc_ids,
+            )
             doc_routing_ms = self._elapsed_ms(doc_routing_started_at)
             if broaden_doc_scope:
-                candidate_doc_ids = None
-                candidate_scope = "all_documents_retry"
+                candidate_doc_ids = accessible_doc_ids
+                candidate_scope = (
+                    "accessible_documents_retry"
+                    if accessible_doc_ids is not None
+                    else "all_documents_retry"
+                )
             else:
                 candidate_doc_ids = self._candidate_doc_ids(routed_docs)
-                candidate_scope = "routed_documents" if candidate_doc_ids else "all_documents"
+                if candidate_doc_ids:
+                    candidate_scope = (
+                        "routed_accessible_documents"
+                        if accessible_doc_ids is not None
+                        else "routed_documents"
+                    )
+                else:
+                    candidate_scope = (
+                        "accessible_documents"
+                        if accessible_doc_ids is not None
+                        else "all_documents"
+                    )
+        elif accessible_doc_ids is not None:
+            candidate_doc_ids = accessible_doc_ids
 
         search_started_at = time.perf_counter()
         results = self.retrieval_service.search(
             query=retrieval_query,
             candidate_doc_ids=candidate_doc_ids,
+            accessible_doc_ids=accessible_doc_ids,
         )
         retrieval_search_ms = self._elapsed_ms(search_started_at)
         evidence_started_at = time.perf_counter()
@@ -444,6 +478,11 @@ class Orchestrator:
                     retrieval_query=retrieval_query,
                     candidate_scope=candidate_scope,
                     candidate_doc_count=len(candidate_doc_ids or []),
+                    accessible_doc_count=(
+                        len(accessible_doc_ids)
+                        if accessible_doc_ids is not None
+                        else None
+                    ),
                     routed_docs=routed_docs,
                     result_count=len(results),
                     selected_count=len(selected_results),
@@ -473,6 +512,11 @@ class Orchestrator:
                 retrieval_query=retrieval_query,
                 candidate_scope=candidate_scope,
                 candidate_doc_count=len(candidate_doc_ids or []),
+                accessible_doc_count=(
+                    len(accessible_doc_ids)
+                    if accessible_doc_ids is not None
+                    else None
+                ),
                 routed_docs=routed_docs,
                 result_count=len(results),
                 selected_count=len(selected_results),
@@ -592,6 +636,21 @@ class Orchestrator:
             return tool_call.name, tool_call.args or {}
         return tool_call.get("name", ""), tool_call.get("args", {})
 
+    def _execute_tool_call(
+        self,
+        *,
+        tool_name: str,
+        tool_args: dict[str, Any],
+        accessible_doc_ids: list[str] | None = None,
+    ) -> ToolResult:
+        if tool_name == "list_documents" and accessible_doc_ids is not None:
+            return ToolResult(
+                tool_name=tool_name,
+                success=True,
+                output=self.sqlite_store.list_documents(doc_ids=accessible_doc_ids),
+            )
+        return self.tool_registry.execute(tool_name, **tool_args)
+
     def _merge_answer_context(
         self,
         selected_results: list[dict],
@@ -622,6 +681,7 @@ class Orchestrator:
         retrieval_query: str,
         candidate_scope: str,
         candidate_doc_count: int,
+        accessible_doc_count: int | None,
         routed_docs: list[dict],
         result_count: int,
         selected_count: int,
@@ -647,6 +707,7 @@ class Orchestrator:
             "retrieval_query": retrieval_query,
             "candidate_scope": candidate_scope,
             "candidate_doc_count": candidate_doc_count,
+            "accessible_doc_count": accessible_doc_count,
             "routed_docs": [
                 {
                     "doc_id": doc["doc_id"],

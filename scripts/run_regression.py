@@ -75,6 +75,7 @@ COMPILE_TARGETS = [
     "scripts/smoke_ingestion_status.py",
     "scripts/smoke_ingestion_status_api.py",
     "scripts/smoke_qdrant_doc_cleanup.py",
+    "scripts/smoke_document_isolation.py",
     "scripts/smoke_sqlite_threading.py",
     "scripts/smoke_system_status.py",
     "scripts/smoke_runtime_backup.py",
@@ -169,6 +170,7 @@ def main() -> None:
     run_step("Ingestion status smoke", [sys.executable, "scripts/smoke_ingestion_status.py"])
     run_step("Ingestion status API smoke", [sys.executable, "scripts/smoke_ingestion_status_api.py"])
     run_step("Qdrant document cleanup smoke", [sys.executable, "scripts/smoke_qdrant_doc_cleanup.py"])
+    run_step("Document isolation smoke", [sys.executable, "scripts/smoke_document_isolation.py"])
     run_step("Memory smoke", [sys.executable, "scripts/smoke_memory.py"])
     run_step("Memory API smoke", [sys.executable, "scripts/smoke_memory_api.py"])
     run_step("Memory eval smoke", [sys.executable, "scripts/smoke_memory_eval.py"])

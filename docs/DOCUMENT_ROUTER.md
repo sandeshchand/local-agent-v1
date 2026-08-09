@@ -30,6 +30,7 @@ The router receives:
 ```text
 query
 top_n
+accessible_doc_ids optional
 ```
 
 It loads document metadata through:
@@ -37,6 +38,8 @@ It loads document metadata through:
 ```text
 SQLiteStore.list_documents_for_routing()
 ```
+
+When API auth is enabled, the orchestrator passes `accessible_doc_ids`, so the router builds its document-level BM25 corpus from only global documents plus the current user's documents.
 
 Each document includes:
 
@@ -158,6 +161,12 @@ The orchestrator calls:
 doc_router.route(retrieval_query, top_n=3)
 ```
 
+For authenticated API requests, the call includes:
+
+```text
+doc_router.route(retrieval_query, top_n=3, accessible_doc_ids=[...])
+```
+
 Then `_candidate_doc_ids()` decides whether to search:
 
 - only the top document, or
@@ -183,7 +192,7 @@ If answer verification fails or no citable evidence is found, the orchestrator c
 broaden_doc_scope = True
 ```
 
-That retry searches all documents instead of only routed candidates.
+That retry broadens from routed candidates to the full accessible document scope.
 
 This is a general recovery path for:
 
@@ -193,12 +202,15 @@ This is a general recovery path for:
 - noisy titles,
 - weak section headings.
 
+With auth enabled, retry still cannot search another user's private documents.
+
 ## Trace Visibility
 
 The retrieve trace step stores:
 
 - `candidate_scope`
 - `candidate_doc_count`
+- `accessible_doc_count`
 - `routed_docs`
 - `routing_score`
 - `result_count`

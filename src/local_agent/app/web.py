@@ -208,6 +208,24 @@ def session_filter_for_identity(identity: AuthIdentity) -> str | None:
     return identity.session_id if identity.enabled else None
 
 
+def document_access_kwargs(identity: AuthIdentity) -> dict[str, Any]:
+    if not identity.enabled:
+        return {"owner_id": None, "include_global": True}
+    return {"owner_id": identity.user_id, "include_global": True}
+
+
+def accessible_doc_ids_for_identity(identity: AuthIdentity, store: SQLiteStore) -> list[str] | None:
+    if not identity.enabled:
+        return None
+    return store.accessible_document_ids(owner_id=identity.user_id, include_global=True)
+
+
+def ingestion_namespace_for_identity(identity: AuthIdentity) -> tuple[str, str]:
+    if identity.enabled:
+        return identity.user_id, "user"
+    return "global", "global"
+
+
 def requested_session_id(identity: AuthIdentity, raw_session_id: str = "default") -> str:
     if identity.enabled:
         return identity.session_id
@@ -290,13 +308,15 @@ def tool_audit(request: Request = None, limit: int = 50):
 
 
 @app.get("/api/documents", response_model=list[DocumentItem])
-def list_documents():
-    docs = get_sqlite_store().list_documents()
+def list_documents(request: Request = None):
+    identity = current_auth_identity(request)
+    docs = get_sqlite_store().list_documents(**document_access_kwargs(identity))
     return [DocumentItem(**doc) for doc in docs]
 
 
 @app.get("/api/library/documents", response_model=DocumentLibraryResponse)
 def list_library_documents(
+    request: Request = None,
     q: str = "",
     limit: int = 12,
     offset: int = 0,
@@ -305,11 +325,13 @@ def list_library_documents(
     bounded_offset = max(offset, 0)
     query = q.strip()
     store = get_sqlite_store()
-    total = store.count_documents(search=query)
+    access_kwargs = document_access_kwargs(current_auth_identity(request))
+    total = store.count_documents(search=query, **access_kwargs)
     docs = store.list_documents(
         search=query,
         limit=bounded_limit,
         offset=bounded_offset,
+        **access_kwargs,
     )
     return DocumentLibraryResponse(
         total=total,
@@ -322,17 +344,20 @@ def list_library_documents(
 
 @app.get("/api/ingestion/status", response_model=IngestionStatusResponse)
 def list_ingestion_status(
+    request: Request = None,
     limit: int = 50,
     status: str = "",
 ):
     bounded_limit = min(max(limit, 1), 200)
     normalized_status = status.strip()
     store = get_sqlite_store()
+    access_kwargs = document_access_kwargs(current_auth_identity(request))
     rows = store.list_document_ingestion_status(
         limit=bounded_limit,
         status=normalized_status or None,
+        **access_kwargs,
     )
-    summary = store.get_document_ingestion_status_summary()
+    summary = store.get_document_ingestion_status_summary(**access_kwargs)
     return IngestionStatusResponse(
         total=int(summary.get("total_count", len(rows))),
         limit=bounded_limit,
@@ -539,11 +564,14 @@ def run_eval_candidate(candidate_id: str, request: Request = None):
 def chat(request_data: ChatRequest, request: Request = None):
     deps = get_deps()
     identity = current_auth_identity(request)
+    store = get_sqlite_store()
+    accessible_doc_ids = accessible_doc_ids_for_identity(identity, store)
 
     results = deps.orchestrator.handle_query(
         request_data.query,
         approved_tools=request_data.approved_tools,
         session_id=identity.session_id,
+        accessible_doc_ids=accessible_doc_ids,
     )
 
     return ChatResponse(
@@ -561,8 +589,10 @@ def chat(request_data: ChatRequest, request: Request = None):
 
 
 @app.post("/api/ingest-path", response_model=IngestPathResponse)
-def ingest_path(request_data: IngestPathRequest):
+def ingest_path(request_data: IngestPathRequest, request: Request = None):
     deps = get_deps()
+    identity = current_auth_identity(request)
+    owner_id, visibility = ingestion_namespace_for_identity(identity)
 
     pipeline = IngestionPipeline(
         sqlite_store=deps.sqlite_store,
@@ -587,7 +617,12 @@ def ingest_path(request_data: IngestPathRequest):
 
     for pdf_file in pdf_files:
         try:
-            summary = pipeline.ingest_pdf(pdf_file, force=request_data.force)
+            summary = pipeline.ingest_pdf(
+                pdf_file,
+                force=request_data.force,
+                owner_id=owner_id,
+                visibility=visibility,
+            )
             status = str(summary.get("status") or "indexed")
             if status == "skipped":
                 skipped_count += 1
@@ -599,6 +634,8 @@ def ingest_path(request_data: IngestPathRequest):
                     success=status != "failed",
                     status=status,
                     message=str(summary.get("message") or "Indexed successfully"),
+                    owner_id=str(summary.get("owner_id") or owner_id),
+                    visibility=str(summary.get("visibility") or visibility),
                     page_count=summary.get("page_count"),
                     chunk_count=summary.get("chunk_count"),
                 )
@@ -610,6 +647,8 @@ def ingest_path(request_data: IngestPathRequest):
                     file_name=pdf_file.name,
                     success=False,
                     status="failed",
+                    owner_id=owner_id,
+                    visibility=visibility,
                     message=str(exc),
                 )
             )

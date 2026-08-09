@@ -10,7 +10,7 @@ Authentication v1 protects API routes with one configured API token. It is inten
 - `/api/*` routes require a token when auth is enabled,
 - `/health`, `/`, and static assets remain public,
 - chat, traces, memory, feedback, and tool-audit views use a request user/session namespace,
-- PDF evidence and indexed documents are still shared across sessions.
+- PDF evidence is scoped to global documents plus the authenticated user's own ingested documents.
 
 This is not full multi-user account management. It is a production-readiness step that adds a real API gate and prevents one authenticated user/session namespace from casually seeing another namespace's traces, feedback, and session memory.
 
@@ -103,6 +103,7 @@ When auth is enabled:
 - `/api/memory` uses the effective user/session id,
 - deleting session memory from another session is blocked.
 - trace-derived eval drafts are filtered by the owning trace session.
+- document library, ingestion status, document routing, and retrieval are filtered to global plus current-user documents.
 
 Two users can safely use the same visible session label. For example:
 
@@ -117,15 +118,15 @@ Global memory is still shared because it represents project-wide guidance.
 
 These are still shared in v1:
 
-- indexed documents,
-- document chunks,
 - Qdrant collection,
 - gold QA files,
 - underlying eval draft JSON files,
 - global memory,
 - local tools and tool registry.
 
-For real multi-user production, add separate user accounts or an external identity provider, user-owned document collections, durable per-user eval storage, and admin roles. The `X-Local-Agent-User` header is a namespace input, not proof of identity by itself.
+Existing indexed documents default to global visibility. New authenticated web ingests are user-owned. See [docs/DOCUMENT_ISOLATION.md](DOCUMENT_ISOLATION.md).
+
+For real multi-user production, add separate user accounts or an external identity provider, decide whether tenants need physically separate vector collections, add durable per-user eval storage, and add admin roles. The `X-Local-Agent-User` header is a namespace input, not proof of identity by itself.
 
 ## Validation
 
@@ -133,5 +134,6 @@ Run:
 
 ```powershell
 venv\Scripts\python.exe scripts\smoke_auth.py
+venv\Scripts\python.exe scripts\smoke_document_isolation.py
 venv\Scripts\python.exe scripts\run_regression.py --skip-rag
 ```

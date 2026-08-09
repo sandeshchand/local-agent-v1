@@ -166,6 +166,8 @@ class IngestFileResult(BaseModel):
     success: bool
     status: str = ""
     message: str
+    owner_id: str = "global"
+    visibility: str = "global"
     page_count: int | None = None
     chunk_count: int | None = None
 
@@ -182,6 +184,8 @@ class IngestionStatusItem(BaseModel):
     doc_id: str | None = None
     title: str = ""
     status: str
+    owner_id: str = "global"
+    visibility: str = "global"
     parser_version: str = ""
     chunking_version: str = ""
     embedding_model: str = ""
@@ -210,6 +214,8 @@ class DocumentItem(BaseModel):
     page_count: int
     checksum: str
     indexed_at: str
+    owner_id: str = "global"
+    visibility: str = "global"
     ingestion_status: str = "indexed"
     parser_version: str = ""
     chunking_version: str = ""
