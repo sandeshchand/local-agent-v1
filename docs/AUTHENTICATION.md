@@ -21,9 +21,12 @@ Set these values in `.env`:
 ```env
 AUTH_ENABLED=true
 AUTH_TOKEN=replace-with-a-long-random-token
+AUTH_ADMIN_USERS=alice,bob
 ```
 
 If `AUTH_ENABLED=true` and `AUTH_TOKEN` is empty, the app refuses the API configuration.
+
+`AUTH_ADMIN_USERS` is optional. If it is empty, every authenticated token user is treated as admin for backward-compatible single-token deployments. Once it is set, only listed user ids receive the `admin` role. Use `*` only for an explicit all-admin setup.
 
 Generate a token with PowerShell:
 
@@ -114,6 +117,29 @@ bob/default   -> bob:default
 
 Global memory is still shared because it represents project-wide guidance.
 
+## Admin Role
+
+Admin role checks protect sensitive API actions.
+
+Current admin-only API actions:
+
+- ingest PDFs through `POST /api/ingest-path`,
+- promote reviewed eval candidates into the gold QA file through `POST /api/eval-candidates/{candidate_id}/promote`.
+
+Examples:
+
+```env
+AUTH_ADMIN_USERS=alice
+```
+
+With that config:
+
+- `X-Local-Agent-User: alice` can ingest and promote eval candidates,
+- `X-Local-Agent-User: bob` can still chat, read own traces, give feedback, and manage own session memory,
+- `bob` receives `403` for admin-only actions.
+
+CLI backup and restore commands are operator workflows. They are protected by machine/terminal access, not web API roles.
+
 ## What Is Still Shared
 
 These are still shared in v1:
@@ -126,7 +152,7 @@ These are still shared in v1:
 
 Existing indexed documents default to global visibility. New authenticated web ingests are user-owned. See [docs/DOCUMENT_ISOLATION.md](DOCUMENT_ISOLATION.md).
 
-For real multi-user production, add separate user accounts or an external identity provider, decide whether tenants need physically separate vector collections, add durable per-user eval storage, and add admin roles. The `X-Local-Agent-User` header is a namespace input, not proof of identity by itself.
+For real multi-user production, add separate user accounts or an external identity provider, decide whether tenants need physically separate vector collections, add durable per-user eval storage, and replace header-based user namespaces with identity-provider claims. The `X-Local-Agent-User` header is a namespace input, not proof of identity by itself.
 
 ## Validation
 

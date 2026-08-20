@@ -190,6 +190,7 @@ def current_auth_identity(request: Request | None = None) -> AuthIdentity:
             user_id="local",
             requested_session_id="default",
             session_id="default",
+            roles=("admin", "user"),
         )
     identity = getattr(request.state, "auth_identity", None)
     if isinstance(identity, AuthIdentity):
@@ -201,6 +202,7 @@ def current_auth_identity(request: Request | None = None) -> AuthIdentity:
         user_id=sanitize_user_id(request.headers.get("X-Local-Agent-User"), fallback="local"),
         requested_session_id=fallback_session,
         session_id=fallback_session,
+        roles=("admin", "user"),
     )
 
 
@@ -266,6 +268,15 @@ def ensure_eval_candidate_access(candidate_id: str, identity: AuthIdentity) -> N
     candidate = next((item for item in candidates if item.get("id") == candidate_id), None)
     if candidate is None or not eval_candidate_visible(candidate, identity):
         raise HTTPException(status_code=404, detail=f"Eval candidate {candidate_id} not found.")
+
+
+def ensure_admin_access(identity: AuthIdentity, action: str) -> None:
+    if identity.is_admin:
+        return
+    raise HTTPException(
+        status_code=403,
+        detail=f"Admin role is required to {action}.",
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -530,7 +541,9 @@ def update_eval_candidate(candidate_id: str, request_data: EvalCandidateUpdateRe
 
 @app.post("/api/eval-candidates/{candidate_id}/promote", response_model=EvalCandidatePromoteResponse)
 def promote_eval_candidate(candidate_id: str, request: Request = None):
-    ensure_eval_candidate_access(candidate_id, current_auth_identity(request))
+    identity = current_auth_identity(request)
+    ensure_admin_access(identity, "promote eval candidates")
+    ensure_eval_candidate_access(candidate_id, identity)
     try:
         result = promote_feedback_eval_candidate(
             candidate_id,
@@ -592,6 +605,7 @@ def chat(request_data: ChatRequest, request: Request = None):
 def ingest_path(request_data: IngestPathRequest, request: Request = None):
     deps = get_deps()
     identity = current_auth_identity(request)
+    ensure_admin_access(identity, "ingest documents")
     owner_id, visibility = ingestion_namespace_for_identity(identity)
 
     pipeline = IngestionPipeline(

@@ -44,6 +44,7 @@ class AppConfig(BaseModel):
     file_mcp_roots: list[Path] = Field(default_factory=list, alias="FILE_MCP_ROOTS")
     auth_enabled: bool = Field(False, alias="AUTH_ENABLED")
     auth_token: str = Field("", alias="AUTH_TOKEN")
+    auth_admin_users: tuple[str, ...] = Field(default_factory=tuple, alias="AUTH_ADMIN_USERS")
 
 
 def load_config(env_file: str | Path = ".env") -> AppConfig:
@@ -78,6 +79,7 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
         ),
         "AUTH_ENABLED": _parse_bool_env("AUTH_ENABLED", False),
         "AUTH_TOKEN": _env("AUTH_TOKEN", "") or "",
+        "AUTH_ADMIN_USERS": tuple(_parse_csv_list(_env("AUTH_ADMIN_USERS", "") or "")),
     }
 
     config = AppConfig.model_validate(data)
@@ -112,6 +114,7 @@ def load_config(env_file: str | Path = ".env") -> AppConfig:
         FILE_MCP_ROOTS=config.file_mcp_roots,
         AUTH_ENABLED=config.auth_enabled,
         AUTH_TOKEN=config.auth_token.strip(),
+        AUTH_ADMIN_USERS=config.auth_admin_users,
     )
 
 
@@ -156,3 +159,12 @@ def _parse_path_list(raw: str, base_dir: Path) -> list[Path]:
             path = base_dir / path
         paths.append(path.resolve())
     return paths
+
+
+def _parse_csv_list(raw: str) -> list[str]:
+    values: list[str] = []
+    for part in raw.split(","):
+        value = part.strip()
+        if value:
+            values.append(value)
+    return values

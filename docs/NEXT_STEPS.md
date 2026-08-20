@@ -203,6 +203,7 @@ Implemented v1:
 - `/api/*` protection when auth is enabled,
 - UI `Access` panel for token, user id, and session id,
 - user/session-scoped traces, feedback, memory, and tool-audit views,
+- admin role gate for document ingest and eval promotion through `AUTH_ADMIN_USERS`,
 - per-user document visibility for web ingest, document library, ingestion status, routing, retrieval, and scoped document-list tool output,
 - smoke coverage in `scripts/smoke_auth.py`.
 - document-isolation smoke coverage in `scripts/smoke_document_isolation.py`.
@@ -211,7 +212,7 @@ Remaining production work:
 
 - full user accounts or an external identity provider,
 - decide whether a hosted deployment needs physically separate vector collections per tenant,
-- roles for admin actions such as ingest, eval promotion, backup, and restore,
+- extend role gates if new sensitive web actions are added,
 - deployed secret management instead of `.env`.
 
 ## 7. Future Guardrail Work

@@ -33,6 +33,7 @@ CONFIG_ENV_NAMES = [
     "FILE_MCP_ROOTS",
     "AUTH_ENABLED",
     "AUTH_TOKEN",
+    "AUTH_ADMIN_USERS",
 ]
 
 
@@ -64,6 +65,7 @@ def assert_missing_env_uses_safe_defaults() -> None:
     assert config.document_router_cache_enabled is True
     assert config.auth_enabled is False
     assert config.auth_token == ""
+    assert config.auth_admin_users == ()
 
 
 def assert_env_file_relative_paths_are_stable() -> None:
@@ -85,6 +87,7 @@ def assert_env_file_relative_paths_are_stable() -> None:
                     "FILE_MCP_ROOTS=docs,README.md",
                     "AUTH_ENABLED=yes",
                     "AUTH_TOKEN=local-dev-token",
+                    "AUTH_ADMIN_USERS=alice, team/a",
                 ]
             ),
             encoding="utf-8",
@@ -103,6 +106,7 @@ def assert_env_file_relative_paths_are_stable() -> None:
         ]
         assert config.auth_enabled is True
         assert config.auth_token == "local-dev-token"
+        assert config.auth_admin_users == ("alice", "team/a")
 
 
 def assert_auth_enabled_requires_token() -> None:
