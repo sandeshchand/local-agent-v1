@@ -183,12 +183,13 @@ Implemented base controls:
 - list backups with `scripts/runtime_state.py list-backups`,
 - prune old backups by retention count with dry-run by default,
 - apply prune only with `--apply`,
+- run a scheduled backup workflow with local backup, optional off-machine copy, pruning, and JSONL job logging through `scripts/runtime_state.py scheduled-backup`,
 - documented local and production-like retention policy.
 
 Remaining production work:
 
 - choose the real off-machine backup storage location,
-- schedule daily backup execution outside the Python app,
+- register the real daily Windows Task Scheduler or cron job,
 - define restore-drill schedule,
 - decide who owns rollback decisions.
 

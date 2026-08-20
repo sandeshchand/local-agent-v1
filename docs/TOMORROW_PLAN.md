@@ -63,9 +63,11 @@ The latest work moved the project closer to production readiness and improved RA
 - Added request user/session isolation for traces, feedback, memory, and tool audit.
 - Added a UI `Access` panel for token, user, and session settings.
 - Added user namespace isolation so authenticated users with the same visible session label store traces, feedback, memory, and tool audit under separate effective sessions.
+- Added per-user document visibility isolation so authenticated users retrieve global documents plus their own user-owned ingests.
 - Added stronger guardrail audit visibility with risk labels, blocked-action counts, and write/delete category highlighting.
 - Added guardrail path-policy checks for File MCP tools before execution.
 - Added write/delete guardrail policy so future mutating tools require explicit metadata, path policy, and request approval.
+- Added scheduled backup execution with local backup, optional off-machine copy, retention pruning, and JSONL job logging.
 
 ## First Task Tomorrow
 
@@ -89,6 +91,9 @@ Latest completed work:
 - Added `docs/AUTHENTICATION.md`.
 - Added `scripts/smoke_auth.py`.
 - Added `X-Local-Agent-User` support and UI user id settings.
+- Added `docs/DOCUMENT_ISOLATION.md`.
+- Added `scripts/smoke_document_isolation.py`.
+- Added `scripts\runtime_state.py scheduled-backup`.
 
 First validation tomorrow:
 
@@ -110,8 +115,9 @@ Then test the UI manually:
 
 Recommended next implementation:
 
-- design per-user document/index isolation,
-- or add scheduled/off-machine backup execution.
+- configure and test a real Windows Task Scheduler backup job using `scheduled-backup`,
+- define admin roles for sensitive actions such as ingest, eval promotion, backup, and restore,
+- or expand gold QA for newly ingested PDFs.
 
 Do not add more answer fast paths unless a new eval or trace shows a repeated generic failure pattern.
 
@@ -138,8 +144,10 @@ Do not add more answer fast paths unless a new eval or trace shows a repeated ge
    - Done: local backup retention controls.
    - Done: API token auth v1.
    - Done: request user/session isolation for traces, feedback, memory, and tool audit.
-   - Next: scheduled/off-machine backup execution.
-   - Next: production user accounts and per-user document/index isolation.
+   - Done: per-user document visibility isolation for authenticated API use.
+   - Done: scheduled backup execution command with optional off-machine copy and job logging.
+   - Next: register the real OS scheduler job and choose the off-machine destination.
+   - Next: production user accounts and role-based admin permissions.
 
 5. MCP and guardrails next step
    - Keep File MCP and SQLite MCP read-only for now.

@@ -259,6 +259,7 @@ Status: completed for local runtime paths and local backup/restore.
 - Keep `.env.example` aligned with these paths.
 - Runtime backup and restore are implemented in `src/local_agent/operations/runtime_backup.py`.
 - Operator commands live in `scripts/runtime_state.py`.
+- Scheduled backup execution is available through `scripts/runtime_state.py scheduled-backup`.
 - Detailed instructions live in [docs/BACKUP_RESTORE.md](BACKUP_RESTORE.md).
 
 ### Phase 5: User And Document Isolation
@@ -280,7 +281,7 @@ Status: started for local single-machine deployment.
 - Add `deploy/` later if we introduce service-manager, container, or hosted deployment assets.
 - Add deployment-specific config examples.
 - Production health endpoints for app, SQLite, Qdrant, Ollama, and model availability are started through `/health` and `/api/system/status`.
-- Add deployment rollback policy and scheduled/off-machine backup policy.
+- Add service-manager/container assets and register the real scheduled backup job for deployed environments.
 
 ## Rules For Future Changes
 

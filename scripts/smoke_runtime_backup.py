@@ -9,6 +9,7 @@ from local_agent.operations import (
     inspect_runtime_backup,
     list_runtime_backups,
     prune_runtime_backups,
+    run_scheduled_backup,
     restore_runtime_state,
 )
 
@@ -100,6 +101,28 @@ def main() -> None:
         remaining = list_runtime_backups(backup_root)
         assert len(remaining) == 1
         assert Path(remaining[0]["backup_path"]).exists()
+
+        off_machine_root = root / "off_machine_backups"
+        job_log_path = root / "logs" / "scheduled_backup.jsonl"
+        scheduled = run_scheduled_backup(
+            sqlite_path=sqlite_path,
+            qdrant_path=qdrant_path,
+            backup_root=backup_root,
+            off_machine_root=off_machine_root,
+            local_keep=2,
+            off_machine_keep=2,
+            apply_prune=True,
+            job_log_path=job_log_path,
+        )
+        assert scheduled["status"] == "success"
+        assert Path(scheduled["backup"]["backup_path"]).exists()
+        assert Path(scheduled["off_machine_copy"]["backup_path"]).exists()
+        assert scheduled["local_prune"]["dry_run"] is False
+        assert scheduled["off_machine_prune"]["dry_run"] is False
+        assert len(list_runtime_backups(backup_root)) <= 2
+        assert len(list_runtime_backups(off_machine_root)) == 1
+        assert job_log_path.exists()
+        assert '"status": "success"' in job_log_path.read_text(encoding="utf-8")
 
     print("Runtime backup smoke test passed.")
 

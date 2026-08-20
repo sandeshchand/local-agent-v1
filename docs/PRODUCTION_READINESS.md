@@ -164,15 +164,17 @@ It should also have:
 
 1. Optimize first-query retrieval/model warmup without reducing RAG quality.
 2. Add broader gold QA for new daily PDFs.
-3. Add scheduled/off-machine backup execution for deployed environments.
-4. Add production user accounts and per-user document isolation design.
+3. Register the real scheduled/off-machine backup job for deployed environments.
+4. Add production user accounts and role-based admin permissions.
 
 Completed from this list:
 
 - Health-check and system-status UI/API endpoints.
 - Local SQLite and Qdrant backup/restore script, smoke test, and documentation.
 - Backup listing, safe retention pruning, and local retention policy documentation.
+- Scheduled backup execution command with optional off-machine copy, retention pruning, JSONL job logging, smoke test, and documentation.
 - Config-gated API token authentication, UI user/session controls, and user-session-scoped traces/feedback/memory/tool-audit views.
+- Per-user document visibility isolation for authenticated API use.
 - Memory multi-turn eval, benchmark cases, smoke test, and short-term redaction.
 - Tool audit API, UI tab, category labels, and smoke test.
 - Memory management API, UI tab, delete control, and smoke test.

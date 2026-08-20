@@ -268,6 +268,12 @@ venv\Scripts\python.exe scripts\runtime_state.py prune-backups --keep 7
 venv\Scripts\python.exe scripts\runtime_state.py prune-backups --keep 7 --apply
 ```
 
+Run the production-style scheduled backup workflow:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py --env-file .env scheduled-backup --backup-root D:\local-agent-backups --off-machine-root E:\local-agent-off-machine-backups --apply-prune
+```
+
 Restore from a backup only after stopping the web server:
 
 ```powershell
