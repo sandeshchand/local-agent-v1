@@ -97,6 +97,7 @@ class RetrievalService:
         query: str, 
         doc_id: str | None = None,  
         candidate_doc_ids: list[str] | None = None,  
+        accessible_doc_ids: list[str] | None = None,
         ) -> list[dict]:
         """
         Hybrid retrieval pipeline:
@@ -108,13 +109,28 @@ class RetrievalService:
         """
         dense_limit = max(self.top_k *5, self.rerank_candidates)
         sparse_limit = max(self.top_k *5, self.rerank_candidates)
+        scope_doc_ids = self._effective_doc_ids(
+            doc_id=doc_id,
+            candidate_doc_ids=candidate_doc_ids,
+            accessible_doc_ids=accessible_doc_ids,
+        )
 
-        if candidate_doc_ids:
-            dense_results= self._dense_search_many_docs(query, dense_limit,candidate_doc_ids=candidate_doc_ids)
-            sparse_results= self._sparse_search(query, sparse_limit,candidate_doc_ids=candidate_doc_ids)
+        if scope_doc_ids is not None:
+            if not scope_doc_ids:
+                return []
+            dense_results = self._dense_search_many_docs(
+                query,
+                dense_limit,
+                candidate_doc_ids=scope_doc_ids,
+            )
+            sparse_results = self._sparse_search(
+                query,
+                sparse_limit,
+                candidate_doc_ids=scope_doc_ids,
+            )
         else:
-            dense_results= self._dense_search(query, dense_limit,doc_id=doc_id)
-            sparse_results= self._sparse_search(query, sparse_limit,doc_id=doc_id)
+            dense_results = self._dense_search(query, dense_limit, doc_id=doc_id)
+            sparse_results = self._sparse_search(query, sparse_limit, doc_id=doc_id)
 
         fused = self._rrf_fuse(
             dense_items=dense_results,
@@ -142,6 +158,37 @@ class RetrievalService:
             use_parent_context=self.use_parent_context,
             final_context_limit=self.final_context_limit,
         )
+
+    def _effective_doc_ids(
+        self,
+        *,
+        doc_id: str | None,
+        candidate_doc_ids: list[str] | None,
+        accessible_doc_ids: list[str] | None,
+    ) -> list[str] | None:
+        if doc_id:
+            selected_ids = [doc_id]
+        elif candidate_doc_ids is not None:
+            selected_ids = candidate_doc_ids
+        elif accessible_doc_ids is not None:
+            selected_ids = accessible_doc_ids
+        else:
+            return None
+
+        normalized_selected = [
+            doc
+            for doc in dict.fromkeys(str(raw_doc).strip() for raw_doc in selected_ids)
+            if doc
+        ]
+        if accessible_doc_ids is None:
+            return normalized_selected
+
+        accessible = {
+            doc
+            for doc in (str(raw_doc).strip() for raw_doc in accessible_doc_ids)
+            if doc
+        }
+        return [doc for doc in normalized_selected if doc in accessible]
 
     def _dense_search_many_docs(
         self, 
@@ -195,13 +242,10 @@ class RetrievalService:
         candidate_doc_ids: list[str] | None = None,
         ) -> list[dict]:
 
-        if candidate_doc_ids:
-            allowed = set(candidate_doc_ids)
-            chunks = [
-                chunk
-                for chunk in self.sqlite_store.list_chunks_for_retrieval()
-                if chunk["doc_id"] in allowed
-            ]
+        if candidate_doc_ids is not None:
+            chunks = self.sqlite_store.list_chunks_for_retrieval(
+                candidate_doc_ids=candidate_doc_ids,
+            )
         else:
             chunks = self.sqlite_store.list_chunks_for_retrieval(doc_id=doc_id)
        

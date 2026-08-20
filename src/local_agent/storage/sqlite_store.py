@@ -32,6 +32,30 @@ FEEDBACK_ISSUE_TYPES = {
     "other",
 }
 
+DOCUMENT_VISIBILITIES = {"global", "user"}
+
+
+def normalize_document_owner_id(owner_id: str | None) -> str:
+    normalized = " ".join((owner_id or "global").strip().split())
+    return normalized[:80] if normalized else "global"
+
+
+def normalize_document_visibility(visibility: str | None) -> str:
+    normalized = (visibility or "global").strip().lower()
+    if normalized not in DOCUMENT_VISIBILITIES:
+        allowed = ", ".join(sorted(DOCUMENT_VISIBILITIES))
+        raise ValueError(f"document visibility must be one of: {allowed}")
+    return normalized
+
+
+def document_visible_to(document: dict[str, Any], owner_id: str | None) -> bool:
+    if owner_id is None:
+        return True
+    owner = normalize_document_owner_id(owner_id)
+    document_owner = normalize_document_owner_id(document.get("owner_id"))
+    visibility = normalize_document_visibility(document.get("visibility"))
+    return visibility == "global" or document_owner == owner
+
 
 def _quote_identifier(identifier: str) -> str:
     return f'"{identifier.replace(chr(34), chr(34) + chr(34))}"'
@@ -95,6 +119,8 @@ class SQLiteStore:
                 title TEXT,
                 page_count INTEGER NOT NULL,
                 checksum TEXT NOT NULL,
+                owner_id TEXT NOT NULL DEFAULT 'global',
+                visibility TEXT NOT NULL DEFAULT 'global',
                 indexed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
@@ -104,6 +130,8 @@ class SQLiteStore:
             for row in conn.execute("PRAGMA table_info(documents)").fetchall()
         }
         document_column_defaults = {
+            "owner_id": "TEXT NOT NULL DEFAULT 'global'",
+            "visibility": "TEXT NOT NULL DEFAULT 'global'",
             "ingestion_status": "TEXT NOT NULL DEFAULT 'indexed'",
             "parser_version": "TEXT NOT NULL DEFAULT ''",
             "chunking_version": "TEXT NOT NULL DEFAULT ''",
@@ -144,6 +172,22 @@ class SQLiteStore:
             )
             """
         )
+        status_columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(document_ingestion_status)").fetchall()
+        }
+        status_column_defaults = {
+            "owner_id": "TEXT NOT NULL DEFAULT 'global'",
+            "visibility": "TEXT NOT NULL DEFAULT 'global'",
+        }
+        for column_name, column_sql in status_column_defaults.items():
+            if column_name not in status_columns:
+                conn.execute(
+                    f"""
+                    ALTER TABLE document_ingestion_status
+                    ADD COLUMN {column_name} {column_sql}
+                    """
+                )
 
         conn.execute(
             """
@@ -255,6 +299,19 @@ class SQLiteStore:
                 ADD COLUMN issue_type TEXT NOT NULL DEFAULT ''
                 """
             )
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_documents_owner_visibility
+            ON documents(owner_id, visibility)
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_document_ingestion_owner_visibility
+            ON document_ingestion_status(owner_id, visibility)
+            """
+        )
 
         conn.commit()
 
@@ -450,6 +507,46 @@ class SQLiteStore:
         row = conn.execute("SELECT 1 AS ok").fetchone()
         return row is not None and row["ok"] == 1
 
+    def _document_access_clause(
+        self,
+        *,
+        owner_id: str | None,
+        include_global: bool = True,
+        alias: str = "",
+    ) -> tuple[str, list[Any]]:
+        if owner_id is None:
+            return "", []
+
+        prefix = f"{alias}." if alias else ""
+        clauses: list[str] = []
+        params: list[Any] = []
+        if include_global:
+            clauses.append(f"{prefix}visibility = 'global'")
+        clauses.append(f"{prefix}owner_id = ?")
+        params.append(normalize_document_owner_id(owner_id))
+        return f"({' OR '.join(clauses)})", params
+
+    def _document_ids_clause(
+        self,
+        doc_ids: list[str] | tuple[str, ...] | set[str] | None,
+        *,
+        alias: str = "",
+    ) -> tuple[str, list[Any]]:
+        if doc_ids is None:
+            return "", []
+
+        normalized_doc_ids = [
+            doc_id
+            for doc_id in dict.fromkeys(str(raw_doc_id).strip() for raw_doc_id in doc_ids)
+            if doc_id
+        ]
+        if not normalized_doc_ids:
+            return "0 = 1", []
+
+        prefix = f"{alias}." if alias else ""
+        placeholders = ", ".join("?" for _ in normalized_doc_ids)
+        return f"{prefix}doc_id IN ({placeholders})", normalized_doc_ids
+
     @_locked
     def upsert_document(
         self,
@@ -467,22 +564,28 @@ class SQLiteStore:
         chunk_count: int = 0,
         ingestion_status: str = "indexed",
         last_ingest_error: str = "",
+        owner_id: str = "global",
+        visibility: str = "global",
     ) -> None:
         conn = self.connect()
+        normalized_owner_id = normalize_document_owner_id(owner_id)
+        normalized_visibility = normalize_document_visibility(visibility)
         conn.execute(
             """
             INSERT INTO documents (
                 doc_id, source_path, title, page_count, checksum,
-                ingestion_status, parser_version, chunking_version, embedding_model,
+                owner_id, visibility, ingestion_status, parser_version, chunking_version, embedding_model,
                 chunk_size, chunk_overlap, chunk_count, ingest_started_at,
                 ingest_completed_at, last_ingest_error
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
             ON CONFLICT(doc_id) DO UPDATE SET
                 source_path = excluded.source_path,
                 title = excluded.title,
                 page_count = excluded.page_count,
                 checksum = excluded.checksum,
+                owner_id = excluded.owner_id,
+                visibility = excluded.visibility,
                 ingestion_status = excluded.ingestion_status,
                 parser_version = excluded.parser_version,
                 chunking_version = excluded.chunking_version,
@@ -498,6 +601,8 @@ class SQLiteStore:
                 title = excluded.title,
                 page_count = excluded.page_count,
                 checksum = excluded.checksum,
+                owner_id = excluded.owner_id,
+                visibility = excluded.visibility,
                 ingestion_status = excluded.ingestion_status,
                 parser_version = excluded.parser_version,
                 chunking_version = excluded.chunking_version,
@@ -515,6 +620,8 @@ class SQLiteStore:
                 title,
                 page_count,
                 checksum,
+                normalized_owner_id,
+                normalized_visibility,
                 ingestion_status,
                 parser_version,
                 chunking_version,
@@ -535,6 +642,7 @@ class SQLiteStore:
             """
             SELECT
                 doc_id, source_path, title, page_count, checksum, indexed_at,
+                owner_id, visibility,
                 ingestion_status, parser_version, chunking_version, embedding_model,
                 chunk_size, chunk_overlap, chunk_count, ingest_started_at,
                 ingest_completed_at, last_ingest_error
@@ -557,15 +665,20 @@ class SQLiteStore:
         embedding_model: str,
         chunk_size: int,
         chunk_overlap: int,
+        owner_id: str = "global",
+        visibility: str = "global",
     ) -> None:
         conn = self.connect()
+        normalized_owner_id = normalize_document_owner_id(owner_id)
+        normalized_visibility = normalize_document_visibility(visibility)
         conn.execute(
             """
             INSERT INTO document_ingestion_status (
                 source_path, status, parser_version, chunking_version,
-                embedding_model, chunk_size, chunk_overlap, started_at, error
+                embedding_model, chunk_size, chunk_overlap, owner_id, visibility,
+                started_at, error
             )
-            VALUES (?, 'running', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, '')
+            VALUES (?, 'running', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, '')
             ON CONFLICT(source_path) DO UPDATE SET
                 status = 'running',
                 parser_version = excluded.parser_version,
@@ -573,6 +686,8 @@ class SQLiteStore:
                 embedding_model = excluded.embedding_model,
                 chunk_size = excluded.chunk_size,
                 chunk_overlap = excluded.chunk_overlap,
+                owner_id = excluded.owner_id,
+                visibility = excluded.visibility,
                 started_at = CURRENT_TIMESTAMP,
                 completed_at = NULL,
                 error = ''
@@ -584,6 +699,8 @@ class SQLiteStore:
                 embedding_model,
                 int(chunk_size),
                 int(chunk_overlap),
+                normalized_owner_id,
+                normalized_visibility,
             ),
         )
         conn.commit()
@@ -604,16 +721,20 @@ class SQLiteStore:
         embedding_model: str,
         chunk_size: int,
         chunk_overlap: int,
+        owner_id: str = "global",
+        visibility: str = "global",
     ) -> None:
         conn = self.connect()
+        normalized_owner_id = normalize_document_owner_id(owner_id)
+        normalized_visibility = normalize_document_visibility(visibility)
         conn.execute(
             """
             INSERT INTO document_ingestion_status (
                 source_path, doc_id, title, status, parser_version, chunking_version,
                 embedding_model, chunk_size, chunk_overlap, checksum, page_count,
-                chunk_count, started_at, completed_at, error
+                chunk_count, owner_id, visibility, started_at, completed_at, error
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '')
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '')
             ON CONFLICT(source_path) DO UPDATE SET
                 doc_id = excluded.doc_id,
                 title = excluded.title,
@@ -626,6 +747,8 @@ class SQLiteStore:
                 checksum = excluded.checksum,
                 page_count = excluded.page_count,
                 chunk_count = excluded.chunk_count,
+                owner_id = excluded.owner_id,
+                visibility = excluded.visibility,
                 completed_at = CURRENT_TIMESTAMP,
                 error = ''
             """,
@@ -642,6 +765,8 @@ class SQLiteStore:
                 checksum,
                 int(page_count),
                 int(chunk_count),
+                normalized_owner_id,
+                normalized_visibility,
             ),
         )
         conn.commit()
@@ -657,17 +782,21 @@ class SQLiteStore:
         embedding_model: str,
         chunk_size: int,
         chunk_overlap: int,
+        owner_id: str = "global",
+        visibility: str = "global",
     ) -> None:
         conn = self.connect()
         truncated_error = " ".join((error or "").split())[:2000]
+        normalized_owner_id = normalize_document_owner_id(owner_id)
+        normalized_visibility = normalize_document_visibility(visibility)
         conn.execute(
             """
             INSERT INTO document_ingestion_status (
                 source_path, status, parser_version, chunking_version,
                 embedding_model, chunk_size, chunk_overlap, started_at,
-                completed_at, error
+                completed_at, error, owner_id, visibility
             )
-            VALUES (?, 'failed', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
+            VALUES (?, 'failed', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)
             ON CONFLICT(source_path) DO UPDATE SET
                 status = 'failed',
                 parser_version = excluded.parser_version,
@@ -676,7 +805,9 @@ class SQLiteStore:
                 chunk_size = excluded.chunk_size,
                 chunk_overlap = excluded.chunk_overlap,
                 completed_at = CURRENT_TIMESTAMP,
-                error = excluded.error
+                error = excluded.error,
+                owner_id = excluded.owner_id,
+                visibility = excluded.visibility
             """,
             (
                 source_path,
@@ -686,6 +817,8 @@ class SQLiteStore:
                 int(chunk_size),
                 int(chunk_overlap),
                 truncated_error,
+                normalized_owner_id,
+                normalized_visibility,
             ),
         )
         conn.commit()
@@ -696,19 +829,30 @@ class SQLiteStore:
         limit: int = 50,
         *,
         status: str | None = None,
+        owner_id: str | None = None,
+        include_global: bool = True,
     ) -> list[dict[str, Any]]:
         conn = self.connect()
         bounded_limit = max(1, min(int(limit), 200))
         normalized_status = (status or "").strip()
-        where_sql = ""
+        conditions: list[str] = []
         params: list[Any] = []
         if normalized_status:
-            where_sql = "WHERE status = ?"
+            conditions.append("status = ?")
             params.append(normalized_status)
+        access_clause, access_params = self._document_access_clause(
+            owner_id=owner_id,
+            include_global=include_global,
+        )
+        if access_clause:
+            conditions.append(access_clause)
+            params.extend(access_params)
+        where_sql = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         params.append(bounded_limit)
         rows = conn.execute(
             f"""
-            SELECT source_path, doc_id, title, status, parser_version, chunking_version,
+            SELECT source_path, doc_id, title, status, owner_id, visibility,
+                   parser_version, chunking_version,
                    embedding_model, chunk_size, chunk_overlap, checksum, page_count,
                    chunk_count, started_at, completed_at, error
             FROM document_ingestion_status
@@ -721,14 +865,26 @@ class SQLiteStore:
         return [dict(row) for row in rows]
 
     @_locked
-    def get_document_ingestion_status_summary(self) -> dict[str, int]:
+    def get_document_ingestion_status_summary(
+        self,
+        *,
+        owner_id: str | None = None,
+        include_global: bool = True,
+    ) -> dict[str, int]:
         conn = self.connect()
+        access_clause, access_params = self._document_access_clause(
+            owner_id=owner_id,
+            include_global=include_global,
+        )
+        where_sql = f"WHERE {access_clause}" if access_clause else ""
         rows = conn.execute(
-            """
+            f"""
             SELECT status, COUNT(*) AS count
             FROM document_ingestion_status
+            {where_sql}
             GROUP BY status
-            """
+            """,
+            access_params,
         ).fetchall()
         counts = {str(row["status"] or ""): int(row["count"] or 0) for row in rows}
         total_count = sum(counts.values())
@@ -767,19 +923,36 @@ class SQLiteStore:
         search: str = "",
         limit: int | None = None,
         offset: int = 0,
+        owner_id: str | None = None,
+        include_global: bool = True,
+        doc_ids: list[str] | tuple[str, ...] | set[str] | None = None,
     ) -> list[dict[str, Any]]:
         conn= self.connect()
         normalized_search = search.strip()
-        where_sql = ""
+        conditions: list[str] = []
         params: list[Any] = []
         if normalized_search:
-            where_sql = """
-            WHERE title LIKE ?
-               OR source_path LIKE ?
-               OR doc_id LIKE ?
-            """
+            conditions.append(
+                """
+                (title LIKE ?
+                 OR source_path LIKE ?
+                 OR doc_id LIKE ?)
+                """
+            )
             pattern = f"%{normalized_search}%"
             params.extend([pattern, pattern, pattern])
+        doc_id_clause, doc_id_params = self._document_ids_clause(doc_ids)
+        if doc_id_clause:
+            conditions.append(doc_id_clause)
+            params.extend(doc_id_params)
+        access_clause, access_params = self._document_access_clause(
+            owner_id=owner_id,
+            include_global=include_global,
+        )
+        if access_clause:
+            conditions.append(access_clause)
+            params.extend(access_params)
+        where_sql = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
         limit_sql = ""
         if limit is not None:
@@ -792,6 +965,7 @@ class SQLiteStore:
             f"""
             SELECT
                 doc_id, source_path, title, page_count, checksum, indexed_at,
+                owner_id, visibility,
                 ingestion_status, parser_version, chunking_version, embedding_model,
                 chunk_size, chunk_overlap, chunk_count, ingest_started_at,
                 ingest_completed_at, last_ingest_error
@@ -811,6 +985,8 @@ class SQLiteStore:
                 "page_count": row["page_count"],
                 "checksum": row["checksum"],
                 "indexed_at": row["indexed_at"],
+                "owner_id": row["owner_id"],
+                "visibility": row["visibility"],
                 "ingestion_status": row["ingestion_status"],
                 "parser_version": row["parser_version"],
                 "chunking_version": row["chunking_version"],
@@ -1180,48 +1356,58 @@ class SQLiteStore:
         }
 
     @_locked
-    def list_chunks_for_retrieval(self,doc_id:str | None=None) -> list[dict]:
+    def list_chunks_for_retrieval(
+        self,
+        doc_id: str | None = None,
+        *,
+        candidate_doc_ids: list[str] | tuple[str, ...] | set[str] | None = None,
+        owner_id: str | None = None,
+        include_global: bool = True,
+    ) -> list[dict]:
         conn = self.connect()
+        conditions: list[str] = []
+        params: list[Any] = []
         if doc_id:
-            rows = conn.execute(
-                """
-                SELECT 
-                    c.chunk_id,
-                    c.doc_id,
-                    c.chunk_index,
-                    c.page_number,
-                    c.text, 
-                    c.token_estimate,
-                    c.section_title,
-                    d.title,
-                    d.source_path
-                FROM chunks c
-                JOIN documents d 
-                    ON c.doc_id = d.doc_id
-                WHERE c.doc_id = ?
-                ORDER BY d.title, c.page_number, c.chunk_index
-                """,
-                (doc_id,)
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                """
-                SELECT 
-                    c.chunk_id,
-                    c.doc_id,
-                    c.chunk_index,
-                    c.page_number,
-                    c.text, 
-                    c.token_estimate,
-                    c.section_title,
-                    d.title,
-                    d.source_path
-                FROM chunks c
-                JOIN documents d 
-                    ON c.doc_id = d.doc_id
-                ORDER BY d.title, c.page_number, c.chunk_index
-                """
-            ).fetchall()
+            conditions.append("c.doc_id = ?")
+            params.append(doc_id)
+        doc_id_clause, doc_id_params = self._document_ids_clause(
+            candidate_doc_ids,
+            alias="c",
+        )
+        if doc_id_clause:
+            conditions.append(doc_id_clause)
+            params.extend(doc_id_params)
+        access_clause, access_params = self._document_access_clause(
+            owner_id=owner_id,
+            include_global=include_global,
+            alias="d",
+        )
+        if access_clause:
+            conditions.append(access_clause)
+            params.extend(access_params)
+        where_sql = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        rows = conn.execute(
+            f"""
+            SELECT
+                c.chunk_id,
+                c.doc_id,
+                c.chunk_index,
+                c.page_number,
+                c.text,
+                c.token_estimate,
+                c.section_title,
+                d.title,
+                d.source_path,
+                d.owner_id,
+                d.visibility
+            FROM chunks c
+            JOIN documents d
+                ON c.doc_id = d.doc_id
+            {where_sql}
+            ORDER BY d.title, c.page_number, c.chunk_index
+            """,
+            params,
+        ).fetchall()
 
         return [
             {
@@ -1234,6 +1420,8 @@ class SQLiteStore:
                 "section_title":row["section_title"],
                 "title":row["title"],
                 "source_path":row["source_path"],
+                "owner_id": row["owner_id"],
+                "visibility": row["visibility"],
             }
             for row in rows
         ]
@@ -1322,26 +1510,53 @@ class SQLiteStore:
         "section_title": row["section_title"] if "section_title" in row.keys() else None,
         "title": row["title"],
         "source_path": row["source_path"],
+        "owner_id": row["owner_id"] if "owner_id" in row.keys() else "global",
+        "visibility": row["visibility"] if "visibility" in row.keys() else "global",
     }
         
     @_locked
-    def list_documents_for_routing(self) -> list[dict[str, Any]]:
+    def list_documents_for_routing(
+        self,
+        *,
+        owner_id: str | None = None,
+        include_global: bool = True,
+        doc_ids: list[str] | tuple[str, ...] | set[str] | None = None,
+    ) -> list[dict[str, Any]]:
         conn=self.connect()
+        conditions: list[str] = []
+        params: list[Any] = []
+        doc_id_clause, doc_id_params = self._document_ids_clause(doc_ids, alias="d")
+        if doc_id_clause:
+            conditions.append(doc_id_clause)
+            params.extend(doc_id_params)
+        access_clause, access_params = self._document_access_clause(
+            owner_id=owner_id,
+            include_global=include_global,
+            alias="d",
+        )
+        if access_clause:
+            conditions.append(access_clause)
+            params.extend(access_params)
+        where_sql = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         rows=conn.execute(
-            """
+            f"""
             SELECT
                 d.doc_id,
                 d.title,
                 d.source_path,
                 d.page_count,
                 d.indexed_at,
+                d.owner_id,
+                d.visibility,
                 COALESCE(GROUP_CONCAT(DISTINCT c.section_title), '') AS section_titles
             FROM documents d
             LEFT JOIN chunks c 
                 ON d.doc_id = c.doc_id
-            GROUP BY d.doc_id, d.title, d.source_path, d.page_count, d.indexed_at
+            {where_sql}
+            GROUP BY d.doc_id, d.title, d.source_path, d.page_count, d.indexed_at, d.owner_id, d.visibility
             ORDER BY d.indexed_at DESC;
-            """
+            """,
+            params,
         ).fetchall()
         return [
             {
@@ -1350,6 +1565,8 @@ class SQLiteStore:
                 "source_path": row["source_path"],
                 "page_count": row["page_count"],
                 "indexed_at": row["indexed_at"],
+                "owner_id": row["owner_id"],
+                "visibility": row["visibility"],
                 "section_titles": row["section_titles"] or "",
             }
             for row in rows
@@ -1383,23 +1600,72 @@ class SQLiteStore:
         )
 
     @_locked
-    def count_documents(self, *, search: str = "") -> int:
+    def accessible_document_ids(
+        self,
+        *,
+        owner_id: str,
+        include_global: bool = True,
+    ) -> list[str]:
+        conn = self.connect()
+        access_clause, access_params = self._document_access_clause(
+            owner_id=owner_id,
+            include_global=include_global,
+        )
+        where_sql = f"WHERE {access_clause}" if access_clause else ""
+        rows = conn.execute(
+            f"""
+            SELECT doc_id
+            FROM documents
+            {where_sql}
+            ORDER BY indexed_at DESC
+            """,
+            access_params,
+        ).fetchall()
+        return [str(row["doc_id"]) for row in rows]
+
+    @_locked
+    def count_documents(
+        self,
+        *,
+        search: str = "",
+        owner_id: str | None = None,
+        include_global: bool = True,
+        doc_ids: list[str] | tuple[str, ...] | set[str] | None = None,
+    ) -> int:
         conn = self.connect()
         normalized_search = search.strip()
-        if not normalized_search:
-            row = conn.execute("SELECT COUNT(*) AS total FROM documents").fetchone()
-            return int(row["total"] or 0)
+        conditions: list[str] = []
+        params: list[Any] = []
 
-        pattern = f"%{normalized_search}%"
+        if normalized_search:
+            pattern = f"%{normalized_search}%"
+            conditions.append(
+                """
+                (title LIKE ?
+                 OR source_path LIKE ?
+                 OR doc_id LIKE ?)
+                """
+            )
+            params.extend([pattern, pattern, pattern])
+        doc_id_clause, doc_id_params = self._document_ids_clause(doc_ids)
+        if doc_id_clause:
+            conditions.append(doc_id_clause)
+            params.extend(doc_id_params)
+        access_clause, access_params = self._document_access_clause(
+            owner_id=owner_id,
+            include_global=include_global,
+        )
+        if access_clause:
+            conditions.append(access_clause)
+            params.extend(access_params)
+        where_sql = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         row = conn.execute(
-            """
+            f"""
             SELECT COUNT(*) AS total
             FROM documents
-            WHERE title LIKE ?
-               OR source_path LIKE ?
-               OR doc_id LIKE ?
+            {where_sql}
             """,
-            (pattern, pattern, pattern),
+            params,
         ).fetchone()
         return int(row["total"] or 0)
 

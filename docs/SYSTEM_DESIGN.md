@@ -90,6 +90,7 @@ This target layout gives each concern a clear owner:
 - `src/local_agent/evaluation`: gold QA scoring, feedback eval candidates, and eval runs,
 - `src/local_agent/operations`: local operational workflows such as runtime backup and restore,
 - `src/local_agent/retrieval`: document routing, hybrid search, context expansion, and routing-cache behavior,
+- `src/local_agent/storage`: SQLite runtime metadata, feedback, traces, memory, document ownership, and local inspection helpers,
 - `tests`: automated tests only,
 - `benchmarks/gold_qa`: versioned evaluation datasets,
 - `data/raw`: user/source documents,
@@ -128,6 +129,7 @@ RAG question:
 user query
 -> memory load
 -> planner
+-> auth document scope when API auth is enabled
 -> document router
 -> retrieval
 -> evidence selection
@@ -257,9 +259,21 @@ Status: completed for local runtime paths and local backup/restore.
 - Keep `.env.example` aligned with these paths.
 - Runtime backup and restore are implemented in `src/local_agent/operations/runtime_backup.py`.
 - Operator commands live in `scripts/runtime_state.py`.
+- Scheduled backup execution is available through `scripts/runtime_state.py scheduled-backup`.
 - Detailed instructions live in [docs/BACKUP_RESTORE.md](BACKUP_RESTORE.md).
 
-### Phase 5: Deployment Shape
+### Phase 5: User And Document Isolation
+
+Status: completed for v1 API token namespaces and document visibility.
+
+- API auth creates user/session namespaces for traces, feedback, memory, and tool audit.
+- Documents carry `owner_id` and `visibility`.
+- Existing indexed documents default to global visibility.
+- Authenticated web ingests become user-owned.
+- Routing, retrieval, document library, ingestion status, and document-list tool output are scoped to global plus current-user documents.
+- Detailed instructions live in [docs/DOCUMENT_ISOLATION.md](DOCUMENT_ISOLATION.md).
+
+### Phase 6: Deployment Shape
 
 Status: started for local single-machine deployment.
 
@@ -267,7 +281,7 @@ Status: started for local single-machine deployment.
 - Add `deploy/` later if we introduce service-manager, container, or hosted deployment assets.
 - Add deployment-specific config examples.
 - Production health endpoints for app, SQLite, Qdrant, Ollama, and model availability are started through `/health` and `/api/system/status`.
-- Add deployment rollback policy and scheduled/off-machine backup policy.
+- Add service-manager/container assets and register the real scheduled backup job for deployed environments.
 
 ## Rules For Future Changes
 

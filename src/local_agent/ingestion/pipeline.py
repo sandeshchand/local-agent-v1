@@ -9,7 +9,12 @@ from local_agent.ingestion.chunking import  chunk_pages
 from local_agent.ingestion.metadata import CHUNKING_VERSION, PARSER_VERSION
 from local_agent.ingestion.parsers.pdf_parser import parse_pdf
 from local_agent.storage.qdrant_store import QdrantStore
-from local_agent.storage.sqlite_store import SQLiteStore
+from local_agent.storage.sqlite_store import (
+    SQLiteStore,
+    document_visible_to,
+    normalize_document_owner_id,
+    normalize_document_visibility,
+)
 
 
 class IngestionPipeline:
@@ -29,8 +34,24 @@ class IngestionPipeline:
     def _make_point_id(self, chunk_id:str) -> int:
         return int(hashlib.md5(chunk_id.encode("utf-8")).hexdigest()[:12], 16)
 
-    def ingest_pdf(self, pdf_path: str | Path, *, force: bool = False) -> dict:
+    def ingest_pdf(
+        self,
+        pdf_path: str | Path,
+        *,
+        force: bool = False,
+        owner_id: str = "global",
+        visibility: str = "global",
+    ) -> dict:
         source_path = str(Path(pdf_path).expanduser().resolve())
+        normalized_owner_id = normalize_document_owner_id(owner_id)
+        normalized_visibility = normalize_document_visibility(visibility)
+        existing_doc = self.sqlite_store.get_document_by_source_path(source_path)
+        if existing_doc and not document_visible_to(existing_doc, normalized_owner_id):
+            raise PermissionError("Document path is already indexed for another user namespace.")
+        if existing_doc:
+            normalized_owner_id = normalize_document_owner_id(existing_doc.get("owner_id"))
+            normalized_visibility = normalize_document_visibility(existing_doc.get("visibility"))
+
         self.sqlite_store.record_document_ingestion_started(
             source_path=source_path,
             parser_version=PARSER_VERSION,
@@ -38,10 +59,17 @@ class IngestionPipeline:
             embedding_model=self.embedding_client.model_name,
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,
+            owner_id=normalized_owner_id,
+            visibility=normalized_visibility,
         )
 
         try:
-            summary = self._ingest_pdf(source_path, force=force)
+            summary = self._ingest_pdf(
+                source_path,
+                force=force,
+                owner_id=normalized_owner_id,
+                visibility=normalized_visibility,
+            )
         except Exception as exc:
             self.sqlite_store.record_document_ingestion_failed(
                 source_path=source_path,
@@ -51,14 +79,30 @@ class IngestionPipeline:
                 embedding_model=self.embedding_client.model_name,
                 chunk_size=self.chunk_size,
                 chunk_overlap=self.chunk_overlap,
+                owner_id=normalized_owner_id,
+                visibility=normalized_visibility,
             )
             raise
 
         return summary
 
-    def _ingest_pdf(self, pdf_path: str | Path, *, force: bool) -> dict:
+    def _ingest_pdf(
+        self,
+        pdf_path: str | Path,
+        *,
+        force: bool,
+        owner_id: str,
+        visibility: str,
+    ) -> dict:
         parsed_doc = parse_pdf(pdf_path)
         existing_doc = self.sqlite_store.get_document_by_source_path(parsed_doc.source_path)
+        if existing_doc and not document_visible_to(existing_doc, owner_id):
+            raise PermissionError("Document path is already indexed for another user namespace.")
+        effective_owner_id = normalize_document_owner_id(owner_id)
+        effective_visibility = normalize_document_visibility(visibility)
+        if existing_doc:
+            effective_owner_id = normalize_document_owner_id(existing_doc.get("owner_id"))
+            effective_visibility = normalize_document_visibility(existing_doc.get("visibility"))
         if not force and self._is_current_index(existing_doc, parsed_doc.checksum):
             chunk_count = int(existing_doc.get("chunk_count") or 0) if existing_doc else 0
             self.sqlite_store.record_document_ingestion_completed(
@@ -74,6 +118,8 @@ class IngestionPipeline:
                 embedding_model=self.embedding_client.model_name,
                 chunk_size=self.chunk_size,
                 chunk_overlap=self.chunk_overlap,
+                owner_id=effective_owner_id,
+                visibility=effective_visibility,
             )
             return {
                 "doc_id": parsed_doc.doc_id,
@@ -83,6 +129,8 @@ class IngestionPipeline:
                 "chunk_count": chunk_count,
                 "embedding_dimension": None,
                 "status": "skipped",
+                "owner_id": effective_owner_id,
+                "visibility": effective_visibility,
                 "message": "Already indexed with current parser, chunking, and embedding settings.",
             }
 
@@ -117,6 +165,8 @@ class IngestionPipeline:
                 "chunk_index": chunk.chunk_index,
                 "source_path": parsed_doc.source_path,
                 "title": parsed_doc.title,
+                "owner_id": effective_owner_id,
+                "visibility": effective_visibility,
                 "page_number": chunk.page_number,
                 "section_title": chunk.section_title,
                 "text": chunk.text,
@@ -147,6 +197,8 @@ class IngestionPipeline:
             chunk_overlap=self.chunk_overlap,
             chunk_count=len(chunks),
             ingestion_status="indexed",
+            owner_id=effective_owner_id,
+            visibility=effective_visibility,
         )
         self.sqlite_store.delete_chunks_for_doc(parsed_doc.doc_id)
         self.sqlite_store.insert_chunks(sqlite_chunks)
@@ -163,6 +215,8 @@ class IngestionPipeline:
             embedding_model=self.embedding_client.model_name,
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,
+            owner_id=effective_owner_id,
+            visibility=effective_visibility,
         )
 
         return {
@@ -173,6 +227,8 @@ class IngestionPipeline:
             "chunk_count": len(chunks),
             "embedding_dimension": len(vectors[0]),
             "status": "indexed",
+            "owner_id": effective_owner_id,
+            "visibility": effective_visibility,
             "message": "Indexed successfully",
         }
 
@@ -189,6 +245,5 @@ class IngestionPipeline:
             and int(existing_doc.get("chunk_count") or 0) > 0
             and (existing_doc.get("ingestion_status") or "indexed") == "indexed"
         )
-
 
 

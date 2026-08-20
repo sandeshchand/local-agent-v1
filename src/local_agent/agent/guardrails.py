@@ -1,8 +1,32 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from local_agent.agent.schemas import AgentAction, GuardrailDecision
+
+_SENSITIVE_FILE_NAMES = {
+    ".env",
+    "credentials",
+    "credentials.json",
+    "id_dsa",
+    "id_ecdsa",
+    "id_ed25519",
+    "id_rsa",
+    "secrets.json",
+}
+
+_SENSITIVE_SUFFIXES = {
+    ".key",
+    ".p12",
+    ".pem",
+    ".pfx",
+}
+
+_WRITE_DELETE_CATEGORIES = {
+    "write_file",
+    "delete_file",
+}
 
 
 class GuardrailPolicy:
@@ -46,6 +70,18 @@ class GuardrailPolicy:
                 policy_name=self.policy_name,
             )
 
+        path_decision = self._evaluate_path_policy(action, tool_spec)
+        if path_decision is not None:
+            return path_decision
+
+        write_delete_decision = self._evaluate_write_delete_policy(
+            action,
+            tool_spec,
+            approved_tool_names,
+        )
+        if write_delete_decision is not None:
+            return write_delete_decision
+
         if tool_spec.requires_approval:
             if tool_name in approved_tool_names:
                 return GuardrailDecision(
@@ -82,3 +118,269 @@ class GuardrailPolicy:
         if hasattr(tool_call, "name"):
             return tool_call.name
         return tool_call.get("name")
+
+    def _tool_args(self, action: AgentAction) -> dict[str, Any]:
+        tool_call = action.tool_call
+        if tool_call is None:
+            return {}
+        if hasattr(tool_call, "args"):
+            return tool_call.args or {}
+        return tool_call.get("args", {}) or {}
+
+    def _evaluate_write_delete_policy(
+        self,
+        action: AgentAction,
+        tool_spec: Any,
+        approved_tool_names: set[str],
+    ) -> GuardrailDecision | None:
+        tool_name = self._tool_name(action)
+        category = self._tool_category(tool_name or "", tool_spec)
+        if category not in _WRITE_DELETE_CATEGORIES:
+            return None
+
+        policy = self._write_delete_policy(tool_spec)
+        if not bool(policy.get("enabled")):
+            return self._write_delete_decision(
+                action,
+                tool_name,
+                "deny",
+                (
+                    f"Tool '{tool_name}' is categorized as '{category}', but write/delete "
+                    "tool execution is disabled unless ToolSpec.metadata.write_delete_policy.enabled=true."
+                ),
+                approved=False,
+            )
+
+        if self._path_policy(tool_spec) is None:
+            return self._write_delete_decision(
+                action,
+                tool_name,
+                "deny",
+                f"Tool '{tool_name}' must define a path_policy before write/delete execution.",
+                approved=False,
+            )
+
+        allowed_categories = self._string_set(
+            policy.get("allowed_categories") or policy.get("allowedCategories") or []
+        )
+        if category not in allowed_categories:
+            return self._write_delete_decision(
+                action,
+                tool_name,
+                "deny",
+                f"Tool '{tool_name}' is not explicitly allowed for '{category}' actions.",
+                approved=False,
+            )
+
+        if category == "delete_file" and not bool(policy.get("allow_delete") or policy.get("allowDelete")):
+            return self._write_delete_decision(
+                action,
+                tool_name,
+                "deny",
+                f"Tool '{tool_name}' is not explicitly allowed to delete files.",
+                approved=False,
+            )
+
+        if tool_name not in approved_tool_names:
+            return self._write_delete_decision(
+                action,
+                tool_name,
+                "needs_approval",
+                f"Tool '{tool_name}' is a write/delete action and requires request approval.",
+                approved=False,
+            )
+
+        return self._write_delete_decision(
+            action,
+            tool_name,
+            "allow",
+            f"Tool '{tool_name}' passed write/delete policy and was approved for this request.",
+            approved=True,
+        )
+
+    def _tool_category(self, tool_name: str, tool_spec: Any) -> str:
+        metadata = getattr(tool_spec, "metadata", {}) or {}
+        explicit_category = metadata.get("category")
+        if explicit_category:
+            return str(explicit_category)
+
+        annotations = metadata.get("annotations") or {}
+        if isinstance(annotations, dict):
+            annotated_category = annotations.get("localAgentToolCategory")
+            if annotated_category:
+                return str(annotated_category)
+
+        lower_name = tool_name.lower()
+        if any(term in lower_name for term in ["delete", "remove", "unlink"]):
+            return "delete_file"
+        if any(term in lower_name for term in ["write", "save", "create", "update"]):
+            return "write_file"
+        return "local_read"
+
+    def _write_delete_policy(self, tool_spec: Any) -> dict[str, Any]:
+        metadata = getattr(tool_spec, "metadata", {}) or {}
+        policy = metadata.get("write_delete_policy")
+        if isinstance(policy, dict):
+            return policy
+        annotations = metadata.get("annotations") or {}
+        if isinstance(annotations, dict):
+            annotated_policy = annotations.get("localAgentWriteDeletePolicy")
+            if isinstance(annotated_policy, dict):
+                return annotated_policy
+        return {}
+
+    def _write_delete_decision(
+        self,
+        action: AgentAction,
+        tool_name: str | None,
+        status: str,
+        reason: str,
+        *,
+        approved: bool,
+    ) -> GuardrailDecision:
+        return GuardrailDecision(
+            status=status,  # type: ignore[arg-type]
+            reason=reason,
+            action_type=action.action_type,
+            tool_name=tool_name,
+            requires_approval=True,
+            approved=approved,
+            policy_name=f"{self.policy_name}.write_delete_policy",
+        )
+
+    def _evaluate_path_policy(self, action: AgentAction, tool_spec: Any) -> GuardrailDecision | None:
+        policy = self._path_policy(tool_spec)
+        if not policy:
+            return None
+
+        tool_name = self._tool_name(action)
+        args = self._tool_args(action)
+        path_args = policy.get("path_args") or policy.get("pathArgs") or ["path"]
+        if isinstance(path_args, str):
+            path_args = [path_args]
+        allow_empty_path = bool(policy.get("allow_empty_path") or policy.get("allowEmptyPath"))
+
+        base_dir = self._resolve_policy_root(policy.get("base_dir") or policy.get("baseDir"))
+        allowed_roots = [
+            self._resolve_policy_root(raw_root, base_dir=base_dir)
+            for raw_root in (policy.get("allowed_roots") or policy.get("allowedRoots") or [])
+            if str(raw_root or "").strip()
+        ]
+        if not allowed_roots:
+            return self._deny_path_policy(
+                action,
+                tool_name,
+                "Tool has a path policy but no allowed roots are configured.",
+            )
+
+        for path_arg in path_args:
+            raw_path = args.get(str(path_arg))
+            if raw_path is None or str(raw_path).strip() == "":
+                if allow_empty_path:
+                    continue
+                return self._deny_path_policy(
+                    action,
+                    tool_name,
+                    f"Tool requires path argument '{path_arg}' for guardrail path validation.",
+                )
+
+            resolved = self._resolve_tool_path(str(raw_path), base_dir)
+            if resolved is None:
+                return self._deny_path_policy(
+                    action,
+                    tool_name,
+                    f"Tool path '{raw_path}' could not be resolved safely.",
+                )
+
+            if not self._is_allowed_path(resolved, allowed_roots):
+                allowed_display = ", ".join(self._display_root(root, base_dir) for root in allowed_roots)
+                return self._deny_path_policy(
+                    action,
+                    tool_name,
+                    f"Tool path '{raw_path}' is outside allowed roots: {allowed_display}.",
+                )
+
+            if bool(policy.get("block_sensitive", True)) and self._is_sensitive_path(resolved, base_dir):
+                return self._deny_path_policy(
+                    action,
+                    tool_name,
+                    f"Tool path '{raw_path}' is hidden or sensitive and cannot be accessed.",
+                )
+
+        return None
+
+    def _path_policy(self, tool_spec: Any) -> dict[str, Any] | None:
+        metadata = getattr(tool_spec, "metadata", {}) or {}
+        policy = metadata.get("path_policy")
+        if isinstance(policy, dict):
+            return policy
+        annotations = metadata.get("annotations") or {}
+        if isinstance(annotations, dict):
+            nested_policy = annotations.get("localAgentPathPolicy")
+            if isinstance(nested_policy, dict):
+                return nested_policy
+        return None
+
+    def _deny_path_policy(
+        self,
+        action: AgentAction,
+        tool_name: str | None,
+        reason: str,
+    ) -> GuardrailDecision:
+        return GuardrailDecision(
+            status="deny",
+            reason=reason,
+            action_type=action.action_type,
+            tool_name=tool_name,
+            policy_name=f"{self.policy_name}.path_policy",
+        )
+
+    def _resolve_policy_root(self, raw_path: Any, *, base_dir: Path | None = None) -> Path:
+        path = Path(str(raw_path or ".")).expanduser()
+        if not path.is_absolute() and base_dir is not None:
+            path = base_dir / path
+        return path.resolve()
+
+    def _resolve_tool_path(self, raw_path: str, base_dir: Path) -> Path | None:
+        try:
+            candidate = Path(raw_path.strip()).expanduser()
+            if not candidate.is_absolute():
+                candidate = base_dir / candidate
+            return candidate.resolve()
+        except (OSError, RuntimeError, ValueError):
+            return None
+
+    def _is_allowed_path(self, path: Path, allowed_roots: list[Path]) -> bool:
+        for root in allowed_roots:
+            if path == root:
+                return True
+            if root.exists() and root.is_dir() and root in path.parents:
+                return True
+        return False
+
+    def _is_sensitive_path(self, path: Path, base_dir: Path) -> bool:
+        lower_name = path.name.lower()
+        if lower_name.endswith(".env.example"):
+            return False
+        if lower_name in _SENSITIVE_FILE_NAMES:
+            return True
+        if path.suffix.lower() in _SENSITIVE_SUFFIXES:
+            return True
+        try:
+            parts = path.relative_to(base_dir).parts
+        except ValueError:
+            parts = path.parts
+        return any(part.startswith(".") for part in parts)
+
+    def _display_root(self, root: Path, base_dir: Path) -> str:
+        try:
+            return root.relative_to(base_dir).as_posix()
+        except ValueError:
+            return str(root)
+
+    def _string_set(self, value: Any) -> set[str]:
+        if isinstance(value, str):
+            return {value}
+        if isinstance(value, (list, tuple, set)):
+            return {str(item) for item in value if str(item).strip()}
+        return set()

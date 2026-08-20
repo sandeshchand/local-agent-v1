@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 from local_agent.agent.schemas import ToolSpec
-from local_agent.app.tool_audit import build_tool_audit, tool_category
+from local_agent.app.tool_audit import build_tool_audit, guardrail_risk, tool_category
 from local_agent.storage.sqlite_store import SQLiteStore
 from local_agent.tools import ToolRegistry
 
@@ -123,13 +123,32 @@ def main() -> None:
         assert summary["needs_approval_count"] == 1
         assert summary["approved_count"] == 1
         assert summary["executed_count"] == 2
+        assert summary["blocked_count"] == 2
+        assert summary["high_risk_count"] == 2
+        assert summary["medium_risk_count"] == 1
+        assert summary["low_risk_count"] == 1
+        assert summary["write_delete_count"] == 1
+        assert summary["category_counts"]["write_file"] == 1
+        assert summary["risk_counts"]["high"] == 2
 
         by_tool = {item["tool_name"]: item for item in items}
         assert by_tool["get_current_weather"]["tool_category"] == "web_read"
+        assert by_tool["get_current_weather"]["risk_level"] == "low"
         assert by_tool["mcp.sqlite.list_tables"]["tool_category"] == "read_db"
+        assert by_tool["mcp.sqlite.list_tables"]["risk_level"] == "medium"
         assert by_tool["mcp.file_server.write_file"]["tool_category"] == "write_file"
+        assert by_tool["mcp.file_server.write_file"]["risk_level"] == "high"
+        assert by_tool["mcp.file_server.write_file"]["blocked"] is True
         assert by_tool["missing_tool"]["executed"] is False
+        assert by_tool["missing_tool"]["risk_level"] == "high"
+        assert by_tool["missing_tool"]["blocked"] is True
         assert tool_category("mcp.local_files.read_text_file", source="mcp") == "read_file"
+        assert guardrail_risk(
+            status="needs_approval",
+            tool_category="read_file",
+            requires_approval=True,
+            executed=False,
+        )[0] == "medium"
 
         store.close()
 

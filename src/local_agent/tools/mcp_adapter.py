@@ -60,18 +60,28 @@ class MCPToolAdapter:
             registry_name = self._registry_tool_name(definition.name, used_names)
             used_names.add(registry_name)
             self._registry_to_mcp[registry_name] = definition.name
+            metadata: dict[str, Any] = {
+                "server_name": self.server_name,
+                "mcp_tool_name": definition.name,
+                "input_schema": definition.input_schema,
+                "annotations": definition.annotations,
+            }
+            category = definition.annotations.get("localAgentToolCategory")
+            path_policy = definition.annotations.get("localAgentPathPolicy")
+            write_delete_policy = definition.annotations.get("localAgentWriteDeletePolicy")
+            if category:
+                metadata["category"] = str(category)
+            if path_policy:
+                metadata["path_policy"] = _as_dict(path_policy)
+            if write_delete_policy:
+                metadata["write_delete_policy"] = _as_dict(write_delete_policy)
 
             spec = ToolSpec(
                 name=registry_name,
                 description=definition.description or f"MCP tool {definition.name}",
                 requires_approval=definition.requires_approval,
                 source="mcp",
-                metadata={
-                    "server_name": self.server_name,
-                    "mcp_tool_name": definition.name,
-                    "input_schema": definition.input_schema,
-                    "annotations": definition.annotations,
-                },
+                metadata=metadata,
             )
             registry.register(spec, self._callable_for(registry_name))
             registered.append(spec)

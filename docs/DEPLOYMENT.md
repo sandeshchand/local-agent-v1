@@ -216,6 +216,12 @@ var/backups/local_agent_backup_YYYYMMDD_HHMMSS/
 
 For real production, copy backups to another disk or managed storage. Local backups alone are not enough.
 
+For a scheduled backup workflow with off-machine copy, pruning, and JSONL job logging:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py --env-file .env scheduled-backup --backup-root D:\local-agent-backups --off-machine-root E:\local-agent-off-machine-backups --apply-prune
+```
+
 Detailed backup notes:
 
 ```text
@@ -295,10 +301,10 @@ Expected quality gate:
 
 Before real multi-user production, add:
 
-- authentication,
-- per-user/session isolation,
+- production user accounts or an external identity provider,
+- role-based authorization for admin actions,
 - deployment secret management,
-- scheduled off-machine backups,
+- a registered OS scheduler job using the scheduled backup command,
 - monitoring and alerting,
 - container or service manager configuration,
 - explicit data retention policy,

@@ -26,7 +26,7 @@ The project has strong local foundations:
 - system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools,
 - local backup and restore tooling for SQLite and Qdrant runtime state,
 - backup listing and retention pruning with dry-run by default,
-- config-gated API token authentication and request session isolation,
+- config-gated API token authentication and request user/session isolation,
 - local deployment documentation,
 - versioned incremental ingestion with per-file status tracking and safe Qdrant cleanup,
 - ingestion status visibility through CLI, API, and UI.
@@ -127,7 +127,7 @@ Completed:
 ### Security And Privacy
 
 - Keep API token authentication enabled for production-like local use.
-- Add full user accounts before true multi-user deployment.
+- Add full user accounts or an external identity provider before true multi-user deployment.
 - Add per-user document/index isolation before handling private data from multiple users.
 - Move production secrets to a proper secret manager.
 - Define data retention rules for traces, feedback, memory, and uploaded PDFs.
@@ -164,15 +164,17 @@ It should also have:
 
 1. Optimize first-query retrieval/model warmup without reducing RAG quality.
 2. Add broader gold QA for new daily PDFs.
-3. Add scheduled/off-machine backup execution for deployed environments.
-4. Add production user accounts and per-user document isolation design.
+3. Register the real scheduled/off-machine backup job for deployed environments.
+4. Add production user accounts and role-based admin permissions.
 
 Completed from this list:
 
 - Health-check and system-status UI/API endpoints.
 - Local SQLite and Qdrant backup/restore script, smoke test, and documentation.
 - Backup listing, safe retention pruning, and local retention policy documentation.
-- Config-gated API token authentication, UI token/session controls, and session-scoped traces/feedback/memory/tool-audit views.
+- Scheduled backup execution command with optional off-machine copy, retention pruning, JSONL job logging, smoke test, and documentation.
+- Config-gated API token authentication, UI user/session controls, and user-session-scoped traces/feedback/memory/tool-audit views.
+- Per-user document visibility isolation for authenticated API use.
 - Memory multi-turn eval, benchmark cases, smoke test, and short-term redaction.
 - Tool audit API, UI tab, category labels, and smoke test.
 - Memory management API, UI tab, delete control, and smoke test.

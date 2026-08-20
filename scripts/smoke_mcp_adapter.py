@@ -68,7 +68,7 @@ def main() -> None:
     assert registry.get_tool_spec(delete_tool).requires_approval is True  # type: ignore[union-attr]
 
     assert guardrail_status(registry, read_tool) == "allow"
-    assert guardrail_status(registry, delete_tool) == "needs_approval"
+    assert guardrail_status(registry, delete_tool) == "deny"
 
     result = registry.execute(read_tool, name="demo")
     payload = json.loads(result.output or "{}")

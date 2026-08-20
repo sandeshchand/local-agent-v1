@@ -22,14 +22,14 @@ Implemented:
 - Memory management API and UI tab for inspecting/deleting long-term memory.
 - Tool-call guardrails with `allow`, `deny`, and `needs_approval`.
 - Request-scoped approval for approval-required tools.
-- Tool audit API and UI tab for guardrail/tool execution visibility.
+- Tool audit API and UI tab for guardrail/tool execution visibility, including risk labels and blocked-action summaries.
 - Read-only weather tool.
 - MCP-style File and SQLite connectors.
 - UI trace view, compact trace path summaries, compact source box, feedback, eval drafts, document library, and tools panel.
 - System status API and UI panel for SQLite, Qdrant, Ollama models, embeddings, and tools.
 - Runtime backup and restore for local SQLite and Qdrant state.
 - Local deployment guide for startup, config, health checks, logs, backup/restore, rollback, and Qdrant path ownership.
-- Config-gated API token authentication and request session isolation for traces, feedback, memory, and tool audit.
+- Config-gated API token authentication and request user/session isolation for traces, feedback, memory, and tool audit.
 - Answer-generation fast path for high-confidence citation-backed extractive answers.
 - Retrieval/model warmup for Qdrant, embeddings, and reranker startup cost.
 - Fast-path observability through `evidence_trace`, `answer_trace`, `evidence_path`, and `answer_path`.
@@ -183,12 +183,13 @@ Implemented base controls:
 - list backups with `scripts/runtime_state.py list-backups`,
 - prune old backups by retention count with dry-run by default,
 - apply prune only with `--apply`,
+- run a scheduled backup workflow with local backup, optional off-machine copy, pruning, and JSONL job logging through `scripts/runtime_state.py scheduled-backup`,
 - documented local and production-like retention policy.
 
 Remaining production work:
 
 - choose the real off-machine backup storage location,
-- schedule daily backup execution outside the Python app,
+- register the real daily Windows Task Scheduler or cron job,
 - define restore-drill schedule,
 - decide who owns rollback decisions.
 
@@ -200,14 +201,16 @@ Implemented v1:
 
 - optional API token authentication through `AUTH_ENABLED` and `AUTH_TOKEN`,
 - `/api/*` protection when auth is enabled,
-- UI `Access` panel for token and session id,
-- session-scoped traces, feedback, memory, and tool-audit views,
+- UI `Access` panel for token, user id, and session id,
+- user/session-scoped traces, feedback, memory, and tool-audit views,
+- per-user document visibility for web ingest, document library, ingestion status, routing, retrieval, and scoped document-list tool output,
 - smoke coverage in `scripts/smoke_auth.py`.
+- document-isolation smoke coverage in `scripts/smoke_document_isolation.py`.
 
 Remaining production work:
 
 - full user accounts or an external identity provider,
-- per-user document/index isolation,
+- decide whether a hosted deployment needs physically separate vector collections per tenant,
 - roles for admin actions such as ingest, eval promotion, backup, and restore,
 - deployed secret management instead of `.env`.
 
@@ -215,10 +218,17 @@ Remaining production work:
 
 Do this before adding write/delete tools.
 
+Completed base:
+
+- generic file-operation categories in the audit layer,
+- low/medium/high risk visibility,
+- blocked-action counts,
+- write/delete category highlighting.
+- explicit File MCP path policy checks before execution.
+- explicit write/delete policy checks before future mutating tools can run.
+
 Next guardrail tasks:
 
-- add file-operation categories,
-- add explicit path allowlists for writable tools,
 - extend audit filters if the trace volume grows,
 - keep approval request-scoped unless there is a real user/session permission model.
 

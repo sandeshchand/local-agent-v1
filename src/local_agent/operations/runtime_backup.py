@@ -12,6 +12,7 @@ from local_agent.app.paths import PROJECT_ROOT
 
 BACKUP_FORMAT_VERSION = 1
 DEFAULT_BACKUP_ROOT = PROJECT_ROOT / "var" / "backups"
+DEFAULT_BACKUP_JOB_LOG = PROJECT_ROOT / "var" / "logs" / "scheduled_backup.jsonl"
 
 
 class RuntimeBackupError(RuntimeError):
@@ -191,6 +192,104 @@ def prune_runtime_backups(
     }
 
 
+def copy_runtime_backup(
+    *,
+    backup_path: str | Path,
+    off_machine_root: str | Path,
+) -> dict[str, Any]:
+    source_dir = Path(backup_path).expanduser().resolve()
+    metadata = inspect_runtime_backup(source_dir)
+    root = Path(off_machine_root).expanduser().resolve()
+    if _path_is_relative_to(root, source_dir):
+        raise RuntimeBackupError(
+            f"Off-machine root cannot be inside the backup directory: {root}"
+        )
+    if _path_is_relative_to(root, source_dir.parent):
+        raise RuntimeBackupError(
+            f"Off-machine root cannot be inside the local backup root: {root}"
+        )
+    root.mkdir(parents=True, exist_ok=True)
+
+    dest_dir = root / source_dir.name
+    if dest_dir.exists():
+        raise RuntimeBackupError(f"Off-machine backup destination already exists: {dest_dir}")
+
+    shutil.copytree(source_dir, dest_dir)
+    copied_metadata = inspect_runtime_backup(dest_dir)
+    summary = _backup_summary(copied_metadata)
+    summary["copied"] = True
+    summary["source_backup_path"] = metadata.get("backup_path", str(source_dir))
+    summary["off_machine_root"] = str(root)
+    return summary
+
+
+def run_scheduled_backup(
+    *,
+    sqlite_path: str | Path,
+    qdrant_path: str | Path,
+    backup_root: str | Path | None = None,
+    off_machine_root: str | Path | None = None,
+    local_keep: int = 14,
+    off_machine_keep: int = 28,
+    apply_prune: bool = False,
+    job_log_path: str | Path | None = DEFAULT_BACKUP_JOB_LOG,
+) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "status": "running",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "completed_at": "",
+        "backup": {},
+        "off_machine_copy": {},
+        "local_prune": {},
+        "off_machine_prune": {},
+        "warnings": [],
+        "error": "",
+    }
+
+    try:
+        backup = backup_runtime_state(
+            sqlite_path=sqlite_path,
+            qdrant_path=qdrant_path,
+            backup_root=backup_root,
+        )
+        result["backup"] = _backup_summary(inspect_runtime_backup(backup["backup_path"]))
+
+        if off_machine_root:
+            result["off_machine_copy"] = copy_runtime_backup(
+                backup_path=backup["backup_path"],
+                off_machine_root=off_machine_root,
+            )
+        else:
+            result["warnings"].append(
+                "No off-machine root configured; backup was created locally only."
+            )
+
+        result["local_prune"] = prune_runtime_backups(
+            backup_root=backup_root,
+            keep=local_keep,
+            dry_run=not apply_prune,
+        )
+        if off_machine_root:
+            result["off_machine_prune"] = prune_runtime_backups(
+                backup_root=off_machine_root,
+                keep=off_machine_keep,
+                dry_run=not apply_prune,
+            )
+
+        result["status"] = "success"
+        return result
+    except Exception as exc:
+        result["status"] = "failed"
+        result["error"] = str(exc)
+        if isinstance(exc, RuntimeBackupError):
+            raise
+        raise RuntimeBackupError(str(exc)) from exc
+    finally:
+        result["completed_at"] = datetime.now(timezone.utc).isoformat()
+        if job_log_path is not None:
+            result["job_log_path"] = _append_backup_job_log(job_log_path, result)
+
+
 def _prepare_backup_dir(
     *,
     backup_root: str | Path | None,
@@ -216,6 +315,25 @@ def _prepare_backup_dir(
 
 def _resolve_backup_root(backup_root: str | Path | None) -> Path:
     return Path(backup_root).expanduser().resolve() if backup_root else DEFAULT_BACKUP_ROOT
+
+
+def _append_backup_job_log(path: str | Path, payload: dict[str, Any]) -> str:
+    log_path = Path(path).expanduser()
+    if not log_path.is_absolute():
+        log_path = PROJECT_ROOT / log_path
+    log_path = log_path.resolve()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, sort_keys=True) + "\n")
+    return str(log_path)
+
+
+def _path_is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
 
 
 def _backup_summary(metadata: dict[str, Any]) -> dict[str, Any]:

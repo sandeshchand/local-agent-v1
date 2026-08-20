@@ -22,6 +22,8 @@ class CitationItem(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     trace_id: int
+    user_id: str = "local"
+    requested_session_id: str = "default"
     session_id: str = "default"
     mode: str
     reason: str =""
@@ -164,6 +166,8 @@ class IngestFileResult(BaseModel):
     success: bool
     status: str = ""
     message: str
+    owner_id: str = "global"
+    visibility: str = "global"
     page_count: int | None = None
     chunk_count: int | None = None
 
@@ -180,6 +184,8 @@ class IngestionStatusItem(BaseModel):
     doc_id: str | None = None
     title: str = ""
     status: str
+    owner_id: str = "global"
+    visibility: str = "global"
     parser_version: str = ""
     chunking_version: str = ""
     embedding_model: str = ""
@@ -208,6 +214,8 @@ class DocumentItem(BaseModel):
     page_count: int
     checksum: str
     indexed_at: str
+    owner_id: str = "global"
+    visibility: str = "global"
     ingestion_status: str = "indexed"
     parser_version: str = ""
     chunking_version: str = ""
@@ -296,10 +304,13 @@ class ToolAuditItem(BaseModel):
     success: bool | None = None
     policy_name: str = ""
     duration_ms: float = 0.0
+    risk_level: str = "low"
+    risk_reason: str = ""
+    blocked: bool = False
 
 
 class ToolAuditResponse(BaseModel):
-    summary: dict[str, int] = Field(default_factory=dict)
+    summary: dict[str, Any] = Field(default_factory=dict)
     items: list[ToolAuditItem]
 
 

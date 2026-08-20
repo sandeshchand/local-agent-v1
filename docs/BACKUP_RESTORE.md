@@ -118,6 +118,50 @@ venv\Scripts\python.exe scripts\runtime_state.py prune-backups --backup-root D:\
 
 Prune only deletes valid backup directories directly under the selected backup root. Directories without `metadata.json` are ignored by listing and are not prune candidates.
 
+## Scheduled Backup Job
+
+Use `scheduled-backup` when an operating-system scheduler should run the whole backup workflow:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py --env-file .env scheduled-backup --backup-root D:\local-agent-backups --off-machine-root E:\local-agent-off-machine-backups --apply-prune
+```
+
+The command does four things:
+
+- creates a normal runtime backup,
+- optionally copies that backup to `--off-machine-root`,
+- prunes local and off-machine backup roots by retention count,
+- appends one JSON line to `var/logs/scheduled_backup.jsonl`.
+
+Pruning is dry-run unless `--apply-prune` is included. Defaults:
+
+```text
+--local-keep 14
+--off-machine-keep 28
+--job-log var/logs/scheduled_backup.jsonl
+```
+
+Use a custom log path:
+
+```powershell
+venv\Scripts\python.exe scripts\runtime_state.py --env-file .env scheduled-backup --backup-root D:\local-agent-backups --off-machine-root E:\local-agent-off-machine-backups --job-log D:\local-agent-backups\scheduled_backup.jsonl --apply-prune
+```
+
+For Windows Task Scheduler, create a daily task with:
+
+```text
+Program/script:
+D:\local-agent-v1\venv\Scripts\python.exe
+
+Arguments:
+scripts\runtime_state.py --env-file .env scheduled-backup --backup-root D:\local-agent-backups --off-machine-root E:\local-agent-off-machine-backups --apply-prune
+
+Start in:
+D:\local-agent-v1
+```
+
+For a production-like setup, put `--off-machine-root` on another disk, network share, or managed mounted storage. A second folder inside the same repo is not an off-machine backup.
+
 ## Restore A Backup
 
 Stop the web server before restore.

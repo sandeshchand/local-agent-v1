@@ -7,11 +7,13 @@ from pathlib import Path
 
 from local_agent.app.config import load_config
 from local_agent.operations import (
+    DEFAULT_BACKUP_JOB_LOG,
     RuntimeBackupError,
     backup_runtime_state,
     inspect_runtime_backup,
     list_runtime_backups,
     prune_runtime_backups,
+    run_scheduled_backup,
     restore_runtime_state,
 )
 
@@ -56,6 +58,48 @@ def build_parser() -> argparse.ArgumentParser:
         "--apply",
         action="store_true",
         help="Actually delete old backups. Without this flag, the command is a dry run.",
+    )
+
+    scheduled_parser = subparsers.add_parser(
+        "scheduled-backup",
+        help="Run a scheduled backup job with optional off-machine copy, pruning, and JSONL job logging.",
+    )
+    scheduled_parser.add_argument(
+        "--backup-root",
+        default="",
+        help="Local backup root. Defaults to var/backups under the project root.",
+    )
+    scheduled_parser.add_argument(
+        "--off-machine-root",
+        default="",
+        help="Optional second backup root on another disk, network share, or mounted storage.",
+    )
+    scheduled_parser.add_argument(
+        "--local-keep",
+        type=int,
+        default=14,
+        help="Newest local backups to keep during pruning.",
+    )
+    scheduled_parser.add_argument(
+        "--off-machine-keep",
+        type=int,
+        default=28,
+        help="Newest off-machine backups to keep during pruning.",
+    )
+    scheduled_parser.add_argument(
+        "--apply-prune",
+        action="store_true",
+        help="Actually prune old backups. Without this flag, prune steps are dry runs.",
+    )
+    scheduled_parser.add_argument(
+        "--job-log",
+        default=str(DEFAULT_BACKUP_JOB_LOG),
+        help="JSONL file that receives one backup job record per run.",
+    )
+    scheduled_parser.add_argument(
+        "--no-job-log",
+        action="store_true",
+        help="Do not write a scheduled backup job log entry.",
     )
 
     restore_parser = subparsers.add_parser("restore", help="Restore runtime state from a backup.")
@@ -110,6 +154,20 @@ def main() -> None:
                 backup_root=args.backup_root or None,
                 keep=args.keep,
                 dry_run=not args.apply,
+            )
+            print(json.dumps(result, indent=2))
+            return
+
+        if args.command == "scheduled-backup":
+            result = run_scheduled_backup(
+                sqlite_path=config.sqlite_path,
+                qdrant_path=config.qdrant_path,
+                backup_root=args.backup_root or None,
+                off_machine_root=args.off_machine_root or None,
+                local_keep=args.local_keep,
+                off_machine_keep=args.off_machine_keep,
+                apply_prune=args.apply_prune,
+                job_log_path=None if args.no_job_log else args.job_log,
             )
             print(json.dumps(result, indent=2))
             return

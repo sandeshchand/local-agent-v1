@@ -57,34 +57,69 @@ The latest work moved the project closer to production readiness and improved RA
 - Added versioned incremental ingestion with parser/chunking metadata.
 - Added safe re-ingestion cleanup for stale Qdrant vectors by `doc_id`.
 - Added ingestion status visibility in CLI, API, and the UI `Ingest` workspace tab.
+- Added gold QA coverage auditing with `scripts/audit_gold_qa_coverage.py`.
+- Added backup listing and retention pruning with dry-run by default.
+- Added optional API token auth for `/api/*`.
+- Added request user/session isolation for traces, feedback, memory, and tool audit.
+- Added a UI `Access` panel for token, user, and session settings.
+- Added user namespace isolation so authenticated users with the same visible session label store traces, feedback, memory, and tool audit under separate effective sessions.
+- Added per-user document visibility isolation so authenticated users retrieve global documents plus their own user-owned ingests.
+- Added stronger guardrail audit visibility with risk labels, blocked-action counts, and write/delete category highlighting.
+- Added guardrail path-policy checks for File MCP tools before execution.
+- Added write/delete guardrail policy so future mutating tools require explicit metadata, path policy, and request approval.
+- Added scheduled backup execution with local backup, optional off-machine copy, retention pruning, and JSONL job logging.
 
 ## First Task Tomorrow
 
-Completed: production-scale retrieval performance validation is now available through `scripts/profile_retrieval_scale.py`.
-
-Completed: ingestion is now safer for daily document batches through incremental skip behavior, `--force` rebuilds, version metadata, Qdrant cleanup, and ingestion status visibility.
-
-Current task: broaden gold QA for newly ingested PDFs and daily document batches. This should be done before adding more answer fast paths.
+Start by checking the branch and pushing any local commit that is not on GitHub yet.
 
 ```powershell
 git status --short
+git log --oneline origin/dev..dev
 ```
 
-Completed for this task:
+Latest completed work:
 
+- Production-scale retrieval performance validation is available through `scripts/profile_retrieval_scale.py`.
+- Ingestion is safer for daily document batches through incremental skip behavior, `--force` rebuilds, version metadata, Qdrant cleanup, and ingestion status visibility.
 - Added `scripts/audit_gold_qa_coverage.py` to compare indexed SQLite documents, raw PDFs, and gold QA items.
 - Added `scripts/smoke_gold_qa_coverage.py` for deterministic coverage-audit smoke testing.
 - Added the coverage smoke test to `scripts/run_regression.py`.
 - Added workflow documentation in `docs/GOLD_QA_COVERAGE.md` and `docs/EVALUATION.md`.
+- Added `list-backups` and `prune-backups` operations for local runtime backup retention.
+- Added `AUTH_ENABLED` / `AUTH_TOKEN` config.
+- Added `docs/AUTHENTICATION.md`.
+- Added `scripts/smoke_auth.py`.
+- Added `X-Local-Agent-User` support and UI user id settings.
+- Added `docs/DOCUMENT_ISOLATION.md`.
+- Added `scripts/smoke_document_isolation.py`.
+- Added `scripts\runtime_state.py scheduled-backup`.
 
-Next after this task:
+First validation tomorrow:
 
-- documents in `data/raw/documents`,
-- existing cases in `benchmarks/gold_qa/eval_multi_doc_rag.json`,
-- recent disliked answers and eval drafts,
-- document families not yet represented by gold QA.
-- run the audit report,
-- add 3 to 5 gold QA items for important missing or undercovered PDFs.
+```powershell
+venv\Scripts\python.exe scripts\run_regression.py --skip-rag
+venv\Scripts\python.exe scripts\smoke_auth.py
+venv\Scripts\python.exe scripts\audit_gold_qa_coverage.py --env-file .env --output var\logs\gold_qa_coverage_report.json
+```
+
+Then test the UI manually:
+
+- start the web app with `scripts\start_web.ps1`,
+- open the `Access` panel,
+- save a user id,
+- save a session id,
+- ask one question,
+- confirm traces, feedback, memory, and tool audit still load,
+- optionally set `AUTH_ENABLED=true` with a test token and confirm API calls require that token.
+
+Recommended next implementation:
+
+- configure and test a real Windows Task Scheduler backup job using `scheduled-backup`,
+- define admin roles for sensitive actions such as ingest, eval promotion, backup, and restore,
+- or expand gold QA for newly ingested PDFs.
+
+Do not add more answer fast paths unless a new eval or trace shows a repeated generic failure pattern.
 
 ## Recommended Feature Order
 
@@ -106,20 +141,20 @@ Next after this task:
    - Run focused RAG eval after adding each batch.
 
 4. Continue production readiness
-   - Define scheduled/off-machine backup policy.
-   - Decide authentication and user-isolation plan.
-   - Keep local backup/restore as the current base.
-
-Completed after this note:
-
-- Added backup listing and retention pruning with dry-run by default.
-- Added optional API token auth for `/api/*`.
-- Added request session isolation for traces, feedback, memory, and tool audit.
-- Added a UI `Access` panel for token/session settings.
+   - Done: local backup retention controls.
+   - Done: API token auth v1.
+   - Done: request user/session isolation for traces, feedback, memory, and tool audit.
+   - Done: per-user document visibility isolation for authenticated API use.
+   - Done: scheduled backup execution command with optional off-machine copy and job logging.
+   - Next: register the real OS scheduler job and choose the off-machine destination.
+   - Next: production user accounts and role-based admin permissions.
 
 5. MCP and guardrails next step
    - Keep File MCP and SQLite MCP read-only for now.
-   - Add stronger guardrail audit visibility before enabling any write-capable tools.
+   - Done: stronger guardrail audit visibility before enabling any write-capable tools.
+   - Done: explicit path policy before writable File MCP tools.
+   - Done: stronger write/delete policy before writable File MCP tools.
+   - Next: keep write/delete tools disabled until there is a concrete product workflow.
    - Plan true external MCP transport only when there is a concrete tool use case.
 
 ## Validation Commands
