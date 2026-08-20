@@ -147,17 +147,42 @@ Use a custom log path:
 venv\Scripts\python.exe scripts\runtime_state.py --env-file .env scheduled-backup --backup-root D:\local-agent-backups --off-machine-root E:\local-agent-off-machine-backups --job-log D:\local-agent-backups\scheduled_backup.jsonl --apply-prune
 ```
 
-For Windows Task Scheduler, create a daily task with:
+For Windows Task Scheduler, first preview the task that would be registered:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\register_scheduled_backup.ps1 -BackupRoot D:\local-agent-backups -OffMachineRoot E:\local-agent-off-machine-backups -ApplyPrune
+```
+
+The preview prints the exact program, arguments, working directory, and daily run time. It does not create a task.
+
+Register or update the task after reviewing the preview:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\register_scheduled_backup.ps1 -BackupRoot D:\local-agent-backups -OffMachineRoot E:\local-agent-off-machine-backups -ApplyPrune -Register
+```
+
+The helper registers:
 
 ```text
+Task name:
+LocalAgentScheduledBackup
+
 Program/script:
 D:\local-agent-v1\venv\Scripts\python.exe
 
 Arguments:
-scripts\runtime_state.py --env-file .env scheduled-backup --backup-root D:\local-agent-backups --off-machine-root E:\local-agent-off-machine-backups --apply-prune
+scripts\runtime_state.py --env-file .env scheduled-backup ...
 
 Start in:
 D:\local-agent-v1
+```
+
+Use `-At 02:30` to change the daily run time. Use `-TaskName MyTaskName` if the deployed environment needs a different task name.
+
+Remove the task:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\register_scheduled_backup.ps1 -Unregister
 ```
 
 For a production-like setup, put `--off-machine-root` on another disk, network share, or managed mounted storage. A second folder inside the same repo is not an off-machine backup.

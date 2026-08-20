@@ -69,6 +69,7 @@ The latest work moved the project closer to production readiness and improved RA
 - Added guardrail path-policy checks for File MCP tools before execution.
 - Added write/delete guardrail policy so future mutating tools require explicit metadata, path policy, and request approval.
 - Added scheduled backup execution with local backup, optional off-machine copy, retention pruning, and JSONL job logging.
+- Added `scripts\register_scheduled_backup.ps1` to preview, register, or remove the Windows scheduled backup job.
 
 ## First Task Tomorrow
 
@@ -116,7 +117,7 @@ Then test the UI manually:
 
 Recommended next implementation:
 
-- configure and test a real Windows Task Scheduler backup job using `scheduled-backup`,
+- choose the real off-machine backup destination and register the scheduled backup job on the deployed host,
 - decide the real external identity provider or production user-account model,
 - or expand gold QA for newly ingested PDFs.
 
@@ -147,8 +148,9 @@ Do not add more answer fast paths unless a new eval or trace shows a repeated ge
    - Done: request user/session isolation for traces, feedback, memory, and tool audit.
    - Done: per-user document visibility isolation for authenticated API use.
    - Done: scheduled backup execution command with optional off-machine copy and job logging.
+   - Done: Windows Task Scheduler registration helper for scheduled backups.
    - Done: admin role gate for ingest and eval promotion.
-   - Next: register the real OS scheduler job and choose the off-machine destination.
+   - Next: choose the off-machine destination and run scheduler registration on the deployed host.
    - Next: production user accounts or external identity provider.
 
 5. MCP and guardrails next step
