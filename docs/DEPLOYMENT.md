@@ -222,6 +222,18 @@ For a scheduled backup workflow with off-machine copy, pruning, and JSONL job lo
 venv\Scripts\python.exe scripts\runtime_state.py --env-file .env scheduled-backup --backup-root D:\local-agent-backups --off-machine-root E:\local-agent-off-machine-backups --apply-prune
 ```
 
+Preview a Windows Task Scheduler registration for that workflow:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\register_scheduled_backup.ps1 -BackupRoot D:\local-agent-backups -OffMachineRoot E:\local-agent-off-machine-backups -ApplyPrune
+```
+
+Register or update the daily scheduled task after choosing the real backup locations:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\register_scheduled_backup.ps1 -BackupRoot D:\local-agent-backups -OffMachineRoot E:\local-agent-off-machine-backups -ApplyPrune -Register
+```
+
 Detailed backup notes:
 
 ```text
@@ -302,9 +314,8 @@ Expected quality gate:
 Before real multi-user production, add:
 
 - production user accounts or an external identity provider,
-- role-based authorization for admin actions,
 - deployment secret management,
-- a registered OS scheduler job using the scheduled backup command,
+- a registered OS scheduler job on the deployed host using `scripts\register_scheduled_backup.ps1`,
 - monitoring and alerting,
 - container or service manager configuration,
 - explicit data retention policy,

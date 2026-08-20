@@ -100,6 +100,7 @@ DEBUG=true
 WARM_RETRIEVAL_ON_STARTUP=false
 AUTH_ENABLED=false
 AUTH_TOKEN=
+AUTH_ADMIN_USERS=
 ```
 
 To reuse an older local index, point the paths at the existing files:

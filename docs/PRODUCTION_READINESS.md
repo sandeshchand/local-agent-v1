@@ -26,6 +26,7 @@ The project has strong local foundations:
 - system-status visibility for SQLite, Qdrant, Ollama models, embeddings, and tools,
 - local backup and restore tooling for SQLite and Qdrant runtime state,
 - backup listing and retention pruning with dry-run by default,
+- Windows Task Scheduler registration helper for scheduled backups,
 - config-gated API token authentication and request user/session isolation,
 - local deployment documentation,
 - versioned incremental ingestion with per-file status tracking and safe Qdrant cleanup,
@@ -164,8 +165,8 @@ It should also have:
 
 1. Optimize first-query retrieval/model warmup without reducing RAG quality.
 2. Add broader gold QA for new daily PDFs.
-3. Register the real scheduled/off-machine backup job for deployed environments.
-4. Add production user accounts and role-based admin permissions.
+3. Choose the real off-machine backup destination and register the scheduler task on the deployed host.
+4. Add production user accounts or an external identity provider.
 
 Completed from this list:
 
@@ -173,7 +174,9 @@ Completed from this list:
 - Local SQLite and Qdrant backup/restore script, smoke test, and documentation.
 - Backup listing, safe retention pruning, and local retention policy documentation.
 - Scheduled backup execution command with optional off-machine copy, retention pruning, JSONL job logging, smoke test, and documentation.
+- Windows Task Scheduler helper for previewing, registering, and removing the scheduled backup job.
 - Config-gated API token authentication, UI user/session controls, and user-session-scoped traces/feedback/memory/tool-audit views.
+- Admin role gate for sensitive web actions such as document ingest and eval promotion.
 - Per-user document visibility isolation for authenticated API use.
 - Memory multi-turn eval, benchmark cases, smoke test, and short-term redaction.
 - Tool audit API, UI tab, category labels, and smoke test.

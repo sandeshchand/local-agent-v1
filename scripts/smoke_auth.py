@@ -25,6 +25,7 @@ from local_agent.storage.sqlite_store import SQLiteStore
 AUTH_ENV_NAMES = [
     "AUTH_ENABLED",
     "AUTH_TOKEN",
+    "AUTH_ADMIN_USERS",
     "QDRANT_PATH",
     "SQLITE_PATH",
     "OLLAMA_BASE_URL",
@@ -38,7 +39,13 @@ def clear_auth_env() -> None:
         os.environ.pop(name, None)
 
 
-def write_env(path: Path, *, auth_enabled: bool, auth_token: str = "secret-token") -> None:
+def write_env(
+    path: Path,
+    *,
+    auth_enabled: bool,
+    auth_token: str = "secret-token",
+    admin_users: str = "",
+) -> None:
     lines = [
         "OLLAMA_BASE_URL=http://127.0.0.1:11434",
         "CHAT_MODEL=test-chat",
@@ -49,6 +56,8 @@ def write_env(path: Path, *, auth_enabled: bool, auth_token: str = "secret-token
     ]
     if auth_token:
         lines.append(f"AUTH_TOKEN={auth_token}")
+    if admin_users:
+        lines.append(f"AUTH_ADMIN_USERS={admin_users}")
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -68,6 +77,7 @@ def assert_auth_headers() -> None:
         assert identity.user_id == "local"
         assert identity.requested_session_id == "default"
         assert identity.session_id == "default"
+        assert identity.is_admin
         identity = authenticate_headers(
             {
                 AUTH_USER_HEADER: "demo-user",
@@ -104,6 +114,7 @@ def assert_auth_headers() -> None:
         assert identity.user_id == "team-a"
         assert identity.requested_session_id == "team-session-1"
         assert identity.session_id == "team-a:team-session-1"
+        assert identity.is_admin
 
         identity = authenticate_headers({AUTH_TOKEN_HEADER: "secret-token"}, config)
         assert identity.user_id.startswith("user-")
@@ -130,6 +141,28 @@ def assert_auth_headers() -> None:
         assert user_a.session_id == "alice:default"
         assert user_b.session_id == "bob:default"
         assert user_a.session_id != user_b.session_id
+
+        clear_auth_env()
+        write_env(env_path, auth_enabled=True, auth_token="secret-token", admin_users="alice,team/a")
+        config = load_config(env_path)
+        admin_identity = authenticate_headers(
+            {
+                AUTH_TOKEN_HEADER: "secret-token",
+                AUTH_USER_HEADER: "alice",
+            },
+            config,
+        )
+        regular_identity = authenticate_headers(
+            {
+                AUTH_TOKEN_HEADER: "secret-token",
+                AUTH_USER_HEADER: "bob",
+            },
+            config,
+        )
+        assert admin_identity.is_admin
+        assert admin_identity.roles == ("admin", "user")
+        assert regular_identity.is_admin is False
+        assert regular_identity.roles == ("user",)
 
 
 def assert_session_scoped_storage_filters() -> None:
@@ -215,6 +248,7 @@ def assert_eval_candidate_namespace_filtering() -> None:
                 requested_session_id="default",
                 session_id="alice:default",
                 auth_mode="api_token",
+                roles=("admin", "user"),
             )
             original_store = web.get_sqlite_store
             original_candidates_path = web.EVAL_CANDIDATES_PATH
@@ -242,12 +276,42 @@ def assert_eval_candidate_namespace_filtering() -> None:
             store.close()
 
 
+def assert_admin_access_gate() -> None:
+    admin = AuthIdentity(
+        enabled=True,
+        authenticated=True,
+        user_id="alice",
+        requested_session_id="default",
+        session_id="alice:default",
+        auth_mode="api_token",
+        roles=("admin", "user"),
+    )
+    regular = AuthIdentity(
+        enabled=True,
+        authenticated=True,
+        user_id="bob",
+        requested_session_id="default",
+        session_id="bob:default",
+        auth_mode="api_token",
+        roles=("user",),
+    )
+    web.ensure_admin_access(admin, "ingest documents")
+    try:
+        web.ensure_admin_access(regular, "ingest documents")
+    except HTTPException as exc:
+        assert exc.status_code == 403
+        assert "Admin role" in str(exc.detail)
+    else:
+        raise AssertionError("Regular user should not pass admin gate.")
+
+
 def main() -> None:
     saved = {name: os.environ.get(name) for name in AUTH_ENV_NAMES}
     try:
         assert_auth_headers()
         assert_session_scoped_storage_filters()
         assert_eval_candidate_namespace_filtering()
+        assert_admin_access_gate()
     finally:
         clear_auth_env()
         for name, value in saved.items():

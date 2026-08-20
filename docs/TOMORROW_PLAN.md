@@ -63,11 +63,13 @@ The latest work moved the project closer to production readiness and improved RA
 - Added request user/session isolation for traces, feedback, memory, and tool audit.
 - Added a UI `Access` panel for token, user, and session settings.
 - Added user namespace isolation so authenticated users with the same visible session label store traces, feedback, memory, and tool audit under separate effective sessions.
+- Added admin role gating for document ingest and eval promotion through `AUTH_ADMIN_USERS`.
 - Added per-user document visibility isolation so authenticated users retrieve global documents plus their own user-owned ingests.
 - Added stronger guardrail audit visibility with risk labels, blocked-action counts, and write/delete category highlighting.
 - Added guardrail path-policy checks for File MCP tools before execution.
 - Added write/delete guardrail policy so future mutating tools require explicit metadata, path policy, and request approval.
 - Added scheduled backup execution with local backup, optional off-machine copy, retention pruning, and JSONL job logging.
+- Added `scripts\register_scheduled_backup.ps1` to preview, register, or remove the Windows scheduled backup job.
 
 ## First Task Tomorrow
 
@@ -115,8 +117,8 @@ Then test the UI manually:
 
 Recommended next implementation:
 
-- configure and test a real Windows Task Scheduler backup job using `scheduled-backup`,
-- define admin roles for sensitive actions such as ingest, eval promotion, backup, and restore,
+- choose the real off-machine backup destination and register the scheduled backup job on the deployed host,
+- decide the real external identity provider or production user-account model,
 - or expand gold QA for newly ingested PDFs.
 
 Do not add more answer fast paths unless a new eval or trace shows a repeated generic failure pattern.
@@ -146,8 +148,10 @@ Do not add more answer fast paths unless a new eval or trace shows a repeated ge
    - Done: request user/session isolation for traces, feedback, memory, and tool audit.
    - Done: per-user document visibility isolation for authenticated API use.
    - Done: scheduled backup execution command with optional off-machine copy and job logging.
-   - Next: register the real OS scheduler job and choose the off-machine destination.
-   - Next: production user accounts and role-based admin permissions.
+   - Done: Windows Task Scheduler registration helper for scheduled backups.
+   - Done: admin role gate for ingest and eval promotion.
+   - Next: choose the off-machine destination and run scheduler registration on the deployed host.
+   - Next: production user accounts or external identity provider.
 
 5. MCP and guardrails next step
    - Keep File MCP and SQLite MCP read-only for now.

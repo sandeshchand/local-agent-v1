@@ -24,6 +24,11 @@ class AuthIdentity:
     requested_session_id: str
     session_id: str
     auth_mode: str = "disabled"
+    roles: tuple[str, ...] = ("user",)
+
+    @property
+    def is_admin(self) -> bool:
+        return "admin" in self.roles
 
 
 def authenticate_request(request: Request, config: AppConfig) -> AuthIdentity:
@@ -39,6 +44,7 @@ def authenticate_headers(headers: Mapping[str, str], config: AppConfig) -> AuthI
             user_id=sanitize_user_id(headers.get(AUTH_USER_HEADER), fallback="local"),
             requested_session_id=session_id,
             session_id=session_id,
+            roles=("admin", "user"),
         )
 
     expected_token = config.auth_token.strip()
@@ -59,6 +65,7 @@ def authenticate_headers(headers: Mapping[str, str], config: AppConfig) -> AuthI
     fallback_user = f"user-{_token_fingerprint(expected_token)}"
     user_id = sanitize_user_id(headers.get(AUTH_USER_HEADER), fallback=fallback_user)
     requested_session_id = sanitize_session_id(headers.get(AUTH_SESSION_HEADER), fallback="default")
+    roles = _roles_for_user(user_id, config.auth_admin_users)
     return AuthIdentity(
         enabled=True,
         authenticated=True,
@@ -66,6 +73,7 @@ def authenticate_headers(headers: Mapping[str, str], config: AppConfig) -> AuthI
         requested_session_id=requested_session_id,
         session_id=namespaced_session_id(user_id, requested_session_id),
         auth_mode="api_token",
+        roles=roles,
     )
 
 
@@ -106,3 +114,14 @@ def _extract_token(headers: Mapping[str, str]) -> str:
 
 def _token_fingerprint(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()[:12]
+
+
+def _roles_for_user(user_id: str, admin_users: tuple[str, ...]) -> tuple[str, ...]:
+    normalized_admins = {
+        "*" if admin_user.strip() == "*" else sanitize_user_id(admin_user, fallback="")
+        for admin_user in admin_users
+        if admin_user.strip()
+    }
+    if not normalized_admins or "*" in normalized_admins or user_id in normalized_admins:
+        return ("admin", "user")
+    return ("user",)
